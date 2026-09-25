@@ -23,6 +23,35 @@ CREATE TABLE IF NOT EXISTS {RELATIONS_TABLE} (
 ) ORGANIZATION HEAP
 """
 
+_CHANGESET_DDL = """
+CREATE TABLE IF NOT EXISTS sw_change_set (
+  change_id      VARCHAR(64) PRIMARY KEY,
+  task_id        VARCHAR(64),
+  project_id     VARCHAR(64),
+  files_changed  TEXT,
+  test_run_id    VARCHAR(64),
+  base_checksum  VARCHAR(128),
+  head_checksum  VARCHAR(128),
+  ts             DATETIME
+) ORGANIZATION HEAP
+"""
+
+_TESTRUN_DDL = """
+CREATE TABLE IF NOT EXISTS sw_test_run (
+  test_run_id VARCHAR(64) PRIMARY KEY,
+  task_id     VARCHAR(64),
+  project_id  VARCHAR(64),
+  command     VARCHAR(1024),
+  total       INT,
+  passed      INT,
+  failed      INT,
+  skipped     INT,
+  commit_ref  VARCHAR(255),
+  report_ref  VARCHAR(1024),
+  ts          DATETIME
+) ORGANIZATION HEAP
+"""
+
 
 class SeekdbClient:
     """Owns the pyseekdb remote client; artifacts use a Collection, relations use a SQL table."""
@@ -67,6 +96,8 @@ class SeekdbClient:
         raw = self._client.get_raw_connection()
         with raw.cursor() as cur:
             cur.execute(_RELATIONS_DDL)
+            cur.execute(_CHANGESET_DDL)
+            cur.execute(_TESTRUN_DDL)
 
     def raw_connection(self):
         return self._client.get_raw_connection()
