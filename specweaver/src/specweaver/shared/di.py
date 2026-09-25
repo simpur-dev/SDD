@@ -26,7 +26,22 @@ from ..adapters.driven.seekdb import (
 from ..adapters.driven.seekdb.health import check_seekdb
 from ..adapters.driven.workspace import GitWorkspace, SubprocessTestRunner
 from ..adapters.driving.mcp.server import build_mcp
+from ..application.engines.assembly import AssemblyEngine
 from ..application.engines.ingestion import IngestionEngine
+from ..application.engines.retrieval import (
+    GraphExpander,
+    QueryPlanner,
+    RetrievalEngine,
+)
+from ..application.engines.validity import (
+    ConflictDetector,
+    GapDetector,
+    LifecycleValidator,
+    ProvenanceDetector,
+    SuspectDetector,
+    ValidityEngine,
+)
+from ..application.usecases.get_context import GetContext
 from ..application.usecases.ingest_project import IngestProject
 from .config import Settings
 from .telemetry import Telemetry
@@ -105,10 +120,35 @@ async def run(settings: Settings | None = None):
     test_runner = SubprocessTestRunner(resolved.workspace)
 
     ingestion_engine = IngestionEngine(embedding)
+
+    # retrieval / validity / assembly engines
+    context_cfg = resolved.context
+    retrieval_engine = RetrievalEngine(
+        QueryPlanner(llm),
+        embedding,
+        hybrid,
+        GraphExpander(catalog),
+        n_results=context_cfg.n_results,
+    )
+    validity_engine = ValidityEngine(
+        LifecycleValidator(),
+        ConflictDetector(),
+        GapDetector(catalog),
+        SuspectDetector(catalog),
+        ProvenanceDetector(),
+    )
+    assembly_engine = AssemblyEngine(context_cfg.budget_bytes)
+
     usecases = {
         "ingest_project": IngestProject(
             ingestion_engine, catalog, workspace, telemetry, memory
-        )
+        ),
+        "get_context": GetContext(
+            retrieval_engine,
+            validity_engine,
+            assembly_engine,
+            telemetry,
+        ),
     }
 
     mcp = build_mcp(resolved)
