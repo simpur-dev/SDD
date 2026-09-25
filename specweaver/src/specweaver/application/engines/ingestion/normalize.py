@@ -68,6 +68,17 @@ def _status(value: object) -> LifecycleStatus:
     return LifecycleStatus.active
 
 
+def _artifact_ref(value: object) -> str | None:
+    """Normalize an explicit artifact reference (e.g. supersedes) to a stable id."""
+    if not isinstance(value, str) or not value.strip():
+        return None
+    text = value.strip()
+    match = _EXPLICIT_ID_RE.match(text.upper())
+    if match:
+        return f"{match.group(1)}-{int(match.group(2))}"
+    return text
+
+
 def _tags(raw: object, artifact_type: ArtifactType) -> list[str]:
     tags = [artifact_type.value]
     if isinstance(raw, str):
@@ -98,7 +109,7 @@ def to_artifact(project_id: str, doc: ParsedDocument) -> Artifact:
         effective_from=_parse_date(fm.get("effective_from")),
         effective_to=_parse_date(fm.get("effective_to")),
         applies_to_ref=fm.get("applies_to"),
-        supersedes=fm.get("supersedes"),
+        supersedes=_artifact_ref(fm.get("supersedes")),
         source=SourceRef(uri=doc.path, checksum=doc.checksum),
         checksum=doc.checksum,
         tags=_tags(fm.get("tags"), doc.type),
