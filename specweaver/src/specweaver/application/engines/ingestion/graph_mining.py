@@ -141,4 +141,28 @@ def mine_relations(
                         f"imports {imported}",
                     )
 
+    # evidence 3: module/path naming convention links implementation to requirements
+    requirements_by_module: dict[str, list[str]] = {}
+    for _doc, artifact in pairs:
+        if artifact.type == ArtifactType.requirement and artifact.module:
+            requirements_by_module.setdefault(
+                artifact.module, []
+            ).append(artifact.id)
+    for _doc, artifact in pairs:
+        if artifact.type not in (
+            ArtifactType.design,
+            ArtifactType.code,
+        ) or not artifact.module:
+            continue
+        for requirement_id in requirements_by_module.get(
+            artifact.module, []
+        ):
+            acc.add(
+                artifact.id,
+                requirement_id,
+                RelationKind.realizes,
+                0.6,
+                f"module naming convention '{artifact.module}'",
+            )
+
     return acc.relations(project_id)
