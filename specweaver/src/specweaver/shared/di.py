@@ -26,6 +26,8 @@ from ..adapters.driven.seekdb import (
 from ..adapters.driven.seekdb.health import check_seekdb
 from ..adapters.driven.workspace import GitWorkspace, SubprocessTestRunner
 from ..adapters.driving.mcp.server import build_mcp
+from ..application.engines.ingestion import IngestionEngine
+from ..application.usecases.ingest_project import IngestProject
 from .config import Settings
 from .telemetry import Telemetry
 
@@ -43,6 +45,7 @@ class SpecWeaverApp:
     hybrid: object | None = None
     memory: object | None = None
     handoff: object | None = None
+    usecases: dict = field(default_factory=dict)
     bootstrap_errors: dict = field(default_factory=dict)
 
     async def doctor(self) -> dict:
@@ -101,6 +104,13 @@ async def run(settings: Settings | None = None):
     workspace = GitWorkspace(resolved.workspace)
     test_runner = SubprocessTestRunner(resolved.workspace)
 
+    ingestion_engine = IngestionEngine(embedding)
+    usecases = {
+        "ingest_project": IngestProject(
+            ingestion_engine, catalog, workspace, telemetry, memory
+        )
+    }
+
     mcp = build_mcp(resolved)
     app = SpecWeaverApp(
         settings=resolved,
@@ -114,6 +124,7 @@ async def run(settings: Settings | None = None):
         hybrid=hybrid,
         memory=memory,
         handoff=handoff,
+        usecases=usecases,
         bootstrap_errors=bootstrap_errors,
     )
     app._pc_client = pc_client
