@@ -38,9 +38,28 @@ def artifact_id(doc: ParsedDocument) -> str:
     return f"{prefix}-{digest}"
 
 
-def _module(path: str) -> str | None:
-    parts = path.replace("\\", "/").split("/")
-    return parts[0] if len(parts) > 1 else None
+_GENERIC_DIRS = frozenset(
+    {"src", "source", "sources", "lib", "test", "tests", "spec",
+     "specs", "docs", "doc"}
+)
+
+
+def _module(doc: ParsedDocument) -> str | None:
+    """Module resolution: explicit front-matter wins, else path/stem inference."""
+    declared = doc.front_matter.get("module")
+    if isinstance(declared, str) and declared.strip():
+        return declared.strip()
+    parts = [p for p in doc.path.replace("\\", "/").split("/") if p]
+    directories = parts[:-1]
+    for directory in reversed(directories):
+        if directory.lower() not in _GENERIC_DIRS:
+            return directory
+    stem = parts[-1].rsplit(".", 1)[0] if parts else ""
+    if doc.type in (ArtifactType.code, ArtifactType.test):
+        if stem.startswith("test_"):
+            stem = stem[5:]
+        return stem or None
+    return directories[0] if directories else None
 
 
 def _status(value: object) -> LifecycleStatus:
@@ -71,7 +90,7 @@ def to_artifact(project_id: str, doc: ParsedDocument) -> Artifact:
         id=artifact_id(doc),
         project_id=project_id,
         type=doc.type,
-        module=_module(doc.path),
+        module=_module(doc),
         title=doc.title,
         content=doc.raw_text,
         version=str(fm.get("version", "0.1.0")),
