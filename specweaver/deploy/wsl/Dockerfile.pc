@@ -1,0 +1,91 @@
+# Multi-stage build for PowerMem Server (SpecWeaver 修补版：仅将 pnpm 固定为 9.15.9 以匹配 lockfile 9.0)
+FROM node:20-slim as frontend-builder
+WORKDIR /dashboard-build
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+COPY dashboard/package.json dashboard/pnpm-lock.yaml ./
+RUN pnpm install
+COPY dashboard/ ./
+RUN pnpm build
+
+FROM python:3.11-slim as builder
+
+ARG PIP_INDEX_URL=""
+ARG PIP_TRUSTED_HOST=""
+ARG DEBIAN_MIRROR=""
+
+WORKDIR /build
+
+RUN if [ -n "$DEBIAN_MIRROR" ]; then \
+        sed -i "s|http://deb.debian.org/debian|http://$DEBIAN_MIRROR/debian|g" /etc/apt/sources.list.d/debian.sources || \
+        sed -i "s|http://deb.debian.org/debian|http://$DEBIAN_MIRROR/debian|g" /etc/apt/sources.list || true; \
+        sed -i "s|http://security.debian.org/debian-security|http://$DEBIAN_MIRROR/debian-security|g" /etc/apt/sources.list.d/debian.sources || \
+        sed -i "s|http://security.debian.org/debian-security|http://$DEBIAN_MIRROR/debian-security|g" /etc/apt/sources.list || true; \
+    fi && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        gcc \
+        g++ \
+        postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY pyproject.toml ./
+COPY README.md ./
+COPY src/ ./src/
+
+COPY --from=frontend-builder /dashboard-build/dist/ ./src/server/dashboard/
+
+RUN pip config set global.timeout 300 && \
+    if [ -n "$PIP_INDEX_URL" ]; then \
+        pip config set global.index-url "$PIP_INDEX_URL" && \
+        if [ -n "$PIP_TRUSTED_HOST" ]; then \
+            pip config set global.trusted-host "$PIP_TRUSTED_HOST"; \
+        fi; \
+    fi && \
+    pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir .
+
+FROM python:3.11-slim
+
+ARG DEBIAN_MIRROR=""
+
+WORKDIR /app
+
+RUN if [ -n "$DEBIAN_MIRROR" ]; then \
+        sed -i "s|http://deb.debian.org/debian|http://$DEBIAN_MIRROR/debian|g" /etc/apt/sources.list.d/debian.sources || \
+        sed -i "s|http://deb.debian.org/debian|http://$DEBIAN_MIRROR/debian|g" /etc/apt/sources.list || true; \
+        sed -i "s|http://security.debian.org/debian-security|http://$DEBIAN_MIRROR/debian-security|g" /etc/apt/sources.list.d/debian.sources || \
+        sed -i "s|http://security.debian.org/debian-security|http://$DEBIAN_MIRROR/debian-security|g" /etc/apt/sources.list || true; \
+    fi && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        postgresql-client \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -u 1000 powermem && \
+    chown -R powermem:powermem /app
+
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+COPY --chown=powermem:powermem src/ ./src/
+COPY --chown=powermem:powermem pyproject.toml ./
+
+COPY --chown=powermem:powermem docker/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+USER powermem
+
+EXPOSE 8000
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    POWERMEM_SERVER_HOST=0.0.0.0 \
+    POWERMEM_SERVER_PORT=8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -f http://localhost:8000/api/v1/system/health || exit 1
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+CMD ["powermem-server", "--host", "0.0.0.0", "--port", "8000"]
