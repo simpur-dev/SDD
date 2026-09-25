@@ -62,6 +62,7 @@ class FileChange(BaseModel):
 
 class ChangeSet(BaseModel):
     id: str
+    project_id: str = ""
     task_id: str
     files_changed: list[FileChange] = []
     base_checksum: str | None = None
@@ -70,7 +71,10 @@ class ChangeSet(BaseModel):
 
 
 class TestRun(BaseModel):
+    __test__ = False
+
     id: str
+    project_id: str = ""
     task_id: str
     command: str = ""
     total: int = 0
