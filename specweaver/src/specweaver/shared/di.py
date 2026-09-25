@@ -19,6 +19,7 @@ from ..adapters.driven.powercontext import (
 )
 from ..adapters.driven.powercontext.health import check_powercontext
 from ..adapters.driven.seekdb import (
+    SeekdbActivityLog,
     SeekdbCatalog,
     SeekdbClient,
     SeekdbHybridSearch,
@@ -28,6 +29,7 @@ from ..adapters.driven.workspace import GitWorkspace, SubprocessTestRunner
 from ..adapters.driving.mcp.server import build_mcp
 from ..application.engines.assembly import AssemblyEngine
 from ..application.engines.ingestion import IngestionEngine
+from ..application.engines.reconciliation import ReconciliationEngine
 from ..application.engines.retrieval import (
     GraphExpander,
     QueryPlanner,
@@ -41,6 +43,7 @@ from ..application.engines.validity import (
     SuspectDetector,
     ValidityEngine,
 )
+from ..application.usecases.complete_task import CompleteTask
 from ..application.usecases.get_context import GetContext
 from ..application.usecases.ingest_project import IngestProject
 from .config import Settings
@@ -58,6 +61,7 @@ class SpecWeaverApp:
     embedding: object
     catalog: object | None = None
     hybrid: object | None = None
+    activity: object | None = None
     memory: object | None = None
     handoff: object | None = None
     usecases: dict = field(default_factory=dict)
@@ -101,13 +105,14 @@ async def run(settings: Settings | None = None):
     dimension = resolved.inference.dim
 
     # seekdb (engineering catalog + hybrid search)
-    catalog = hybrid = None
+    catalog = hybrid = activity = None
     pc_client = PowerContextClient(resolved.powercontext)
     try:
         seek_client = SeekdbClient(resolved.seekdb, dimension)
         await asyncio.to_thread(seek_client.initialize)
         catalog = SeekdbCatalog(seek_client)
         hybrid = SeekdbHybridSearch(seek_client)
+        activity = SeekdbActivityLog(seek_client)
     except Exception as exc:  # noqa: BLE001
         bootstrap_errors["seekdb"] = str(exc)
 
@@ -138,6 +143,7 @@ async def run(settings: Settings | None = None):
         ProvenanceDetector(),
     )
     assembly_engine = AssemblyEngine(context_cfg.budget_bytes)
+    reconciliation_engine = ReconciliationEngine(embedding)
 
     usecases = {
         "ingest_project": IngestProject(
@@ -148,6 +154,15 @@ async def run(settings: Settings | None = None):
             validity_engine,
             assembly_engine,
             telemetry,
+        ),
+        "complete_task": CompleteTask(
+            reconciliation_engine,
+            catalog,
+            activity,
+            workspace,
+            test_runner,
+            telemetry,
+            memory,
         ),
     }
 
@@ -162,6 +177,7 @@ async def run(settings: Settings | None = None):
         embedding=embedding,
         catalog=catalog,
         hybrid=hybrid,
+        activity=activity,
         memory=memory,
         handoff=handoff,
         usecases=usecases,
