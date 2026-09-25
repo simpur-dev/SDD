@@ -44,6 +44,16 @@ class GitWorkspace:
             )
         return out.decode(errors="ignore").strip()
 
+    async def list_files(self) -> list[str]:
+        tracked = await self._git("ls-files")
+        others = await self._git(
+            "ls-files", "--others", "--exclude-standard"
+        )
+        files = set(tracked.splitlines())
+        if others:
+            files.update(others.splitlines())
+        return sorted(files)
+
     async def current_ref(self) -> str:
         return await self._git("rev-parse", "HEAD")
 
