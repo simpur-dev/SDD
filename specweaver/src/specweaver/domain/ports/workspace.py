@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from typing import Protocol
+
+from ..entities import FileChange, TestRun
+
+
+class WorkspacePort(Protocol):
+    async def current_ref(self) -> str: ...
+
+    async def changed_files(self, base: str, head: str) -> list[FileChange]: ...
+
+    async def read_file(self, path: str) -> str: ...
+
+    async def exists(self, path: str) -> bool: ...
+
+    async def checksum(self, path: str) -> str: ...
+
+
+class TestRunnerPort(Protocol):
+    async def run(self, command: str) -> TestRun: ...
+
+    async def parse_report(self, uri: str) -> TestRun: ...
