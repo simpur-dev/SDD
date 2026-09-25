@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpecWeaver 架构全景图</title>
+<style>
+  :root{
+    --ob-blue:#0a66d6; --ob-blue-d:#084a9e; --ob-cyan:#12b8c3;
+    --ink:#16243a; --ink-2:#4a5a72; --line:#d7e0ec;
+    --bg:#eef3f9; --card:#ffffff;
+    --agent:#6d5bd0; --if:#0a66d6; --core:#0f9d8f; --back:#d98324; --src:#5b6b82;
+    --warn:#d64a4a; --ok:#1f9e62;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Noto Sans SC","Microsoft YaHei","PingFang SC",system-ui,sans-serif;
+    background:var(--bg); color:var(--ink); line-height:1.5; padding:28px 18px 60px;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  header.page{text-align:center;margin-bottom:26px}
+  header.page h1{font-size:30px;letter-spacing:.5px;color:var(--ink)}
+  header.page h1 b{color:var(--ob-blue)}
+  header.page p{color:var(--ink-2);margin-top:8px;font-size:15px}
+  .legend{display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-top:14px;font-size:13px;color:var(--ink-2)}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+  .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+
+  .layer{
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:16px 18px;position:relative;box-shadow:0 6px 18px rgba(20,50,90,.06);
+  }
+  .layer + .layer{margin-top:14px}
+  .layer-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .layer-tag{color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+  .layer-head h2{font-size:17px}
+  .layer-head .sub{font-size:12.5px;color:var(--ink-2);margin-left:auto;text-align:right}
+
+  .grid{display:grid;gap:10px}
+  .g5{grid-template-columns:repeat(5,1fr)}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .g2{grid-template-columns:repeat(2,1fr)}
+  .cell{
+    border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fbfdff;
+  }
+  .cell h3{font-size:14px;margin-bottom:3px}
+  .cell p{font-size:12px;color:var(--ink-2)}
+  .cell .pill{font-size:11px;color:var(--ob-blue);font-weight:600}
+
+  .flow-arrow{text-align:center;color:var(--ob-blue);font-size:20px;margin:2px 0}
+  .flow-arrow .lbl{font-size:12px;color:var(--ink-2);vertical-align:middle;margin-left:8px}
+
+  .core-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .engine{
+    border:1.5px solid #bfe6e1;background:#f2fbfa;border-radius:10px;padding:11px 12px;text-align:center;
+  }
+  .engine .ico{font-size:20px;font-weight:800;color:var(--core)}
+  .engine h3{font-size:13.5px;margin:5px 0 3px}
+  .engine p{font-size:11.5px;color:var(--ink-2)}
+
+  .back-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .backend{border-radius:11px;padding:13px 15px;color:#fff}
+  .backend.seek{background:linear-gradient(135deg,#0a66d6,#1286c3)}
+  .backend.pc{background:linear-gradient(135deg,#d98324,#e8a53f)}
+  .backend h3{font-size:15.5px;margin-bottom:4px}
+  .backend p{font-size:12px;opacity:.95}
+  .backend .meta{font-size:11px;opacity:.85;margin-top:6px}
+
+  .note-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:14px;margin-top:18px}
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:15px 17px}
+  .panel h2{font-size:15.5px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .steps{list-style:none}
+  .steps li{display:flex;gap:10px;font-size:13px;padding:7px 0;border-bottom:1px dashed var(--line)}
+  .steps li:last-child{border-bottom:0}
+  .steps .n{flex:0 0 22px;height:22px;border-radius:50%;background:var(--ob-blue);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;font-weight:700}
+  .steps b{font-weight:600}
+  .steps span{color:var(--ink-2)}
+
+  .truth li{font-size:13px;padding:6px 0;list-style:none;display:flex;gap:8px;align-items:flex-start}
+  .truth .rank{flex:0 0 26px;height:22px;border-radius:6px;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700}
+  .r1{background:var(--warn)}.r2{background:var(--ob-blue)}.r3{background:var(--back)}
+  .truth small{color:var(--ink-2)}
+
+  .findings{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .fchip{font-size:11.5px;padding:4px 10px;border-radius:20px;border:1px solid var(--line);background:#f7f9fc}
+  .fchip b{color:var(--warn)}
+
+  footer{text-align:center;color:var(--ink-2);font-size:12px;margin-top:26px}
+
+  @media(max-width:860px){
+    .g5,.g3,.core-grid{grid-template-columns:repeat(2,1fr)}
+    .g2,.back-grid,.note-grid{grid-template-columns:1fr}
+    .layer-head .sub{display:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="page">
+    <h1><b>SpecWeaver · 规格织网</b> 架构全景图</h1>
+    <p>SDD 工程上下文运行层：动手前给出「当前有效 · 最小充分 · 来源可核对」的工程依据，收工后把变化与验证「反向织回」记录</p>
+    <div class="legend">
+      <span><i class="dot" style="background:var(--agent)"></i>现成 Agent</span>
+      <span><i class="dot" style="background:var(--if)"></i>接口层</span>
+      <span><i class="dot" style="background:var(--core)"></i>自研核心引擎</span>
+      <span><i class="dot" style="background:var(--back)"></i>指定后端</span>
+      <span><i class="dot" style="background:var(--src)"></i>工程数据源</span>
+    </div>
+  </header>
+
+  <!-- ===== Layer 1：现成 Agent ===== -->
+  <div class="layer">
+    <div class="layer-head">
+      <span class="layer-tag" style="background:var(--agent)">① 现成开发 Agent · 不自研</span>
+      <h2>实际完成代码修改与测试</h2>
+      <span class="sub">通过标准 MCP 接入，品牌无绑定</span>
+    </div>
+    <div class="grid g3">
+      <div class="cell"><h3>Claude Code / Codex</h3><p>主流 Coding Agent，MCP/Hook 接入</p></div>
+      <div class="cell"><h3>Bub <span class="pill">evaluation</span></h3><p>轻量 runtime，疑似官方评测口径，优先适配</p></div>
+      <div class="cell"><h3>任意 MCP Agent</h3><p>题包指定 Agent 发布后仅改配置</p></div>
+    </div>
+  </div>
+
+  <div class="flow-arrow">▼ <span class="lbl">MCP 调用（get_context / record / complete / resume）</span></div>
+
+  <!-- ===== Layer 2：接口层 ===== -->
+  <div class="layer">
+    <div class="layer-head">
+      <span class="layer-tag" style="background:var(--if)">② 接口层 · 薄</span>
+      <h2>SpecWeaver API</h2>
+      <span class="sub">参数校验 · 鉴权 · 序列化</span>
+    </div>
+    <div class="grid g2">
+      <div class="cell"><h3>MCP Server</h3><p>stdio（本地拉起）/ streamable-http（共享服务）；10 个工具</p></div>
+      <div class="cell"><h3>CLI</h3><p>init · ingest · task · context · finish · handoff · resume · doctor</p></div>
+    </div>
+  </div>
+
+  <div class="flow-arrow">▼ <span class="lbl">任务编排器 Orchestrator 串联生命周期并留痕</span></div>
+
+  <!-- ===== Layer 3：自研核心引擎 ===== -->
+  <div class="layer" style="border-color:#bfe6e1">
+    <div class="layer-head">
+      <span class="layer-tag" style="background:var(--core)">③ 上下文工具核心 · 自研（主要得分点）</span>
+      <h2>五大引擎</h2>
+      <span class="sub">关联 · 检索 · 有效性 · 组装 · 回写</span>
+    </div>
+    <div class="core-grid">
+      <div class="engine"><div class="ico">⛓</div><h3>摄入索引</h3><p>五类 Parser · Tree-sitter AST · 多证据自动建图 · 增量</p></div>
+      <div class="engine"><div class="ico">⌕</div><h3>混合检索</h3><p>任务意图规划 · 全文/向量/标量三路 · RRF · 图扩展</p></div>
+      <div class="engine"><div class="ico">✓</div><h3>有效性判定</h3><p>状态机 · 时间窗 · 版本范围 · 冲突/缺口/过时</p></div>
+      <div class="engine"><div class="ico">▤</div><h3>上下文组装</h3><p>四段式 Bundle · 预算裁剪 · 每条带 citation</p></div>
+      <div class="engine"><div class="ico">↺</div><h3>核对回写</h3><p>diff/测试解析 · 反向更新 · resume 三方核对</p></div>
+    </div>
+  </div>
+
+  <div class="flow-arrow">
+    <span style="color:var(--ob-blue)">▲ 召回/写入</span> · <span style="color:var(--back)">记忆/交接</span>
+    <span class="lbl">核心引擎与两个后端双向交互</span>
+  </div>
+
+  <!-- ===== Layer 4：指定后端 ===== -->
+  <div class="layer">
+    <div class="layer-head">
+      <span class="layer-tag" style="background:var(--back)">④ 指定后端 · 必须真实参与</span>
+      <h2>存储检索 + 记忆交接</h2>
+      <span class="sub">Windows 统一 Docker / WSL2 部署</span>
+    </div>
+    <div class="back-grid">
+      <div class="backend seek">
+        <h3>seekdb — 工程资料库 + 混合检索</h3>
+        <p>五类要素统一存储 · 关联图谱 · 全文索引 · 向量 HNSW(vsag)</p>
+        <p class="meta">Docker 2881 SQL / 2886 HTTP · pyseekdb · DBMS_HYBRID_SEARCH</p>
+      </div>
+      <div class="backend pc">
+        <h3>PowerContext — 记忆 / Handoff</h3>
+        <p>Memory 决策约束 · PreparedContext · Handoff 交接 · Experience/Skill</p>
+        <p class="meta">Server 127.0.0.1:8000 · Scope 隔离 · 持久化可配 seekdb</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flow-arrow">▲ <span class="lbl">摄入（解析 / 抽取 / 向量化）</span></div>
+
+  <!-- ===== Layer 5：工程数据源 ===== -->
+  <div class="layer">
+    <div class="layer-head">
+      <span class="layer-tag" style="background:var(--src)">⑤ 工程数据源 · 既有资产</span>
+      <h2>四类资料 + 团队规则</h2>
+      <span class="sub">模板规范吸收自 GitHub Spec Kit</span>
+    </div>
+    <div class="grid g5">
+      <div class="cell"><h3>需求规格</h3><p>行为 · 约束 · 验收条件</p></div>
+      <div class="cell"><h3>技术设计</h3><p>架构 · 接口 · ADR 取舍</p></div>
+      <div class="cell"><h3>代码</h3><p>符号 · 调用 · 模块依赖</p></div>
+      <div class="cell"><h3>测试用例</h3><p>断言 · 覆盖 · 测试入口</p></div>
+      <div class="cell"><h3>团队规则/宪法</h3><p>规范 · 评审 · 发布约定</p></div>
+    </div>
+  </div>
+
+  <div class="note-grid">
+    <div class="panel">
+      <h2>一次任务的闭环（正向对齐 → 反向校验）</h2>
+      <ul class="steps">
+        <li><i class="n">1</i><div><b>入库</b> <span>需求/设计/代码/测试/规则解析、AST 建图、写入 seekdb，注册 Source</span></div></li>
+        <li><i class="n">2</i><div><b>取上下文</b> <span>任务驱动混合检索 + 有效性判定，输出四段式 Context Bundle</span></div></li>
+        <li><i class="n">3</i><div><b>开发验证</b> <span>Agent 改代码、跑测试；决策与进度写入记忆</span></div></li>
+        <li><i class="n">4</i><div><b>反向回写</b> <span>diff / 测试结果回写 seekdb，提交 Handoff 与任务结果</span></div></li>
+        <li><i class="n">5</i><div><b>接续</b> <span>新会话 resume：代码 · 库 · 记忆三方核对，再生成最新上下文</span></div></li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>权威来源原则（防双写不一致）</h2>
+      <ul class="truth">
+        <li><i class="rank r1">1</i><div><b>实际工程状态</b><br><small>Git 仓库 + 真实测试结果，是最终事实来源</small></div></li>
+        <li><i class="rank r2">2</i><div><b>seekdb</b><br><small>工程要素权威结构化存储（版本/关联/索引）</small></div></li>
+        <li><i class="rank r3">3</i><div><b>PowerContext</b><br><small>工作记忆与交接视图，以「引用+版本」指向上两者</small></div></li>
+      </ul>
+      <div style="margin-top:10px">
+        <div style="font-size:12.5px;color:var(--ink-2);margin-bottom:4px">自动标注的 Findings（待核实与已验证同等显眼）</div>
+        <div class="findings">
+          <span class="fchip"><b>冲突</b> 要求矛盾</span>
+          <span class="fchip"><b>缺口</b> 链路缺失</span>
+          <span class="fchip"><b>过时</b> 下游未同步</span>
+          <span class="fchip"><b>存疑</b> 需人工确认</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>SpecWeaver v1.0 架构定稿 · 2026-09-25 · 配套《架构设计说明书》《调研纪要》</footer>
+</div>
+</body>
+</html>
