@@ -12,9 +12,11 @@ class InMemoryWorkspace:
         self,
         files: dict[str, str] | None = None,
         ref: str = "deadbeef",
+        changes: list[FileChange] | None = None,
     ) -> None:
         self.files = dict(files or {})
         self._ref = ref
+        self._changes = list(changes or [])
 
     async def list_files(self) -> list[str]:
         return sorted(self.files)
@@ -25,7 +27,7 @@ class InMemoryWorkspace:
     async def changed_files(
         self, base: str, head: str
     ) -> list[FileChange]:
-        return []
+        return list(self._changes)
 
     async def read_file(self, path: str) -> str:
         return self.files[path]
