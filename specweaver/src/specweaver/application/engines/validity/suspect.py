@@ -14,6 +14,8 @@ class SuspectDetector:
         self._catalog = catalog
 
     async def detect(self, artifacts: list[Artifact]) -> list[Finding]:
+        if self._catalog is None:
+            return []
         findings: list[Finding] = []
         for artifact in artifacts:
             for ref in artifact.based_on:

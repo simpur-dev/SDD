@@ -30,6 +30,8 @@ class GapDetector:
         self._catalog = catalog
 
     async def detect(self, artifacts: list[Artifact]) -> list[Finding]:
+        if self._catalog is None:
+            return []
         findings: list[Finding] = []
         requirements = [
             a for a in artifacts if a.type == ArtifactType.requirement
