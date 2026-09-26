@@ -195,9 +195,9 @@ def test_minute_helpers_roundtrip() -> None:
 (full source: see the citation uri)
 
 ## ④ Task status and sources
-- task id: task-db730d8a4e
+- task id: task-778d06e06f
 - phase: analyzing
-- base ref: 3c9f526ee92c7cb7fc34aa2aba6618d50150ea58
+- base ref: 3a915e0cffcb17d1080d80f4d4eedc2589bcc11c
 - sources cited: RULE-3, RULE-2, RULE-1, REQ-4, REQ-5, REQ-2, REQ-3, REQ-1, DES-2, DES-1, CODE-e662196c212e, CODE-4bfabc68a8f6, CODE-12d4b7620710, CODE-2335993c1bbc, TST-46ecef6a906e, TST-da7154c71d35, TST-d4cf3c71d337, TST-e9c84656fadf
 
 ## ⑤ Findings (conflicts · gaps · confirmations)
@@ -222,4 +222,4 @@ def test_minute_helpers_roundtrip() -> None:
 
 ## ⑥ Budget and usage
 - context size: 6178/8000 bytes
-- generated at: 2026-09-26 12:32:58.478115
+- generated at: 2026-09-26 13:57:32.707010

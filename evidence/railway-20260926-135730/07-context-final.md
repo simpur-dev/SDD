@@ -191,13 +191,26 @@ def test_same_train_overlap_conflicts() -> None:
 def test_different_trains_never_conflict() -> None:
 def test_adjacent_windows_do_not_conflict() -> None:
 (full source: see the citation uri)
-- last test run [PASS] task=railway-20260926-123253-audit: 13/13 passed, 0 failed, 0 skipped, ref=66ff3ae61ff6e3b3679c834017828b8f3738b78b, cmd="E:\2026ob_projects\SDD\.venv\Scripts\python.exe" -m pytest -q
+
+### test_publish  [TST-d4cf3c71d337 v0.1.0 · tests/test_publish.py]
+def make_train() -> Train:
+def test_publish_allowed_without_conflict() -> None:
+def test_publish_blocked_by_conflict() -> None:
+(full source: see the citation uri)
+
+### test_schedule  [TST-e9c84656fadf v0.1.0 · tests/test_schedule.py]
+def make_train() -> Train:
+def test_stop_order() -> None:
+def test_arrival_times_accumulate() -> None:
+def test_minute_helpers_roundtrip() -> None:
+(full source: see the citation uri)
+- last test run [PASS] task=railway-20260926-135730-audit: 13/13 passed, 0 failed, 0 skipped, ref=d4a69dab23b2a32537c2c8e949720b0fb72c724d, cmd="E:\2026ob_projects\SDD\.venv\Scripts\python.exe" -m pytest -q
 
 ## ④ Task status and sources
-- task id: task-4c5256b51e
+- task id: task-661aa37e1e
 - phase: analyzing
-- base ref: 66ff3ae61ff6e3b3679c834017828b8f3738b78b
-- sources cited: RULE-3, RULE-2, RULE-1, REQ-4, REQ-5, REQ-2, REQ-3, REQ-6, DES-2, DES-1, CODE-e662196c212e, CODE-4bfabc68a8f6, CODE-12d4b7620710, CODE-2335993c1bbc, TST-885ea3f0b041, TST-bf4598def6a1, TST-da7154c71d35
+- base ref: d4a69dab23b2a32537c2c8e949720b0fb72c724d
+- sources cited: RULE-3, RULE-2, RULE-1, REQ-4, REQ-5, REQ-2, REQ-3, REQ-6, DES-2, DES-1, CODE-e662196c212e, CODE-4bfabc68a8f6, CODE-12d4b7620710, CODE-2335993c1bbc, TST-885ea3f0b041, TST-bf4598def6a1, TST-da7154c71d35, TST-d4cf3c71d337, TST-e9c84656fadf
 
 ## ⑤ Findings (conflicts · gaps · confirmations)
 - (warning/gap) Requirement '车辆占用检查' has no design layer
@@ -215,15 +228,6 @@ def test_adjacent_windows_do_not_conflict() -> None:
 - (warning/gap) Requirement '调度操作入口' has no design layer
     suggestion: Add a design realizing this requirement.
     sources: REQ-4
-- (warning/gap) Requirement '按站调整发车时间（升版：含审计）' has no design layer
-    suggestion: Add a design realizing this requirement.
-    sources: REQ-6
-- (warning/gap) Requirement '按站调整发车时间（升版：含审计）' has no code layer
-    suggestion: Add an implementation of this requirement.
-    sources: REQ-6
-- (warning/gap) Requirement '按站调整发车时间（升版：含审计）' has no test layer
-    suggestion: Add tests covering the implementation.
-    sources: REQ-6
 - (warning/suspect) '时刻计算设计' is based on REQ-1, whose status is superseded
     suggestion: Review and update this downstream artifact against the current upstream version.
     sources: DES-1, REQ-1
@@ -241,6 +245,5 @@ def test_adjacent_windows_do_not_conflict() -> None:
     sources: REQ-6, REQ-1
 
 ## ⑥ Budget and usage
-- context size: 7772/8000 bytes
-- generated at: 2026-09-26 12:33:01.070243
-- warning: context truncated to budget; some relevant artifacts were omitted (request a larger budget if needed)
+- context size: 7741/8000 bytes
+- generated at: 2026-09-26 13:57:35.458016

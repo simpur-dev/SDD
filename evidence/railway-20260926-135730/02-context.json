@@ -1,13 +1,13 @@
 {
   "bundle": {
     "task": {
-      "id": "task-db730d8a4e",
-      "project_id": "railway-20260926-123253",
+      "id": "task-778d06e06f",
+      "project_id": "railway-20260926-135730",
       "title": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
       "objective": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
       "phase": "analyzing",
       "branch": null,
-      "base_ref": "3c9f526ee92c7cb7fc34aa2aba6618d50150ea58",
+      "base_ref": "3a915e0cffcb17d1080d80f4d4eedc2589bcc11c",
       "handoff_rev": null,
       "created_at": null,
       "closed_at": null
@@ -15,7 +15,7 @@
     "goal_and_constraints": [
       {
         "id": "RULE-3",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "rule",
         "module": "publish",
         "title": "冲突禁发",
@@ -1583,7 +1583,7 @@
       },
       {
         "id": "RULE-2",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "rule",
         "module": "rules",
         "title": "全量回归",
@@ -3151,7 +3151,7 @@
       },
       {
         "id": "RULE-1",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "rule",
         "module": "schedule",
         "title": "最小站间隔（现行规章）",
@@ -4719,7 +4719,7 @@
       },
       {
         "id": "REQ-4",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "requirement",
         "module": "api",
         "title": "调度操作入口",
@@ -6287,7 +6287,7 @@
       },
       {
         "id": "REQ-5",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "requirement",
         "module": "dryrun",
         "title": "发布前预览接口",
@@ -7855,7 +7855,7 @@
       },
       {
         "id": "REQ-2",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "requirement",
         "module": "occupancy",
         "title": "车辆占用检查",
@@ -9423,7 +9423,7 @@
       },
       {
         "id": "REQ-3",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "requirement",
         "module": "publish",
         "title": "发布判断",
@@ -10991,7 +10991,7 @@
       },
       {
         "id": "REQ-1",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "requirement",
         "module": "schedule",
         "title": "按站调整发车时间",
@@ -12561,7 +12561,7 @@
     "design_and_implementation": [
       {
         "id": "DES-2",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "design",
         "module": "publish",
         "title": "发布链路设计",
@@ -14131,7 +14131,7 @@
       },
       {
         "id": "DES-1",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "design",
         "module": "schedule",
         "title": "时刻计算设计",
@@ -15700,7 +15700,7 @@
       },
       {
         "id": "CODE-e662196c212e",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "code",
         "module": "api",
         "title": "api",
@@ -17268,7 +17268,7 @@
       },
       {
         "id": "CODE-4bfabc68a8f6",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "code",
         "module": "occupancy",
         "title": "occupancy",
@@ -18836,7 +18836,7 @@
       },
       {
         "id": "CODE-12d4b7620710",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "code",
         "module": "publish",
         "title": "publish",
@@ -20405,7 +20405,7 @@
       },
       {
         "id": "CODE-2335993c1bbc",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "code",
         "module": "schedule",
         "title": "schedule",
@@ -21975,7 +21975,7 @@
     "verification": [
       {
         "id": "TST-46ecef6a906e",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "test",
         "module": "api",
         "title": "test_api",
@@ -23543,7 +23543,7 @@
       },
       {
         "id": "TST-da7154c71d35",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "test",
         "module": "occupancy",
         "title": "test_occupancy",
@@ -25111,7 +25111,7 @@
       },
       {
         "id": "TST-d4cf3c71d337",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "test",
         "module": "publish",
         "title": "test_publish",
@@ -26680,7 +26680,7 @@
       },
       {
         "id": "TST-e9c84656fadf",
-        "project_id": "railway-20260926-123253",
+        "project_id": "railway-20260926-135730",
         "type": "test",
         "module": "schedule",
         "title": "test_schedule",
@@ -28586,7 +28586,7 @@
       "used_bytes": 6178,
       "truncated": false
     },
-    "generated_at": "2026-09-26T12:32:58.478115"
+    "generated_at": "2026-09-26T13:57:32.707010"
   },
   "excluded": []
 }
