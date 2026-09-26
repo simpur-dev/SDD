@@ -68,20 +68,22 @@ class QueryPlanner:
         self._llm = llm
 
     async def plan(self, task: str) -> RetrievalPlan:
+        structured: object = None
         if self._llm is not None:
-            result = await self._llm.complete(
-                f"{PLANNER_INSTRUCTION}\n\nTask: {task}",
-                schema={"type": "object"},
-            )
-            structured = result.structured
-            if isinstance(structured, dict):
-                return RetrievalPlan(
-                    objective=str(
-                        structured.get("objective") or task
-                    ),
-                    keywords=_coerce_str_list(structured.get("keywords")),
-                    modules=_coerce_str_list(structured.get("modules")),
-                    types=_coerce_types(structured.get("types")),
-                    rationale="llm planning",
+            try:
+                result = await self._llm.complete(
+                    f"{PLANNER_INSTRUCTION}\n\nTask: {task}",
+                    schema={"type": "object"},
                 )
+                structured = result.structured
+            except Exception:  # noqa: BLE001 - network/model failure -> fallback
+                structured = None
+        if isinstance(structured, dict):
+            return RetrievalPlan(
+                objective=str(structured.get("objective") or task),
+                keywords=_coerce_str_list(structured.get("keywords")),
+                modules=_coerce_str_list(structured.get("modules")),
+                types=_coerce_types(structured.get("types")),
+                rationale="llm planning",
+            )
         return RetrievalPlan(objective=task, keywords=rule_keywords(task))
