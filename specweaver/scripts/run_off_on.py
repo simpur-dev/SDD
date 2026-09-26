@@ -233,6 +233,17 @@ def mean(values: list[float]) -> float:
     return round(sum(values) / len(values), 1) if values else 0.0
 
 
+def median(values: list[float]) -> float:
+    """Robust central tendency - with N=3 one outlier moves the mean a lot."""
+    ordered = sorted(v for v in values if v is not None)
+    if not ordered:
+        return 0.0
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return round(ordered[mid], 1)
+    return round((ordered[mid - 1] + ordered[mid]) / 2, 1)
+
+
 def write_report(root: Path, runs: list[dict], n: int,
                task_label: str) -> None:
     lines = [
@@ -249,9 +260,9 @@ def write_report(root: Path, runs: list[dict], n: int,
         "- 判据（对 Agent 隐藏，任务结束后注入）：3 条验收测试 + 全部"
         "遗留测试必须通过 + 有实际代码变更；success = 全部满足",
         "",
-        "| 臂 | 成功率 | 平均耗时(s) | 平均轮数 | 平均 in/out tokens "
-        "| 平均 sw 调用 |",
-        "|---|---|---|---|---|---|",
+        "| 臂 | 成功率 | 中位耗时(s) | 均值耗时(s) | 最快/最慢(s) |"
+        " 中位轮数 | 中位 out tokens | 均值 out tokens | 中位 sw 调用 |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for arm in ("off", "on"):
         rows = [r for r in runs if r["arm"] == arm]
@@ -259,14 +270,15 @@ def write_report(root: Path, runs: list[dict], n: int,
             continue
         ok = sum(1 for r in rows if r.get("success"))
         usage = [(r.get("usage") or {}) for r in rows]
-        tin = mean([u.get("input_tokens", 0) or 0 for u in usage])
-        tout = mean([u.get("output_tokens", 0) or 0 for u in usage])
+        tout = [u.get("output_tokens", 0) or 0 for u in usage]
+        durations = [r.get("duration_ms", 0) / 1000 for r in rows]
         lines.append(
             f"| {arm.upper()} | {ok}/{len(rows)} "
-            f"| {mean([r.get('duration_ms', 0) / 1000 for r in rows])} "
-            f"| {mean([r.get('num_turns') or 0 for r in rows])} "
-            f"| {tin}/{tout} "
-            f"| {mean([len(r.get('sw_calls', [])) for r in rows])} |"
+            f"| {median(durations)} | {mean(durations)} "
+            f"| {round(min(durations), 1)}/{round(max(durations), 1)} "
+            f"| {median([r.get('num_turns') or 0 for r in rows])} "
+            f"| {median(tout)} | {mean(tout)} "
+            f"| {median([len(r.get('sw_calls', [])) for r in rows])} |"
         )
     lines += ["", "## 每次运行明细", ""]
     for r in runs:
