@@ -8,6 +8,12 @@ from .complete_task import (
 )
 from .get_context import ContextResult, GetContext
 from .ingest_project import IngestProject, IngestProjectRequest
+from .resume_task import (
+    ResumeReport,
+    ResumeTask,
+    ResumeTaskRequest,
+    StateMismatch,
+)
 
 __all__ = [
     "IngestProject",
@@ -17,4 +23,8 @@ __all__ = [
     "CompleteTask",
     "CompleteTaskRequest",
     "CompleteTaskReport",
+    "ResumeTask",
+    "ResumeTaskRequest",
+    "ResumeReport",
+    "StateMismatch",
 ]

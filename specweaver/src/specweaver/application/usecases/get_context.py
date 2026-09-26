@@ -29,11 +29,13 @@ class GetContext(UseCase):
         validity: ValidityEngine,
         assembly: AssemblyEngine,
         telemetry,
+        workspace=None,
     ) -> None:
         super().__init__(telemetry)
         self._retrieval = retrieval
         self._validity = validity
         self._assembly = assembly
+        self._workspace = workspace
 
     async def execute(
         self,
@@ -45,7 +47,9 @@ class GetContext(UseCase):
         with self.span():
             retrieved = await self._retrieval.run(project_id, task_text)
             validity_result = await self._validity.run(
-                retrieved.scored, current_ref=base_ref
+                retrieved.scored,
+                current_ref=base_ref,
+                workspace=self._workspace,
             )
             task = Task(
                 id=f"task-{uuid.uuid4().hex[:10]}",
