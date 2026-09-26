@@ -91,6 +91,35 @@ async def test_every_delivered_usecase_has_a_tool() -> None:
     assert names == _TOOLS
 
 
+async def test_tool_annotations_declare_read_only_semantics() -> None:
+    """Agents decide whether a retry is safe from these hints (docs/03 §7.2)."""
+    async with Client(build_mcp(_app())) as client:
+        hints = {
+            tool.name: tool.annotations for tool in await client.list_tools()
+        }
+
+    assert all(
+        hints[name].read_only_hint and hints[name].idempotent_hint
+        for name in (
+            "sw_ping",
+            "sw_doctor",
+            "sw_get_context",
+            "sw_verify",
+            "sw_explain_source",
+        )
+    )
+    # replaying the ingestion upsert converges; replaying a handoff or a
+    # decision does not (each call mints a new revision / entry)
+    assert hints["sw_ingest_project"].read_only_hint is False
+    assert hints["sw_ingest_project"].idempotent_hint is True
+    for name in ("sw_handoff", "sw_record_decision", "sw_report_progress",
+                 "sw_complete_task", "sw_resume_task"):
+        assert hints[name].read_only_hint is False
+        assert hints[name].idempotent_hint is False
+    assert all(h.destructive_hint is False for h in hints.values())
+    assert set(hints) == _TOOLS
+
+
 async def test_sw_record_decision_forwards_the_resolved_scope() -> None:
     usecase = _RecordingUseCase(
         RecordDecisionReport(action="remembered", entry_id="mem-1")

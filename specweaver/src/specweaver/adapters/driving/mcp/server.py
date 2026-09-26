@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
+from mcp.types import ToolAnnotations
 
 from ....application.usecases.complete_task import CompleteTaskRequest
 from ....application.usecases.create_handoff import CreateHandoffRequest
@@ -28,6 +29,21 @@ def _as_tool_error(exc: SWError) -> ToolError:
     return ToolError(f"[{exc.code}] {exc.message}")
 
 
+_READ_ONLY = ToolAnnotations(
+    readOnlyHint=True, destructiveHint=False, idempotentHint=True
+)
+# Writes that converge to the same state when replayed (artifact upsert,
+# memory remember - PowerContext treats identical text as a no-op).
+_WRITE_IDEMPOTENT = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, idempotentHint=True
+)
+# Each call mints new evidence rows or a new revision, so replay is not
+# idempotent: agents should not retry these blindly.
+_WRITE = ToolAnnotations(
+    readOnlyHint=False, destructiveHint=False, idempotentHint=False
+)
+
+
 def build_mcp(app: SpecWeaverApp) -> FastMCP:
     mcp = FastMCP("SpecWeaver")
 
@@ -45,17 +61,17 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
         except SWError as exc:
             raise _as_tool_error(exc) from exc
 
-    @mcp.tool
+    @mcp.tool(annotations=_READ_ONLY)
     async def sw_ping() -> str:
         """Liveness probe."""
         return "pong"
 
-    @mcp.tool
+    @mcp.tool(annotations=_READ_ONLY)
     async def sw_doctor() -> dict:
         """Report seekdb / PowerContext connectivity and inference mode."""
         return await app.doctor()
 
-    @mcp.tool
+    @mcp.tool(annotations=_WRITE_IDEMPOTENT)
     async def sw_ingest_project(
         project_id: str,
         scope_id: str = "",
@@ -78,7 +94,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
         )
         return _payload(report)
 
-    @mcp.tool
+    @mcp.tool(annotations=_READ_ONLY)
     async def sw_get_context(
         project_id: str,
         task_text: str,
@@ -106,7 +122,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
             ],
         }
 
-    @mcp.tool
+    @mcp.tool(annotations=_WRITE)
     async def sw_complete_task(
         project_id: str,
         task_id: str,
@@ -131,7 +147,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
         )
         return _payload(report)
 
-    @mcp.tool
+    @mcp.tool(annotations=_WRITE)
     async def sw_handoff(
         project_id: str,
         objective: str = "",
@@ -161,7 +177,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
         )
         return _payload(report)
 
-    @mcp.tool
+    @mcp.tool(annotations=_WRITE)
     async def sw_resume_task(
         project_id: str,
         scope_id: str = "",
@@ -193,7 +209,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
             "context_markdown": report.context.markdown,
         }
 
-    @mcp.tool
+    @mcp.tool(annotations=_WRITE)
     async def sw_record_decision(
         project_id: str,
         decision: str = "",
@@ -222,7 +238,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
         )
         return _payload(report)
 
-    @mcp.tool
+    @mcp.tool(annotations=_WRITE)
     async def sw_report_progress(
         project_id: str,
         note: str,
@@ -254,7 +270,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
         )
         return _payload(report)
 
-    @mcp.tool
+    @mcp.tool(annotations=_READ_ONLY)
     async def sw_verify(
         project_id: str,
         scope_id: str = "",
@@ -280,7 +296,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
             report.notes.insert(0, f"scope unresolved: {scope_error}")
         return _payload(report)
 
-    @mcp.tool
+    @mcp.tool(annotations=_READ_ONLY)
     async def sw_explain_source(
         project_id: str,
         artifact_id: str,
