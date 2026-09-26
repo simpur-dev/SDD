@@ -67,7 +67,7 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 | 受控规模扫描（2 语料 × 3 召回上限 × 8 重复） | `n_results=5` 时 18 与 354 构件语料均 40 次后端调用（与规模无关）；`40` 时 65 vs 178（增量来自核对循环与图扩展）；p95 5.47-6.74s 由单次 LLM 规划主导 | `evidence/scaling-sweep-20260927/sweep.md` |
 | 真实后端接口（进程内） | 11 个 MCP 工具逐个跑通（含 revise/retire/guard 探针与 `ToolAnnotations` 声明） | `evidence/m5-20260927-005855/` |
 | 真实后端接口（streamable-http 传输） | 11 工具经真实 HTTP 传输全跑一遍：9/9 用例 span 全部出现、0 error、`sw_span_duration_ms` 直方图在位（span 缺失即判失败，用于区分"请求被应答"与"打到应用层"） | `evidence/http-transport-20260927-042816/probe.txt` |
-| 全链路演示（当前代码重跑） | 11/11 → 13/13 真实回归；`usage.csv` 含引擎级 `metrics` 列；Bundle ④段回读 PowerContext 工作记忆（该部署记忆侧只有 fts 词面召回，命中 0 属正常，见《02》§7.6）；末次 bundle 7988 bytes / 8000 承诺 | `evidence/railway-20260927-041806/`（`…-041341/` 留下的是预算收口前"自报合规、实际超标"的现场证据） |
+| 全链路演示（当前代码重跑） | 11/11 → 13/13 真实回归；`usage.csv` 含引擎级 `metrics` 列；Bundle ④段回读 PowerContext 工作记忆（该部署记忆侧只有 fts 词面召回，命中 0 属正常，见《02》§7.6）；末次 bundle 7988 bytes / 8000 承诺 | `evidence/railway-20260927-045924/`（`…-041341/` 留下的是预算收口前"自报合规、实际超标"的现场证据） |
 | 效率对照（hard 档，N=3） | 成功率 3/3 vs 3/3；ON 中位耗时 46.1s vs OFF 82.3s，输出 tokens 中位 8185 vs 14500；**均值 -26%/-28%，但 ON 最差一次劣于全部 OFF** | `evidence/off-on/20260926-235601/` |
 | 上下文组装用量（同一次 HTTP 探针内） | `get_context` 3 次真实 planner 调用：prompt/completion 357/294 tokens、召回 60 条（有效 9、排除 51）、findings 6、装配合计 8827 bytes（均值≈2942，单次均在 8000 预算内）；整条 11 工具链共 410 次后端往返 | `evidence/http-transport-20260927-042816/probe.txt` |
 
