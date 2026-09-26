@@ -43,7 +43,9 @@ class AssemblyEngine:
             findings=findings,
             citations=citations_for(included),
             budget=Budget(
-                max_bytes=self._max_bytes, used_bytes=used_bytes
+                max_bytes=self._max_bytes,
+                used_bytes=used_bytes,
+                truncated=decision.truncated,
             ),
             generated_at=datetime.now(),
         )

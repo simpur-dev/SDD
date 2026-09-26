@@ -15,7 +15,7 @@ _CODE_SUMMARY_CHARS = 700
 def citation_tag(artifact: Artifact) -> str:
     source = artifact.source
     if source is not None:
-        locator = f"#${source.locator}" if source.locator else ""
+        locator = f"#{source.locator}" if source.locator else ""
         pointer = f"{source.uri}{locator}"
     else:
         pointer = artifact.id
@@ -84,11 +84,17 @@ def _status_lines(bundle: ContextBundle) -> str:
 
 def render_markdown(bundle: ContextBundle) -> str:
     budget = bundle.budget
-    usage = (
-        f"{budget.used_bytes}/{budget.max_bytes} bytes"
-        if budget is not None
-        else "unknown"
-    )
+    if budget is not None:
+        usage = f"{budget.used_bytes}/{budget.max_bytes} bytes"
+        trunc = (
+            "\n- warning: context truncated to budget; some relevant artifacts "
+            "were omitted (request a larger budget if needed)"
+            if budget.truncated
+            else ""
+        )
+    else:
+        usage = "unknown"
+        trunc = ""
     sections = [
         f"# Context: {bundle.task.title}",
         "## ① Current goal and effective constraints\n"
@@ -102,7 +108,7 @@ def render_markdown(bundle: ContextBundle) -> str:
         + findings_block(bundle.findings),
         "## ⑥ Budget and usage\n"
         f"- context size: {usage}\n"
-        f"- generated at: {bundle.generated_at}",
+        f"- generated at: {bundle.generated_at}{trunc}",
     ]
     return "\n\n".join(sections)
 
