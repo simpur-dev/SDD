@@ -11,6 +11,7 @@ and every live step has to exit 0.
 from __future__ import annotations
 
 import argparse
+import re
 import socket
 import subprocess
 import sys
@@ -26,7 +27,7 @@ def _port_open(port: int) -> bool:
         return sock.connect_ex(("127.0.0.1", port)) == 0
 
 
-def _run(label: str, args: list[str]) -> bool:
+def _run(label: str, args: list[str]) -> tuple[bool, str]:
     print(f"\n=== {label}: {' '.join(args[1:])}", flush=True)
     proc = subprocess.run(
         args,
@@ -36,13 +37,14 @@ def _run(label: str, args: list[str]) -> bool:
         encoding="utf-8",
         errors="replace",
     )
-    output = ((proc.stdout or "") + (proc.stderr or "")).splitlines()
+    text = (proc.stdout or "") + (proc.stderr or "")
+    output = text.splitlines()
     if proc.returncode == 0:
         print(f"PASS {label}: {output[-1] if output else '(no output)'}")
-        return True
+        return True, text
     print(f"FAIL {label} (exit {proc.returncode})")
     print("\n".join(output[-40:]))
-    return False
+    return False, text
 
 
 def main() -> int:
@@ -83,7 +85,23 @@ def main() -> int:
         if args.demo:
             steps.append(("railway-demo", [py, str(ROOT / "scripts" / "run_demo.py")]))
 
-    results = [(label, _run(label, argv)) for label, argv in steps]
+    results = []
+    for label, argv in steps:
+        ok, text = _run(label, argv)
+        results.append((label, ok))
+        if label == "pytest":
+            skipped = re.search(r"(\d+) skipped", text)
+            if skipped:
+                print(
+                    f"[warn] {skipped.group(1)} test(s) skipped - "
+                    "real-backend behaviour is NOT covered by this run"
+                )
+                if args.live:
+                    print(
+                        "       --live expects the containers up; start "
+                        "deploy/docker-compose.yml and rerun"
+                    )
+                    results.append(("no-skipped-integration", False))
     print("\n=== gate summary ===")
     for label, ok in results:
         print(f"  {'PASS' if ok else 'FAIL'}  {label}")
