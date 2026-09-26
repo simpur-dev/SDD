@@ -101,8 +101,17 @@ def git(cwd: Path, *args: str) -> str:
 
 
 def inference_env() -> dict[str, str]:
+    """Inference settings to hand the ON-arm server, absent .env tolerated.
+
+    A fresh clone has no credentials: returning {} keeps the harness usable
+    in rule mode instead of dying on FileNotFoundError mid-comparison.
+    """
+    path = SPECWEAVER / ".env"
+    if not path.exists():
+        print(f"[warn] no {path}; ON arm runs without inference credentials")
+        return {}
     env: dict[str, str] = {}
-    for line in (SPECWEAVER / ".env").read_text(encoding="utf-8").splitlines():
+    for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if line and not line.startswith("#") and "=" in line:
             key, value = line.split("=", 1)
