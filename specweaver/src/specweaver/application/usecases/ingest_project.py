@@ -30,7 +30,7 @@ class IngestProjectReport(BaseModel):
 class IngestProject(UseCase):
     """Run the ingestion pipeline, persist results, and register a Source."""
 
-    name = "IngestProject"
+    name = "ingest_project"
 
     def __init__(
         self,

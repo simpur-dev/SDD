@@ -7,7 +7,7 @@ from ...domain.ports.handoff import HandoffPort
 from ...domain.ports.workspace import WorkspacePort
 from ..engines.validity.lifecycle import LifecycleValidator
 from .base import UseCase
-from .get_context import ContextResult, GetContext
+from .get_context import ContextResult, GetContext, GetContextRequest
 
 
 class StateMismatch(BaseModel):
@@ -103,8 +103,12 @@ class ResumeTask(UseCase):
 
             objective = objective or "resume current work"
             current_ref = await self._workspace.current_ref()
-            context = await self._get_context.execute(
-                request.project_id, objective, base_ref=current_ref
+            context = await self._get_context(
+                GetContextRequest(
+                    project_id=request.project_id,
+                    task_text=objective,
+                    base_ref=current_ref,
+                )
             )
 
             return ResumeReport(

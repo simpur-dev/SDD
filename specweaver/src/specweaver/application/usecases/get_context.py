@@ -12,6 +12,12 @@ from ..engines.validity.pipeline import ExcludedArtifact
 from .base import UseCase
 
 
+class GetContextRequest(BaseModel):
+    project_id: str
+    task_text: str
+    base_ref: str | None = None
+
+
 class ContextResult(BaseModel):
     bundle: ContextBundle
     markdown: str
@@ -37,26 +43,24 @@ class GetContext(UseCase):
         self._assembly = assembly
         self._workspace = workspace
 
-    async def execute(
-        self,
-        project_id: str,
-        task_text: str,
-        *,
-        base_ref: str | None = None,
+    async def __call__(
+        self, request: GetContextRequest
     ) -> ContextResult:
         with self.span():
-            retrieved = await self._retrieval.run(project_id, task_text)
+            retrieved = await self._retrieval.run(
+                request.project_id, request.task_text
+            )
             validity_result = await self._validity.run(
                 retrieved.scored,
-                current_ref=base_ref,
+                current_ref=request.base_ref,
                 workspace=self._workspace,
             )
             task = Task(
                 id=f"task-{uuid.uuid4().hex[:10]}",
-                project_id=project_id,
-                title=task_text[:80],
-                objective=task_text,
-                base_ref=base_ref,
+                project_id=request.project_id,
+                title=request.task_text[:80],
+                objective=request.task_text,
+                base_ref=request.base_ref,
             )
             bundle = await self._assembly.run(
                 task,

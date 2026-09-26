@@ -17,7 +17,10 @@ from specweaver.application.engines.validity import (
     SuspectDetector,
     ValidityEngine,
 )
-from specweaver.application.usecases.get_context import GetContext
+from specweaver.application.usecases.get_context import (
+    GetContext,
+    GetContextRequest,
+)
 from specweaver.domain.entities import Artifact, Relation
 from specweaver.domain.enums import (
     ArtifactType,
@@ -95,8 +98,8 @@ def _usecase(catalog: InMemoryCatalog) -> GetContext:
 
 async def test_get_context_returns_bundle_and_markdown() -> None:
     catalog = await _catalog()
-    result = await _usecase(catalog).execute(
-        "railway", "调整 发车时间"
+    result = await _usecase(catalog)(
+        GetContextRequest(project_id="railway", task_text="调整 发车时间")
     )
     assert result.markdown.startswith("# Context")
     cited = {c.artifact_id for c in result.bundle.citations}
