@@ -51,6 +51,12 @@ class RetrievalEngine:
     async def run(
         self, project_id: str, task_text: str
     ) -> RetrievalResult:
+        if not task_text.strip():
+            # Degenerate query: an empty task must not reach the backend
+            # (pyseekdb rejects empty $contains with OperationalError 1210).
+            return RetrievalResult(
+                plan=RetrievalPlan(objective=task_text), scored=[]
+            )
         plan = await self._planner.plan(task_text)
         query_vectors = await self._embedding.embed([task_text], kind="query")
         query = build_hybrid_query(

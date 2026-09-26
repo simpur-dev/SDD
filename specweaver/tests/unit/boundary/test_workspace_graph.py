@@ -29,12 +29,6 @@ def _git(cwd: Path, *args: str) -> str:
     ).stdout
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="audit B-14: git core.quotepath escapes non-ASCII paths, so "
-    "changed_files yields '\"\\344\\270\\255...\"' and reconcile silently "
-    "skips Chinese-named spec files",
-)
 def test_changed_files_reports_unicode_paths_verbatim(tmp_path: Path) -> None:
     git = subprocess.run(
         ["git", "--version"], capture_output=True

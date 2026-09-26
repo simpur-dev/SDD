@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import re
 import time
+import uuid
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -25,6 +26,8 @@ class GitWorkspace:
     async def _git(self, *args: str) -> str:
         proc = await asyncio.create_subprocess_exec(
             "git",
+            "-c",
+            "core.quotepath=off",
             *args,
             cwd=self.root,
             stdout=asyncio.subprocess.PIPE,
@@ -122,7 +125,7 @@ def _parse_junit(path: Path) -> TestRun:
         else:
             passed += 1
     return TestRun(
-        id=f"tr-report-{int(time.time() * 1000)}",
+        id=f"tr-report-{uuid.uuid4().hex[:8]}",
         task_id="",
         report_ref=str(path),
         total=total,
@@ -151,7 +154,7 @@ class SubprocessTestRunner:
         except TimeoutError:
             proc.kill()
             return TestRun(
-                id=f"tr-{int(start * 1000)}",
+                id=f"tr-{int(start * 1000)}-{uuid.uuid4().hex[:6]}",
                 task_id="",
                 command=command,
                 failed=1,
@@ -164,7 +167,7 @@ class SubprocessTestRunner:
             text, proc.returncode
         )
         return TestRun(
-            id=f"tr-{int(start * 1000)}",
+            id=f"tr-{int(start * 1000)}-{uuid.uuid4().hex[:6]}",
             task_id="",
             command=command,
             total=total,

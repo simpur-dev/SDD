@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from ....domain.entities import Artifact, Relation
 from ....domain.ports.catalog import ArtifactFilter
 from .client import RELATIONS_TABLE, SeekdbClient
@@ -36,7 +34,7 @@ class SeekdbCatalog:
                 metadatas=rec["metadata"],
             )
 
-        await asyncio.to_thread(_op)
+        await self._client.run_op(_op, "upsert_artifact")
 
     async def get_artifact(
         self, project_id: str, artifact_id: str
@@ -57,32 +55,39 @@ class SeekdbCatalog:
                 res.get("embeddings", [None])[0],
             )
 
-        return await asyncio.to_thread(_op)
+        return await self._client.run_op(_op, "get_artifact")
 
     async def list_artifacts(self, flt: ArtifactFilter) -> list[Artifact]:
         collection = self._client.artifacts
         where = _scalar_where(flt)
 
         def _op() -> list[Artifact]:
-            res = collection.get(
-                where=where,
-                include=["documents", "metadatas", "embeddings"],
-                limit=1000,
-            )
-            items = []
-            embeddings = res.get("embeddings", [None] * len(res["ids"]))
-            for i, aid in enumerate(res["ids"]):
-                items.append(
-                    record_to_artifact(
-                        aid,
-                        res["documents"][i],
-                        res["metadatas"][i],
-                        embeddings[i],
-                    )
+            page_size = 500
+            items: list[Artifact] = []
+            offset = 0
+            while True:
+                res = collection.get(
+                    where=where,
+                    include=["documents", "metadatas", "embeddings"],
+                    limit=page_size,
+                    offset=offset,
                 )
-            return items
+                ids = res["ids"]
+                embeddings = res.get("embeddings", [None] * len(ids))
+                for i, aid in enumerate(ids):
+                    items.append(
+                        record_to_artifact(
+                            aid,
+                            res["documents"][i],
+                            res["metadatas"][i],
+                            embeddings[i],
+                        )
+                    )
+                if len(ids) < page_size:
+                    return items
+                offset += page_size
 
-        items = await asyncio.to_thread(_op)
+        items = await self._client.run_op(_op, "list_artifacts")
         if flt.ref:
             items = [
                 a
@@ -121,7 +126,7 @@ class SeekdbCatalog:
             with raw.cursor() as cur:
                 cur.execute(sql, args)
 
-        await asyncio.to_thread(_op)
+        await self._client.run_op(_op, "upsert_relation")
 
     async def neighbors(
         self,
@@ -185,4 +190,4 @@ class SeekdbCatalog:
                 )
             return out
 
-        return await asyncio.to_thread(_op)
+        return await self._client.run_op(_op, "neighbors")

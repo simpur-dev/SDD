@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+import uuid
 
 from pydantic import BaseModel
 
@@ -83,7 +84,9 @@ class CompleteTask(UseCase):
                     ArtifactFilter(project_id=request.project_id)
                 )
                 existing = {a.id: a for a in existing_list}
-                change_id = f"cs-{int(time.time() * 1000)}"
+                change_id = (
+                    f"cs-{int(time.time() * 1000)}-{uuid.uuid4().hex[:6]}"
+                )
                 result = await self._engine.run(
                     request.project_id,
                     request.task_id,

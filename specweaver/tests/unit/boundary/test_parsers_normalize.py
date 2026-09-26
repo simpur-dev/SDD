@@ -45,7 +45,6 @@ def test_crlf_front_matter_parses() -> None:
     assert artifact_id(doc) == "REQ-1"
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-1: BOM drops front-matter")
 def test_bom_prefixed_front_matter_still_parsed() -> None:
     """Audit B-1: BOM is common on Windows; front-matter must not be lost."""
     doc = _doc("design/x.md", "﻿---\nid: DES-01\ntype: design\n---\n# t\n")
@@ -60,17 +59,17 @@ def test_quoted_and_colon_values_in_front_matter() -> None:
     assert fm["module"] == "schedule"
 
 
-def test_refs_reject_overlong_numbers() -> None:
-    # documented limitation: 6+ digit ids are silently ignored (cap \d{1,5})
-    assert extract_refs("REQ-123456 DES-9876543") == []
+def test_refs_cap_at_six_digits() -> None:
+    # audit C8 fixed: cap raised to \d{1,6}; 7+ digits stay ignored
+    assert extract_refs("REQ-1234567 DES-9876543") == []
+    assert extract_refs("REQ-123456") == ["REQ-123456"]
 
 
 def test_refs_are_case_sensitive_and_pad_zero() -> None:
-    # REQ-000005 is 6 digits -> out of the \d{1,5} cap; lowercase rule-3 is
-    # not matched (extract_refs is uppercase-only). Both are documented
-    # limitations pinned here so a future regex change is a deliberate act.
+    # zero-padded ids normalize; lowercase prefixes are not matched
+    # (uppercase-only ids are the project convention, see docs/03 §4.1)
     assert extract_refs("REQ-0005") == ["REQ-5"]
-    assert extract_refs("REQ-000005 rule-3") == []
+    assert extract_refs("REQ-000005 rule-3") == ["REQ-5"]
 
 
 def test_python_syntax_error_file_is_indexed_without_symbols() -> None:

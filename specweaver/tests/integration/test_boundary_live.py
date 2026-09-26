@@ -10,11 +10,6 @@ from specweaver.shared.errors import SWError
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="audit B-16: empty query text reaches pyseekdb and raises raw "
-    "pymysql OperationalError(1210) instead of SWError",
-)
 async def test_empty_text_hybrid_search_raises_swerror(
     seekdb_adapters,
 ) -> None:

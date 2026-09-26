@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-
 from ....domain.ports.catalog import HybridQuery, ScoredArtifact
 from .client import SeekdbClient
 from .schema import record_to_artifact
@@ -70,4 +68,4 @@ class SeekdbHybridSearch:
                 )
             return out
 
-        return await asyncio.to_thread(_op)
+        return await self._client.run_op(_op, "hybrid_search")

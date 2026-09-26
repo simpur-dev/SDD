@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 from datetime import datetime
 
@@ -43,7 +42,7 @@ class SeekdbActivityLog:
             with self._client.raw_connection().cursor() as cur:
                 cur.execute(sql, args)
 
-        await asyncio.to_thread(_op)
+        await self._client.run_op(_op, "record_test_run")
 
     async def record_change_set(self, change_set: ChangeSet) -> None:
         files = json.dumps(
@@ -73,7 +72,7 @@ class SeekdbActivityLog:
             with self._client.raw_connection().cursor() as cur:
                 cur.execute(sql, args)
 
-        await asyncio.to_thread(_op)
+        await self._client.run_op(_op, "record_change_set")
 
     async def list_test_runs(
         self, project_id: str, task_id: str | None = None
@@ -105,7 +104,7 @@ class SeekdbActivityLog:
                 for r in rows
             ]
 
-        return await asyncio.to_thread(_op)
+        return await self._client.run_op(_op, "list_test_runs")
 
     async def list_change_sets(
         self, project_id: str, task_id: str | None = None
@@ -141,4 +140,4 @@ class SeekdbActivityLog:
                 )
             return result
 
-        return await asyncio.to_thread(_op)
+        return await self._client.run_op(_op, "list_change_sets")

@@ -114,6 +114,22 @@ async def test_planner_empty_task_falls_back() -> None:
     assert plan.rationale == "rule-based planning"
 
 
+async def test_empty_task_short_circuits_before_backend() -> None:
+    """Audit B-16 guard: a blank task must never reach hybrid search."""
+    from fakes.inference import ScriptedEmbedding
+
+    from specweaver.application.engines.retrieval import RetrievalEngine
+
+    class _Boom:
+        async def hybrid_search(self, query):  # pragma: no cover
+            raise AssertionError("backend must not be hit for empty task")
+
+    engine = RetrievalEngine(QueryPlanner(None), ScriptedEmbedding(8), _Boom())
+    result = await engine.run("p", "   ")
+    assert result.scored == []
+    assert result.plan.objective == "   "
+
+
 def test_sections_sorted_rule_before_requirement() -> None:
     rule = _req("RULE-1", "m", "r")
     rule = rule.model_copy(update={"type": ArtifactType.rule})

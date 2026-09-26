@@ -7,10 +7,10 @@ from .....domain.enums import ArtifactType
 from ..taxonomy import normalize_type
 from .base import ParsedDocument
 
-_ID_RE = re.compile(r"\b(REQ|TST|DES|ADR|RULE)[-_ ]?(\d{1,5})\b")
+_ID_RE = re.compile(r"\b(REQ|TST|DES|ADR|RULE)[-_ ]?(\d{1,6})\b")
 _TAG_RE = re.compile(
     r"@(?:implements|covers|realizes|tests|refines)\s+"
-    r"([A-Z]{2,5})[-_ ]?(\d{1,5})\b"
+    r"([A-Z]{2,5})[-_ ]?(\d{1,6})\b"
 )
 _PREFIX = {"REQ": "REQ", "TST": "TST", "DES": "DES", "ADR": "DES",
            "RULE": "RULE"}
@@ -48,7 +48,7 @@ def extract_refs(text: str) -> list[str]:
 
 def split_front_matter(text: str) -> tuple[dict, str]:
     lines = text.splitlines()
-    if not lines or lines[0].strip() != "---":
+    if not lines or lines[0].lstrip("﻿").strip() != "---":
         return {}, text
     closing = next(
         (i for i in range(1, len(lines)) if lines[i].strip() == "---"), None

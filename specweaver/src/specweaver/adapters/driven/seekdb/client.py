@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 
 import pymysql
 import pyseekdb
 
 from ....shared.config import SeekDbSettings
+from ....shared.errors import SWError
 
 ARTIFACTS_COLLECTION = "sw_artifacts_v2"
 RELATIONS_TABLE = "sw_relations_v2"
@@ -115,6 +117,14 @@ class SeekdbClient:
     def raw_connection(self):
         self.count_op()
         return self._client.get_raw_connection()
+
+    async def run_op(self, fn, what: str):
+        """Execute a blocking pyseekdb/pymysql call, translating backend
+        failures into the domain error contract (docs/03 §7.1)."""
+        try:
+            return await asyncio.to_thread(fn)
+        except Exception as exc:  # noqa: BLE001 - SDK boundary
+            raise SWError(f"seekdb {what} failed: {exc}") from exc
 
     @staticmethod
     def edge_id(project: str, src: str, kind: str, dst: str) -> str:
