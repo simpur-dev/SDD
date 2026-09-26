@@ -3,17 +3,16 @@ from __future__ import annotations
 import hashlib
 
 from ....domain.ports.inference import CompletionResult
+from ....shared.errors import InferenceUnavailable
 
 
 class NullLLM:
-    """Fallback when no LLM is configured: returns empty content."""
+    """Fallback when no LLM is configured: callers degrade to rule-based paths."""
 
     async def complete(
         self, prompt: str, schema: dict | None = None
     ) -> CompletionResult:
-        return CompletionResult(
-            text="", structured={} if schema is not None else None
-        )
+        raise InferenceUnavailable("no LLM provider configured")
 
 
 class DeterministicEmbedding:

@@ -47,6 +47,14 @@ from ..application.usecases.complete_task import CompleteTask
 from ..application.usecases.get_context import GetContext
 from ..application.usecases.ingest_project import IngestProject
 from ..application.usecases.resume_task import ResumeTask
+from ..domain.ports.activity import ActivityLogPort
+from ..domain.ports.catalog import CatalogPort, HybridSearchPort
+from ..domain.ports.handoff import HandoffPort
+from ..domain.ports.inference import (
+    EmbeddingGatewayPort,
+    LLMGatewayPort,
+)
+from ..domain.ports.memory import MemoryPort
 from .config import Settings
 from .telemetry import Telemetry
 
@@ -58,13 +66,14 @@ class SpecWeaverApp:
     mcp: FastMCP
     workspace: GitWorkspace
     test_runner: SubprocessTestRunner
-    llm: object
-    embedding: object
-    catalog: object | None = None
-    hybrid: object | None = None
-    activity: object | None = None
-    memory: object | None = None
-    handoff: object | None = None
+    llm: LLMGatewayPort
+    embedding: EmbeddingGatewayPort
+    pc_client: PowerContextClient
+    catalog: CatalogPort | None = None
+    hybrid: HybridSearchPort | None = None
+    activity: ActivityLogPort | None = None
+    memory: MemoryPort | None = None
+    handoff: HandoffPort | None = None
     usecases: dict = field(default_factory=dict)
     bootstrap_errors: dict = field(default_factory=dict)
 
@@ -86,8 +95,7 @@ class SpecWeaverApp:
         return result
 
     async def aclose(self) -> None:
-        if getattr(self, "_pc_client", None) is not None:
-            await self._pc_client.close()
+        await self.pc_client.close()
 
 
 @asynccontextmanager
@@ -97,12 +105,19 @@ async def run(settings: Settings | None = None):
     bootstrap_errors: dict = {}
 
     # inference (real MiniMax or local fallback)
-    if resolved.inference.provider == "minimax":
+    inference_warning = None
+    if resolved.inference.provider == "minimax" and not resolved.inference.api_key:
+        inference_warning = (
+            "provider=minimax but no api_key; falling back to rule mode"
+        )
+    if resolved.inference.provider == "minimax" and resolved.inference.api_key:
         llm = MiniMaxLLM(resolved.inference)
         embedding = MiniMaxEmbedding(resolved.inference)
     else:
         llm = NullLLM()
         embedding = DeterministicEmbedding(resolved.inference.dim)
+    if inference_warning:
+        bootstrap_errors["inference"] = inference_warning
     dimension = resolved.inference.dim
 
     # seekdb (engineering catalog + hybrid search)
@@ -185,6 +200,7 @@ async def run(settings: Settings | None = None):
         test_runner=test_runner,
         llm=llm,
         embedding=embedding,
+        pc_client=pc_client,
         catalog=catalog,
         hybrid=hybrid,
         activity=activity,
@@ -193,7 +209,6 @@ async def run(settings: Settings | None = None):
         usecases=usecases,
         bootstrap_errors=bootstrap_errors,
     )
-    app._pc_client = pc_client
     try:
         yield app
     finally:
