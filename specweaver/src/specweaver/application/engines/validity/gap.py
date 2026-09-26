@@ -4,10 +4,11 @@ from ....domain.entities import Artifact
 from ....domain.enums import (
     ArtifactType,
     FindingKind,
+    LifecycleStatus,
     RelationKind,
     Severity,
 )
-from ....domain.ports.catalog import CatalogPort
+from ....domain.ports.catalog import ArtifactFilter, CatalogPort
 from ....domain.values import Finding
 from .citations import cite
 
@@ -30,12 +31,19 @@ class GapDetector:
         self._catalog = catalog
 
     async def detect(self, artifacts: list[Artifact]) -> list[Finding]:
-        if self._catalog is None:
+        if self._catalog is None or not artifacts:
             return []
         findings: list[Finding] = []
-        requirements = [
-            a for a in artifacts if a.type == ArtifactType.requirement
-        ]
+        # Completeness is a whole-project question: check EVERY active
+        # requirement, not just the ones retrieval happened to surface
+        # (LLM-keyword narrowing can miss orphan specs entirely).
+        requirements = await self._catalog.list_artifacts(
+            ArtifactFilter(
+                project_id=artifacts[0].project_id,
+                types=[ArtifactType.requirement],
+                status=LifecycleStatus.active,
+            )
+        )
         for requirement in requirements:
             connected = await self._catalog.neighbors(
                 requirement.project_id, requirement.id, _CHAIN_KINDS, depth=2

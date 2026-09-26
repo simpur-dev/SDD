@@ -31,6 +31,17 @@ async def test_all_layers_missing() -> None:
     assert "test" in messages
 
 
+async def test_orphan_requirement_outside_candidates_still_reported() -> None:
+    """LLM narrowing can miss orphan specs; completeness covers the project."""
+    catalog = InMemoryCatalog()
+    orphan = _artifact("REQ-5", ArtifactType.requirement)
+    await catalog.upsert_artifact(orphan)
+    other = _artifact("DES-1", ArtifactType.design)
+    findings = await GapDetector(catalog).detect([other])
+    assert len(findings) == 3
+    assert {f.refs[0].artifact_id for f in findings} == {"REQ-5"}
+
+
 async def test_complete_chain_has_no_gap() -> None:
     catalog = InMemoryCatalog()
     req = _artifact("REQ-1", ArtifactType.requirement)
