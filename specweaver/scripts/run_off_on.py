@@ -64,6 +64,22 @@ it reports (rules, conflicts, gaps, stale specs). After tests are green, \
 call sw_complete_task with base_ref = the git HEAD captured BEFORE your \
 edits and test_command "python -m pytest -q"."""
 
+ON_HINT_FULL = ON_HINT + """
+
+This run additionally exercises the whole context lifecycle, so the
+reviewer can see the loop closed by tooling instead of by memory:
+1. sw_ping and sw_doctor first;
+2. sw_get_context before editing, and honor the findings it reports;
+3. sw_record_decision for the design decision you make (revise it with
+   replaces_entry_id if you change your mind);
+4. once tests are green: sw_handoff, then sw_resume_task with the
+   returned handoff_rev, plus sw_report_progress with
+   update_handoff=true;
+5. sw_verify, and sw_explain_source on one artifact you relied on.
+"""
+
+HINTS = {"flow": ON_HINT, "full": ON_HINT_FULL}
+
 ACCEPTANCE = '''"""Hidden acceptance suite injected by the OFF/ON harness."""
 
 from api import submit_adjust_departure
@@ -157,10 +173,11 @@ def mcp_config(workdir: Path, path: Path) -> None:
 
 
 def run_agent(arm: str, workdir: Path, pid: str, outdir: Path,
-              cfg: Path, timeout: int, task: str) -> dict:
+              cfg: Path, timeout: int, task: str,
+              arm_hint: str = "flow") -> dict:
     prompt = (
         (TASK_HARD if task == "hard" else TASK_CORE).format(pid=pid)
-        + (ON_HINT if arm == "on" else "")
+        + (HINTS[arm_hint] if arm == "on" else "")
     )
     cmd = [
         "cmd", "/c", shutil.which("claude") or "claude",
@@ -310,6 +327,14 @@ def main() -> None:
     parser.add_argument("--out", default=str(REPO / "evidence" / "off-on"))
     parser.add_argument("--task", choices=("easy", "hard"),
                         default="easy")
+    parser.add_argument(
+        "--hint",
+        choices=("flow", "full"),
+        default="flow",
+        help="ON arm guidance: flow = recommended three-step flow (used by "
+        "the published A/B runs); full = require the whole 11-tool "
+        "lifecycle, for the coverage demonstration",
+    )
     args = parser.parse_args()
     stamp = time.strftime("%Y%m%d-%H%M%S")
     root = Path(args.out) / stamp
@@ -329,7 +354,7 @@ def main() -> None:
                 mcp_config(workdir, cfg)
                 record.update(run_agent(
                     arm, workdir, pid, outdir, cfg, args.timeout,
-                    args.task,
+                    args.task, args.hint,
                 ))
                 record.update(judge(workdir, base_rev, outdir))
             except Exception as exc:  # noqa: BLE001 - harness must finish
@@ -345,7 +370,7 @@ def main() -> None:
     (root / "summary.json").write_text(
         json.dumps(runs, ensure_ascii=False, indent=2), encoding="utf-8"
     )
-    write_report(root, runs, args.n, args.task)
+    write_report(root, runs, args.n, f"{args.task} · hint={args.hint}")
     print(f"done -> {root}")
 
 
