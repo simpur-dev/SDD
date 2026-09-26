@@ -1,0 +1,9 @@
+name,duration_ms,llm_calls,prompt_tokens,completion_tokens,backend_calls,status,error,metrics
+ingest_project,5064.3636000022525,0,0,0,38,ok,,{}
+get_context,5560.349399995175,1,133,109,60,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.4, ""findings"": 6, ""bundle_bytes"": 6432, ""memory_notes"": 1}"
+complete_task,3004.6931999968365,0,0,0,20,ok,,{}
+create_handoff,111.92950000986457,0,0,0,2,ok,,{}
+get_context,5122.627000004286,1,135,107,60,ok,,"{""recall"": 19, ""valid"": 19, ""excluded"": 0, ""assembly_ms"": 0.8, ""findings"": 6, ""bundle_bytes"": 6667, ""memory_notes"": 0}"
+resume_task,5267.0656999980565,0,0,0,2,ok,,{}
+complete_task,3115.142200011178,0,0,0,24,ok,,{}
+get_context,5879.866499992204,1,137,108,66,ok,,"{""recall"": 20, ""valid"": 19, ""excluded"": 1, ""assembly_ms"": 0.4, ""findings"": 10, ""bundle_bytes"": 7995, ""memory_notes"": 1}"

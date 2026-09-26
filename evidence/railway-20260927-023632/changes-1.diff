@@ -1,0 +1,52 @@
+diff --git a/src/api.py b/src/api.py
+index f039144..7d15d37 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -15,3 +15,12 @@ def show_timetable(train: Train) -> dict[str, str]:
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
++
++
++def submit_adjust_departure(
++    train: Train, new_start: str
++) -> dict[str, str]:
++    """提交新始发时刻并返回调整后的时刻表（REQ-4 入口）。"""
++    from schedule import adjust_departure
++
++    return arrival_times(adjust_departure(train, new_start))
+diff --git a/src/schedule.py b/src/schedule.py
+index 08042fc..16a261b 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -43,3 +43,10 @@ def arrival_times(train: Train) -> dict[str, str]:
+         clock += minutes
+         times[stops[index + 1]] = to_hhmm(clock)
+     return times
++
++
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """按站调整发车时间：以新始发时刻平移整条时刻表（REQ-1）。"""
++    return Train(
++        train_id=train.train_id, start=new_start, legs=dict(train.legs)
++    )
+diff --git a/tests/test_adjust.py b/tests/test_adjust.py
+new file mode 100644
+index 0000000..3874404
+--- /dev/null
++++ b/tests/test_adjust.py
+@@ -0,0 +1,14 @@
++"""发车时间调整回归测试（REQ-1 新行为）。"""
++
++from schedule import Train, adjust_departure, arrival_times
++
++
++def make_train() -> Train:
++    return Train(train_id="K1", start="08:00", legs={"A->B": 10, "B->C": 15})
++
++
++def test_adjust_departure_shifts_whole_timetable() -> None:
++    adjusted = adjust_departure(make_train(), "08:30")
++    assert arrival_times(adjusted) == {
++        "A": "08:30", "B": "08:40", "C": "08:55",
++    }
