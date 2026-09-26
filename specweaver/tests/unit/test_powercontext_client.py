@@ -67,10 +67,13 @@ async def test_open_sends_the_bearer_token_that_enforced_mode_requires() -> None
 
 
 async def test_open_stays_anonymous_without_a_token() -> None:
-    client = PowerContextClient(PowerContextSettings())
-    client.open()
-    try:
-        assert client._http is not None
-        assert "authorization" not in client._http.headers
-    finally:
-        await client.close()
+    unset = PowerContextSettings()
+    empty = PowerContextSettings(token=SecretStr(""))
+    for settings in (unset, empty):
+        client = PowerContextClient(settings)
+        client.open()
+        try:
+            assert client._http is not None
+            assert "authorization" not in client._http.headers
+        finally:
+            await client.close()

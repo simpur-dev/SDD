@@ -31,11 +31,13 @@ class PowerContextClient:
     def open(self) -> None:
         if self._http is None:
             headers = {}
-            if self._settings.token is not None:
+            token = self._settings.token
+            if token is not None and token.get_secret_value():
                 # matches POWERCONTEXT_SERVER_ACCESS_MODE=enforced +
-                # POWERCONTEXT_SERVER_AUTH_TOKEN on the server side
+                # POWERCONTEXT_SERVER_AUTH_TOKEN on the server side; an empty
+                # value (as shipped in .env.example) stays anonymous
                 headers["Authorization"] = (
-                    f"Bearer {self._settings.token.get_secret_value()}"
+                    f"Bearer {token.get_secret_value()}"
                 )
             self._http = httpx.AsyncClient(
                 base_url=self._settings.base_url,

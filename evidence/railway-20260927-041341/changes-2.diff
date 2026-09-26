@@ -1,0 +1,68 @@
+diff --git a/specs/requirement-schedule-v2.md b/specs/requirement-schedule-v2.md
+new file mode 100644
+index 0000000..22d69db
+--- /dev/null
++++ b/specs/requirement-schedule-v2.md
+@@ -0,0 +1,16 @@
++---
++id: REQ-06
++type: requirement
++module: schedule
++version: 2.0.0
++status: active
++supersedes: REQ-01
++title: 按站调整发车时间（升版：含审计）
++---
++
++# 按站调整发车时间（升版）
++
++本需求为 REQ-1 的升版：
++
++- 调度员应能按站点修改发车时间并自动重算后续各站时刻
++- 每次调整必须记录审计日志
+diff --git a/src/schedule.py b/src/schedule.py
+index 16a261b..d6e13e3 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -50,3 +50,13 @@ def adjust_departure(train: Train, new_start: str) -> Train:
+     return Train(
+         train_id=train.train_id, start=new_start, legs=dict(train.legs)
+     )
++
++
++ADJUST_AUDIT: list[tuple[str, str, str]] = []
++
++
++def adjust_departure_logged(train: Train, new_start: str) -> Train:
++    """调整发车时间并记录审计日志（REQ-6 增量）。"""
++    adjusted = adjust_departure(train, new_start)
++    ADJUST_AUDIT.append((train.train_id, train.start, new_start))
++    return adjusted
+diff --git a/tests/test_audit.py b/tests/test_audit.py
+new file mode 100644
+index 0000000..2156666
+--- /dev/null
++++ b/tests/test_audit.py
+@@ -0,0 +1,22 @@
++"""调整联动回归测试（REQ-6 审计 + REQ-2 占用复核）。"""
++
++from occupancy import Occupation
++from publish import can_publish
++from schedule import ADJUST_AUDIT, Train, adjust_departure_logged
++
++
++def make_train() -> Train:
++    return Train(train_id="K1", start="08:00", legs={"A->B": 10, "B->C": 15})
++
++
++def test_audit_log_records_adjustment() -> None:
++    before = len(ADJUST_AUDIT)
++    adjust_departure_logged(make_train(), "09:00")
++    assert len(ADJUST_AUDIT) == before + 1
++
++
++def test_adjusted_train_still_checked_for_occupancy() -> None:
++    adjusted = adjust_departure_logged(make_train(), "08:05")
++    busy = [Occupation("K1", 486, 494)]
++    ok, _ = can_publish(adjusted, busy)
++    assert not ok
