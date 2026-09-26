@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import httpx
 import pytest
+from pydantic import SecretStr
 
 from specweaver.adapters.driven.powercontext.client import PowerContextClient
 from specweaver.shared.config import PowerContextSettings
@@ -50,3 +51,26 @@ async def test_unreachable_not_counted() -> None:
         with pytest.raises(BackendConnectionError):
             await client.get("/v1/scopes")
     assert rec.backend_calls == 0
+
+
+async def test_open_sends_the_bearer_token_that_enforced_mode_requires() -> None:
+    client = PowerContextClient(
+        PowerContextSettings(token=SecretStr("tok-123"), timeout=5.5)
+    )
+    client.open()
+    try:
+        assert client._http is not None
+        assert client._http.headers["authorization"] == "Bearer tok-123"
+        assert client._http.timeout.read == 5.5
+    finally:
+        await client.close()
+
+
+async def test_open_stays_anonymous_without_a_token() -> None:
+    client = PowerContextClient(PowerContextSettings())
+    client.open()
+    try:
+        assert client._http is not None
+        assert "authorization" not in client._http.headers
+    finally:
+        await client.close()

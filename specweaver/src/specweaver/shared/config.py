@@ -22,7 +22,7 @@ class SeekDbSettings(BaseModel):
 class PowerContextSettings(BaseModel):
     base_url: str = "http://localhost:8000"
     token: SecretStr | None = None
-    timeout: float = 10.0
+    timeout: float = 20.0
 
 
 class InferenceSettings(BaseModel):

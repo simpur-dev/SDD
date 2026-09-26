@@ -30,8 +30,17 @@ class PowerContextClient:
 
     def open(self) -> None:
         if self._http is None:
+            headers = {}
+            if self._settings.token is not None:
+                # matches POWERCONTEXT_SERVER_ACCESS_MODE=enforced +
+                # POWERCONTEXT_SERVER_AUTH_TOKEN on the server side
+                headers["Authorization"] = (
+                    f"Bearer {self._settings.token.get_secret_value()}"
+                )
             self._http = httpx.AsyncClient(
-                base_url=self._settings.base_url, timeout=20.0
+                base_url=self._settings.base_url,
+                timeout=self._settings.timeout,
+                headers=headers,
             )
 
     async def close(self) -> None:
