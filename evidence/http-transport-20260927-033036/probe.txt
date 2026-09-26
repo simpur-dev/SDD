@@ -1,0 +1,227 @@
+GET /metrics -> 200
+# trace_id 9727851dce2d4240a6aa29538c43b3b6
+MCP over http -> 11 tools (first=sw_ping)
+GET /metrics(after traffic) -> 200
+# HELP sw_spans_total Completed spans by usecase.
+# TYPE sw_spans_total counter
+sw_spans_total{span="complete_task"} 1
+sw_spans_total{span="create_handoff"} 3
+sw_spans_total{span="explain_source"} 1
+sw_spans_total{span="get_context"} 3
+sw_spans_total{span="ingest_project"} 1
+sw_spans_total{span="record_decision"} 1
+sw_spans_total{span="report_progress"} 1
+sw_spans_total{span="resume_task"} 1
+sw_spans_total{span="verify_state"} 1
+# HELP sw_errors_total Failed spans by usecase.
+# TYPE sw_errors_total counter
+sw_errors_total{span="complete_task"} 0
+sw_errors_total{span="create_handoff"} 0
+sw_errors_total{span="explain_source"} 0
+sw_errors_total{span="get_context"} 0
+sw_errors_total{span="ingest_project"} 0
+sw_errors_total{span="record_decision"} 0
+sw_errors_total{span="report_progress"} 0
+sw_errors_total{span="resume_task"} 0
+sw_errors_total{span="verify_state"} 0
+# HELP sw_llm_calls_total LLM completions by usecase.
+# TYPE sw_llm_calls_total counter
+sw_llm_calls_total{span="complete_task"} 0
+sw_llm_calls_total{span="create_handoff"} 0
+sw_llm_calls_total{span="explain_source"} 0
+sw_llm_calls_total{span="get_context"} 3
+sw_llm_calls_total{span="ingest_project"} 0
+sw_llm_calls_total{span="record_decision"} 0
+sw_llm_calls_total{span="report_progress"} 0
+sw_llm_calls_total{span="resume_task"} 0
+sw_llm_calls_total{span="verify_state"} 0
+# HELP sw_llm_prompt_tokens_total Prompt tokens by usecase.
+# TYPE sw_llm_prompt_tokens_total counter
+sw_llm_prompt_tokens_total{span="complete_task"} 0
+sw_llm_prompt_tokens_total{span="create_handoff"} 0
+sw_llm_prompt_tokens_total{span="explain_source"} 0
+sw_llm_prompt_tokens_total{span="get_context"} 336
+sw_llm_prompt_tokens_total{span="ingest_project"} 0
+sw_llm_prompt_tokens_total{span="record_decision"} 0
+sw_llm_prompt_tokens_total{span="report_progress"} 0
+sw_llm_prompt_tokens_total{span="resume_task"} 0
+sw_llm_prompt_tokens_total{span="verify_state"} 0
+# HELP sw_llm_completion_tokens_total Completion tokens by usecase.
+# TYPE sw_llm_completion_tokens_total counter
+sw_llm_completion_tokens_total{span="complete_task"} 0
+sw_llm_completion_tokens_total{span="create_handoff"} 0
+sw_llm_completion_tokens_total{span="explain_source"} 0
+sw_llm_completion_tokens_total{span="get_context"} 292
+sw_llm_completion_tokens_total{span="ingest_project"} 0
+sw_llm_completion_tokens_total{span="record_decision"} 0
+sw_llm_completion_tokens_total{span="report_progress"} 0
+sw_llm_completion_tokens_total{span="resume_task"} 0
+sw_llm_completion_tokens_total{span="verify_state"} 0
+# HELP sw_backend_calls_total Backend operations by usecase.
+# TYPE sw_backend_calls_total counter
+sw_backend_calls_total{span="complete_task"} 118
+sw_backend_calls_total{span="create_handoff"} 6
+sw_backend_calls_total{span="explain_source"} 2
+sw_backend_calls_total{span="get_context"} 94
+sw_backend_calls_total{span="ingest_project"} 153
+sw_backend_calls_total{span="record_decision"} 1
+sw_backend_calls_total{span="report_progress"} 1
+sw_backend_calls_total{span="resume_task"} 2
+sw_backend_calls_total{span="verify_state"} 4
+# HELP sw_span_duration_ms Span duration in ms.
+# TYPE sw_span_duration_ms histogram
+sw_span_duration_ms_bucket{span="complete_task",le="1"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="2"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="5"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="10"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="25"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="50"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="100"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="250"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="500"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="1000"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="2500"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="5000"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="10000"} 0
+sw_span_duration_ms_bucket{span="complete_task",le="+Inf"} 1
+sw_span_duration_ms_sum{span="complete_task"} 24347.476
+sw_span_duration_ms_count{span="complete_task"} 1
+sw_span_duration_ms_bucket{span="create_handoff",le="1"} 0
+sw_span_duration_ms_bucket{span="create_handoff",le="2"} 0
+sw_span_duration_ms_bucket{span="create_handoff",le="5"} 0
+sw_span_duration_ms_bucket{span="create_handoff",le="10"} 0
+sw_span_duration_ms_bucket{span="create_handoff",le="25"} 0
+sw_span_duration_ms_bucket{span="create_handoff",le="50"} 0
+sw_span_duration_ms_bucket{span="create_handoff",le="100"} 1
+sw_span_duration_ms_bucket{span="create_handoff",le="250"} 3
+sw_span_duration_ms_bucket{span="create_handoff",le="500"} 3
+sw_span_duration_ms_bucket{span="create_handoff",le="1000"} 3
+sw_span_duration_ms_bucket{span="create_handoff",le="2500"} 3
+sw_span_duration_ms_bucket{span="create_handoff",le="5000"} 3
+sw_span_duration_ms_bucket{span="create_handoff",le="10000"} 3
+sw_span_duration_ms_bucket{span="create_handoff",le="+Inf"} 3
+sw_span_duration_ms_sum{span="create_handoff"} 406.192
+sw_span_duration_ms_count{span="create_handoff"} 3
+sw_span_duration_ms_bucket{span="explain_source",le="1"} 0
+sw_span_duration_ms_bucket{span="explain_source",le="2"} 0
+sw_span_duration_ms_bucket{span="explain_source",le="5"} 0
+sw_span_duration_ms_bucket{span="explain_source",le="10"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="25"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="50"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="100"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="250"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="500"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="1000"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="2500"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="5000"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="10000"} 1
+sw_span_duration_ms_bucket{span="explain_source",le="+Inf"} 1
+sw_span_duration_ms_sum{span="explain_source"} 6.365
+sw_span_duration_ms_count{span="explain_source"} 1
+sw_span_duration_ms_bucket{span="get_context",le="1"} 0
+sw_span_duration_ms_bucket{span="get_context",le="2"} 0
+sw_span_duration_ms_bucket{span="get_context",le="5"} 0
+sw_span_duration_ms_bucket{span="get_context",le="10"} 0
+sw_span_duration_ms_bucket{span="get_context",le="25"} 0
+sw_span_duration_ms_bucket{span="get_context",le="50"} 0
+sw_span_duration_ms_bucket{span="get_context",le="100"} 0
+sw_span_duration_ms_bucket{span="get_context",le="250"} 0
+sw_span_duration_ms_bucket{span="get_context",le="500"} 0
+sw_span_duration_ms_bucket{span="get_context",le="1000"} 0
+sw_span_duration_ms_bucket{span="get_context",le="2500"} 0
+sw_span_duration_ms_bucket{span="get_context",le="5000"} 1
+sw_span_duration_ms_bucket{span="get_context",le="10000"} 3
+sw_span_duration_ms_bucket{span="get_context",le="+Inf"} 3
+sw_span_duration_ms_sum{span="get_context"} 15112.35
+sw_span_duration_ms_count{span="get_context"} 3
+sw_span_duration_ms_bucket{span="ingest_project",le="1"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="2"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="5"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="10"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="25"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="50"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="100"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="250"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="500"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="1000"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="2500"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="5000"} 1
+sw_span_duration_ms_bucket{span="ingest_project",le="10000"} 1
+sw_span_duration_ms_bucket{span="ingest_project",le="+Inf"} 1
+sw_span_duration_ms_sum{span="ingest_project"} 4929.156
+sw_span_duration_ms_count{span="ingest_project"} 1
+sw_span_duration_ms_bucket{span="record_decision",le="1"} 0
+sw_span_duration_ms_bucket{span="record_decision",le="2"} 0
+sw_span_duration_ms_bucket{span="record_decision",le="5"} 0
+sw_span_duration_ms_bucket{span="record_decision",le="10"} 0
+sw_span_duration_ms_bucket{span="record_decision",le="25"} 0
+sw_span_duration_ms_bucket{span="record_decision",le="50"} 0
+sw_span_duration_ms_bucket{span="record_decision",le="100"} 1
+sw_span_duration_ms_bucket{span="record_decision",le="250"} 1
+sw_span_duration_ms_bucket{span="record_decision",le="500"} 1
+sw_span_duration_ms_bucket{span="record_decision",le="1000"} 1
+sw_span_duration_ms_bucket{span="record_decision",le="2500"} 1
+sw_span_duration_ms_bucket{span="record_decision",le="5000"} 1
+sw_span_duration_ms_bucket{span="record_decision",le="10000"} 1
+sw_span_duration_ms_bucket{span="record_decision",le="+Inf"} 1
+sw_span_duration_ms_sum{span="record_decision"} 95.665
+sw_span_duration_ms_count{span="record_decision"} 1
+sw_span_duration_ms_bucket{span="report_progress",le="1"} 0
+sw_span_duration_ms_bucket{span="report_progress",le="2"} 0
+sw_span_duration_ms_bucket{span="report_progress",le="5"} 0
+sw_span_duration_ms_bucket{span="report_progress",le="10"} 0
+sw_span_duration_ms_bucket{span="report_progress",le="25"} 0
+sw_span_duration_ms_bucket{span="report_progress",le="50"} 0
+sw_span_duration_ms_bucket{span="report_progress",le="100"} 0
+sw_span_duration_ms_bucket{span="report_progress",le="250"} 0
+sw_span_duration_ms_bucket{span="report_progress",le="500"} 1
+sw_span_duration_ms_bucket{span="report_progress",le="1000"} 1
+sw_span_duration_ms_bucket{span="report_progress",le="2500"} 1
+sw_span_duration_ms_bucket{span="report_progress",le="5000"} 1
+sw_span_duration_ms_bucket{span="report_progress",le="10000"} 1
+sw_span_duration_ms_bucket{span="report_progress",le="+Inf"} 1
+sw_span_duration_ms_sum{span="report_progress"} 261.474
+sw_span_duration_ms_count{span="report_progress"} 1
+sw_span_duration_ms_bucket{span="resume_task",le="1"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="2"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="5"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="10"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="25"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="50"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="100"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="250"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="500"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="1000"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="2500"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="5000"} 0
+sw_span_duration_ms_bucket{span="resume_task",le="10000"} 1
+sw_span_duration_ms_bucket{span="resume_task",le="+Inf"} 1
+sw_span_duration_ms_sum{span="resume_task"} 6641.239
+sw_span_duration_ms_count{span="resume_task"} 1
+sw_span_duration_ms_bucket{span="verify_state",le="1"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="2"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="5"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="10"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="25"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="50"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="100"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="250"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="500"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="1000"} 0
+sw_span_duration_ms_bucket{span="verify_state",le="2500"} 1
+sw_span_duration_ms_bucket{span="verify_state",le="5000"} 1
+sw_span_duration_ms_bucket{span="verify_state",le="10000"} 1
+sw_span_duration_ms_bucket{span="verify_state",le="+Inf"} 1
+sw_span_duration_ms_sum{span="verify_state"} 1320.658
+sw_span_duration_ms_count{span="verify_state"} 1
+# HELP sw_engine_metric_sum Engine metrics summed by usecase (recall, findings, bundle_bytes...)
+# TYPE sw_engine_metric_sum gauge
+sw_engine_metric_sum{span="get_context",metric="assembly_ms"} 3.5
+sw_engine_metric_sum{span="get_context",metric="bundle_bytes"} 7322.0
+sw_engine_metric_sum{span="get_context",metric="excluded"} 48.0
+sw_engine_metric_sum{span="get_context",metric="findings"} 0.0
+sw_engine_metric_sum{span="get_context",metric="memory_notes"} 0.0
+sw_engine_metric_sum{span="get_context",metric="recall"} 57.0
+sw_engine_metric_sum{span="get_context",metric="valid"} 9.0
+# trace_id 9727851dce2d4240a6aa29538c43b3b6
+PROBE PASS
