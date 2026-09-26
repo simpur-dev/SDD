@@ -12,22 +12,29 @@ nearest-rank p95 come from the samples themselves.
 
     python scripts/scaling_probe.py --out ../evidence/scaling-20260927
 
-测量前提（2026-09-27 复跑踩到）：语料必须是"刚 ingest 过且 workspace 对齐"的状态。
-scratch 语料（如 mcp-verify）会随着代码改动被反复摄入而进入 superseded/deprecated，
-有效性阶段把它们全部排除，于是测到的是"空 bundle 的成本"（cap=5 时 14 次往返、
-bundle 801 bytes），与交付饱满语料的 40 次不可比。跨版本比较前先确认该项目的
-构件确实通过了有效性核对（看每格 recall 与 `平均 bundle bytes` 是否合理）。
+测量前提（2026-09-27 两次复跑踩到，现已由代码把守）：语料必须是"刚 ingest 过、
+且 project id 没有被上一次摄入污染"的状态。scratch 语料（如 mcp-verify）会随着代码
+改动被反复摄入：同一 project 里成千上万个 markdown 共用 `REQ-1` 这类逻辑 id，后一次
+摄入把先一次的副本判为 superseded，而向量召回照样把它们捞回来，于是有效性阶段把几乎
+全部召回项排除，测到的是"空 bundle 的成本"（cap=5/20 时 14-44 次往返、bundle 801
+bytes），与交付饱满语料的 40 次不可比。因此每次扫描都摄入到一个带时间戳的新 project；
+任何一格"有召回但 bundle 只有框架那么大"都会让脚本以退出码 1 拒绝写证据，而不是留下
+一条看起来合法的曲线。报告正文的结论句同样从本次数值生成，不复述历史数字。
 """
 from __future__ import annotations
 
 import argparse
 import asyncio
 import json
+import re
 import statistics
+import subprocess
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
+from specweaver.application.engines.assembly import FIXED_CHROME_BYTES
 from specweaver.application.usecases.get_context import GetContextRequest
 from specweaver.application.usecases.ingest_project import IngestProjectRequest
 from specweaver.domain.ports.catalog import ArtifactFilter
@@ -61,6 +68,58 @@ async def ingest_once(project: str, workspace_root: str) -> int:
     return len(corpus)
 
 
+def build_large_workspace(src: Path, dst: Path, factor: int) -> int:
+    """Replicate a project ``factor`` times with per-copy artifact ids.
+
+    A whole repository cannot serve as the "large corpus" for a scaling
+    measurement: its markdown files reuse logical ids (``REQ-1`` in five
+    different directories), and ids are unique per project, so one ingest
+    supersedes the siblings and validity drops everything downstream —
+    measured on this repository: 357 of 361 stored artifacts ended up
+    deprecated and the bundle fell back to its fixed frame. Replicating a
+    project keeps the ids disjoint, so the only thing that scales is size.
+    """
+    files = [
+        p
+        for p in src.rglob("*.md")
+        if ".pytest_cache" not in p.parts and "node_modules" not in p.parts
+    ]
+    originals = {p: p.read_text(encoding="utf-8") for p in files}
+    ids = set()
+    for text in originals.values():
+        ids.update(re.findall(r"^id:\s*(\S+)\s*$", text, flags=re.M))
+    for copy in range(factor):
+        for path, text in originals.items():
+            rewritten = text
+            for artifact_id in sorted(ids, key=len, reverse=True):
+                pattern = re.compile(
+                    rf"(?<![\w-]){re.escape(artifact_id)}(?![\w-])"
+                )
+                rewritten = pattern.sub(
+                    f"{artifact_id}-{copy}", rewritten
+                )
+            target = dst / f"copy-{copy:02d}" / path.relative_to(src)
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text(rewritten, encoding="utf-8")
+    # the workspace adapter reads the project through git, so an untracked
+    # scratch tree would ingest as nothing
+    for step in (
+        ["init", "-q"],
+        ["add", "-A"],
+        [
+            "-c", "user.email=scaling-probe@local",
+            "-c", "user.name=scaling-probe",
+            "commit", "-q", "-m", "synthetic scaling corpus",
+        ],
+    ):
+        subprocess.run(
+            ["git", "-C", str(dst), *step],
+            check=True,
+            capture_output=True,
+        )
+    return len(ids) * factor
+
+
 async def probe(
     project: str,
     cap: int,
@@ -68,6 +127,7 @@ async def probe(
     repeats: int,
     workspace_root: str,
     corpus_size: int,
+    corpus_note: str,
 ) -> dict:
     settings = Settings()
     settings.context.n_results = cap
@@ -100,6 +160,7 @@ async def probe(
     return {
         "project": project,
         "corpus_artifacts": corpus_size,
+        "corpus_note": corpus_note,
         "n_results_cap": cap,
         "budget_bytes": budget,
         "repeats": repeats,
@@ -117,7 +178,44 @@ async def probe(
     }
 
 
+def _cell(cells: list[dict], project: str, cap: int) -> dict:
+    return next(
+        c
+        for c in cells
+        if c["project"] == project and c["n_results_cap"] == cap
+    )
+
+
+def _reading(small: dict, large: dict) -> str:
+    """One bullet comparing both corpora at the same recall cap.
+
+    Written from the measured numbers because the earlier hand-written prose
+    kept quoting a run that no longer reproduced once the corpus drifted.
+    """
+    small_calls, large_calls = (
+        small["backend_calls"]["median"],
+        large["backend_calls"]["median"],
+    )
+    ratio = large_calls / max(small_calls, 1)
+    verdict = (
+        "成本与语料规模基本无关"
+        if ratio < 1.2
+        else f"成本随语料规模放大到 {ratio:.1f}×"
+    )
+    return (
+        f"- **cap={small['n_results_cap']}**（{small['corpus_artifacts']} 构件"
+        f" vs {large['corpus_artifacts']} 构件）：后端调用中位 "
+        f"{small_calls} vs {large_calls} → "
+        f"{verdict}；平均召回 {small['recall_mean']} vs "
+        f"{large['recall_mean']}，bundle {small['bundle_bytes_mean']}B vs "
+        f"{large['bundle_bytes_mean']}B。"
+    )
+
+
 def write_markdown(out_dir: Path, cells: list[dict], repeats: int) -> None:
+    caps = sorted({c["n_results_cap"] for c in cells})
+    small_project, large_project = cells[0]["project"], cells[-1]["project"]
+    pairs = [caps[0]] if len(caps) == 1 else [caps[0], caps[-1]]
     lines = [
         "# 受控规模扫描（M6，docs/01 §11）",
         "",
@@ -126,7 +224,8 @@ def write_markdown(out_dir: Path, cells: list[dict], repeats: int) -> None:
         "- 成本口径 = `get_context` 跨度的真实后端调用数与耗时（"
         "`Telemetry`，含真实 LLM 规划往返）；p95 为最近秩分位，"
         f"样本 n={repeats}，只作趋势不作精度",
-        "- 语料：`railway-*` = 教学项目全量（小），`mcp-verify` = 整仓摄入（大）",
+        f"- 语料（小）：`{small_project}` — {cells[0]['corpus_note']}\n"
+        f"- 语料（大）：`{large_project}` — {cells[-1]['corpus_note']}",
         "",
         "| 语料 | 构件数 | 召回上限 | 后端调用 min/中位/max |"
         " 耗时中位(ms) | 耗时 p95(ms) | 平均召回数 | 平均 bundle bytes |",
@@ -144,25 +243,51 @@ def write_markdown(out_dir: Path, cells: list[dict], repeats: int) -> None:
         )
     lines += [
         "",
-        "## 读法",
+        "## 读法（以下每句的数值都来自本次表格，不是复述历史结论）",
         "",
-        "- **召回上限很小时成本与语料规模无关**：cap=5 时 18 构件与 354 构件语料都是 "
-        "40 次后端调用——top-k 索引 + 交付封顶生效，语料行数不进入热路径；",
-        "- **上限一抬，成本随『实际交付 + 核对量』上升，而不是随语料行数线性放大**："
-        "cap=20 → 65 vs 94，cap=40 → 65 vs 178。小语料在 cap=20 已饱和"
-        "（平均召回 18 = 语料全量），所以它的 65 是天花板；大语料的增量来自有效性核对"
-        "的项目级循环（每个需求一次 `neighbors`、每个 `based_on` 引用一次回读）"
-        "与更深的图扩展；",
-        "- 因此 `CONTEXT__N_RESULTS` 是唯一需要按仓库规模调的旋钮：本项目默认 20 在"
-        "354 构件语料上约 94 次往返、bundle 约 7.9KB（预算 8000B 内）；"
-        "把它降到 5 可把往返压到与语料无关的 40 次，代价是漏掉更多依据；",
-        "- 耗时由每次调用 1 次的真实 LLM 规划往返主导（p95 5.47-6.74s），"
-        "跨语料差异远小于跨上限差异；规则模式（无 key）下耗时会显著下降而召回口径不变。",
+    ]
+    for cap in pairs:
+        lines.append(
+            _reading(
+                _cell(cells, small_project, cap),
+                _cell(cells, large_project, cap),
+            )
+        )
+    lines += [
+        "- 机制：与语料规模同向的那一段成本来自 validity 的 gap 检测——它对项目内"
+        "**每一条需求**做一次 `neighbors` 图查询（`engines/validity/gap.py`），"
+        "不受召回上限约束；随上限增长的那一段才是"
+        "「实际交付 + 逐 `based_on` 回读」"
+        "（`engines/validity/suspect.py`）。所以上限不是唯一旋钮，**项目级核对是"
+        "大仓库的主要成本**；",
+    ]
+    lo_cap, hi_cap = caps[0], caps[-1]
+    corpus_rise = round(
+        _cell(cells, large_project, hi_cap)["duration_ms"]["p95"]
+        - _cell(cells, small_project, hi_cap)["duration_ms"]["p95"],
+        1,
+    )
+    cap_rise = round(
+        _cell(cells, large_project, hi_cap)["duration_ms"]["p95"]
+        - _cell(cells, large_project, lo_cap)["duration_ms"]["p95"],
+        1,
+    )
+    dominant = (
+        "语料规模（项目级 gap 扫描）"
+        if corpus_rise >= cap_rise
+        else "召回上限"
+    )
+    lines += [
+        f"- 耗时（p95）：同一上限下 18→{cells[-1]['corpus_artifacts']} 构件带来 "
+        f"{corpus_rise}ms，同一语料内 cap={lo_cap}→{hi_cap} 只带来 {cap_rise}ms "
+        f"→ 主导项是**{dominant}**；规则模式（无 key）下绝对值显著下降，"
+        "上述相对关系不变。",
         "",
         "## 局限",
         "",
-        "- 大语料是**整仓摄入的演示仓库**（~160 构件），不是数千构件的真实工程；"
-        "两点之间已可看趋势，但绝对值不可外推到 10^3 量级以上；",
+        f"- 大语料的构造方式是**把教学项目复制放大**（{cells[-1]['corpus_note']}），"
+        "不是数千构件的真实工程；两点之间已可看趋势，但绝对值不可外推到 "
+        "10^3 量级以上；",
         "- 未测并发与多进程（seekdb 连接池）场景。",
         "",
     ]
@@ -172,17 +297,35 @@ def write_markdown(out_dir: Path, cells: list[dict], repeats: int) -> None:
 async def main_async(args: argparse.Namespace) -> int:
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+    stamp = f"{datetime.now():%Y%m%d-%H%M%S}"
+    # fresh project ids: re-ingesting an existing project supersedes its own
+    # history, which would turn the sweep into a measurement of empty bundles
+    small_project = args.small_project or f"sweep-small-{stamp}"
+    large_project = args.large_project or f"sweep-large-{stamp}"
+    small_root = ROOT.parent / "demo" / "railway"
+    large_root = (
+        Path(args.large_root)
+        if args.large_root
+        else Path(tempfile.gettempdir()) / f"sw-scaling-{stamp}"
+    )
+    if not args.large_root:
+        built = build_large_workspace(small_root, large_root, args.large_factor)
+        print(f"synthetic corpus: {built} artifacts under {large_root}")
     cells = []
-    for project, root in (
-        (args.small_project, str(ROOT.parent / "demo" / "railway")),
-        (args.large_project, str(ROOT.parent)),
+    for project, root, note in (
+        (small_project, small_root, "教学项目全量"),
+        (
+            large_project,
+            large_root,
+            f"同一教学项目 ×{args.large_factor} 复制，逐副本唯一化 id",
+        ),
     ):
-        corpus_size = await ingest_once(project, root)
+        corpus_size = await ingest_once(project, str(root))
         print(f"{project}: corpus ingested -> {corpus_size} artifacts")
         for cap in args.caps:
             cell = await probe(
-                project, cap, args.budget_bytes, args.repeats, root,
-                corpus_size,
+                project, cap, args.budget_bytes, args.repeats, str(root),
+                corpus_size, note,
             )
             cells.append(cell)
             print(
@@ -191,6 +334,26 @@ async def main_async(args: argparse.Namespace) -> int:
                 f"p95={cell['duration_ms']['p95']}ms "
                 f"recall={cell['recall_mean']}"
             )
+    # A corpus can drift out of validity (artifacts superseded by earlier
+    # ingests, or the workspace no longer matching what was indexed): recall
+    # still happens, but nothing survives into the bundle, so the "cost" being
+    # measured is that of an empty frame. Never write that out as a curve.
+    degenerate = [
+        cell
+        for cell in cells
+        if cell["recall_mean"]
+        and cell["bundle_bytes_mean"] <= FIXED_CHROME_BYTES * 1.5
+    ]
+    if degenerate:
+        for cell in degenerate:
+            print(
+                f"DEGENERATE CELL {cell['project']} cap="
+                f"{cell['n_results_cap']}: recalled {cell['recall_mean']} "
+                f"but delivered only {cell['bundle_bytes_mean']}B (~frame). "
+                "Re-ingest from the workspace the corpus was built from, "
+                "then re-run; the sweep is not valid."
+            )
+        return 1
     (out_dir / "sweep.json").write_text(
         json.dumps(cells, ensure_ascii=False, indent=2), encoding="utf-8"
     )
@@ -201,8 +364,19 @@ async def main_async(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--small-project", default="railway-eval-small")
-    parser.add_argument("--large-project", default="mcp-verify")
+    parser.add_argument("--small-project", default=None)
+    parser.add_argument("--large-project", default=None)
+    parser.add_argument(
+        "--large-factor",
+        type=int,
+        default=20,
+        help="replicate the small project this many times for the large corpus",
+    )
+    parser.add_argument(
+        "--large-root",
+        default=None,
+        help="use this already-ingestable workspace instead of building one",
+    )
     parser.add_argument(
         "--caps",
         type=int,
