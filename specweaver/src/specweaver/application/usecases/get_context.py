@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 import uuid
 
 from pydantic import BaseModel
@@ -53,10 +54,17 @@ class GetContext(UseCase):
             retrieved = await self._retrieval.run(
                 request.project_id, request.task_text
             )
+            self.telemetry.record_metric("recall", len(retrieved.scored))
             validity_result = await self._validity.run(
                 retrieved.scored,
                 current_ref=request.base_ref,
                 workspace=self._workspace,
+            )
+            self.telemetry.record_metric(
+                "valid", len(validity_result.valid)
+            )
+            self.telemetry.record_metric(
+                "excluded", len(validity_result.excluded)
             )
             last_test_run = None
             if self._activity is not None:
@@ -71,12 +79,24 @@ class GetContext(UseCase):
                 objective=request.task_text,
                 base_ref=request.base_ref,
             )
+            started = time.perf_counter()
             bundle = await self._assembly.run(
                 task,
                 validity_result.valid,
                 validity_result.findings,
                 last_test_run=last_test_run,
             )
+            self.telemetry.record_metric(
+                "assembly_ms",
+                round((time.perf_counter() - started) * 1000, 1),
+            )
+            self.telemetry.record_metric(
+                "findings", len(bundle.findings)
+            )
+            if bundle.budget is not None:
+                self.telemetry.record_metric(
+                    "bundle_bytes", bundle.budget.used_bytes
+                )
             return ContextResult(
                 bundle=bundle,
                 markdown=render_markdown(bundle),

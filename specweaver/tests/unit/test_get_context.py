@@ -75,7 +75,7 @@ async def _catalog() -> InMemoryCatalog:
 
 
 def _usecase(
-    catalog: InMemoryCatalog, activity=None
+    catalog: InMemoryCatalog, activity=None, telemetry=None
 ) -> GetContext:
     retrieval = RetrievalEngine(
         QueryPlanner(None),
@@ -95,7 +95,7 @@ def _usecase(
         retrieval,
         validity,
         AssemblyEngine(8000),
-        Telemetry(),
+        telemetry or Telemetry(),
         activity=activity,
     )
 
@@ -139,3 +139,19 @@ async def test_get_context_includes_latest_test_run() -> None:
     assert "ref=head9" in result.markdown
     assert result.bundle.budget is not None
     assert result.bundle.budget.used_bytes <= 8000
+
+
+async def test_get_context_records_engine_metrics() -> None:
+    catalog = await _catalog()
+    telemetry = Telemetry()
+
+    await _usecase(catalog, telemetry=telemetry)(
+        GetContextRequest(project_id="railway", task_text="调整 发车时间")
+    )
+
+    span = next(r for r in telemetry.records if r.name == "get_context")
+    assert span.metrics["recall"] == 3
+    assert span.metrics["valid"] + span.metrics["excluded"] == span.metrics["recall"]
+    assert span.metrics["assembly_ms"] > 0
+    assert span.metrics["bundle_bytes"] > 0
+    assert span.metrics["findings"] >= 0
