@@ -5,7 +5,7 @@ from datetime import datetime
 from ....domain.entities import Artifact, ContextBundle, Task, TestRun
 from ....domain.rules import byte_size
 from ....domain.values import Budget, MemoryNote
-from .budget import FIXED_CHROME_BYTES, BudgetDecision, Budgeter
+from .budget import FIXED_CHROME_BYTES, BudgetDecision, Budgeter, entry_cost
 from .render import (
     citations_for,
     format_test_run,
@@ -83,14 +83,30 @@ class AssemblyEngine:
 
         bundle = _bundle(decision)
         # The budget is a promise about the emitted text, not about the
-        # accounting model: measure the real render and, where the model was
-        # still optimistic, trim once more with the overshoot removed from the
-        # entry allowance. A budget below the bare frame cannot be met by any
-        # content decision, so it stays over budget and section ⑥ says so
-        # loudly (audit C3).
-        overshoot = byte_size(render_markdown(bundle)) - self._max_bytes
-        if overshoot > 0 and decision.entry_bytes:
-            bundle = _bundle(
-                budgeter.apply(sections, chrome + overshoot, findings)
-            )
+        # accounting model, and the model can be optimistic in ways only the
+        # render shows: a UTF-8 heavy task title costs 3 bytes per character,
+        # and emitting the "truncated" warning spends a line no artifact paid
+        # for. Measure the real render and pay the overshoot out of the entry
+        # allowance, repeatedly - one pass is not enough, because the pass that
+        # drops an entry is also the pass that adds the warning it must pay for.
+        all_entries = [
+            *sections.goal_and_constraints,
+            *sections.design_and_implementation,
+            *sections.verification,
+        ]
+        reserve = chrome
+        for _ in range(len(all_entries) + 1):
+            overshoot = byte_size(render_markdown(bundle)) - self._max_bytes
+            kept = [
+                *decision.sections.goal_and_constraints,
+                *decision.sections.design_and_implementation,
+                *decision.sections.verification,
+            ]
+            if overshoot <= 0 or not kept:
+                break
+            # an overshoot below the cheapest entry would change nothing, so a
+            # pass always retires at least one entry and the loop terminates
+            reserve += max(overshoot, min(entry_cost(a) for a in kept))
+            decision = budgeter.apply(sections, reserve, findings)
+            bundle = _bundle(decision)
         return bundle

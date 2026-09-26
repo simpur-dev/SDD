@@ -90,8 +90,8 @@ def _test_run() -> TestRun:
     )
 
 
-async def _assemble(max_bytes: int):
-    task = Task(id="task-1", project_id="p", title="给调度接口加校验")
+async def _assemble(max_bytes: int, title: str = "给调度接口加校验"):
+    task = Task(id="task-1", project_id="p", title=title)
     return await AssemblyEngine(max_bytes=max_bytes).run(
         task,
         _corpus(),
@@ -99,6 +99,9 @@ async def _assemble(max_bytes: int):
         last_test_run=_test_run(),
         memory_notes=_notes(),
     )
+
+
+_LONG_TITLE = "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布" * 3
 
 
 @pytest.mark.parametrize(
@@ -111,6 +114,33 @@ async def test_rendered_bundle_never_exceeds_its_declared_budget(
     assert bundle.budget is not None
     assert bundle.budget.used_bytes <= max_bytes
     assert byte_size(render_markdown(bundle)) <= max_bytes
+
+
+@pytest.mark.parametrize(
+    "max_bytes", [2600, 3400, 4200, 5000, 6000, 7000, 7700, 8000]
+)
+async def test_a_utf8_heavy_title_cannot_push_the_bundle_over_budget(
+    max_bytes: int,
+) -> None:
+    """The frame is not a constant.
+
+    The title costs 3 bytes per character and the "truncated" warning costs a
+    line no artifact paid for; the railway demo caught a build that was 8269
+    bytes on a 8000-byte promise because of exactly those two.
+    """
+    bundle = await _assemble(max_bytes, title=_LONG_TITLE)
+    assert bundle.budget is not None
+    assert bundle.budget.used_bytes <= max_bytes
+    markdown = render_markdown(bundle)
+    dropped_anything = (
+        bundle.goal_and_constraints
+        or bundle.design_and_implementation
+        or bundle.verification
+    )
+    if dropped_anything:  # while there is content left to cut, it must fit
+        assert byte_size(markdown) <= max_bytes
+    else:  # the one sanctioned overflow says so out loud
+        assert "exceeds this budget" in markdown
 
 
 async def test_tight_budget_keeps_the_constraint_floor_first() -> None:
