@@ -54,10 +54,19 @@ class PowerContextMemory:
                 "text": entry.content,
             },
         )
-        out = pc_to_domain(
-            entry.scope_id,
-            require(res, "entry", "memory remember response"),
-        )
+        raw = res.get("entry")
+        if raw is None:
+            # measured 2026-09-27: PowerContext de-duplicates identical text
+            # inside one memory and answers 200 with entry=null. The fact is
+            # stored either way, so report the existing entry (remember stays
+            # idempotent) instead of failing a re-run of the same task.
+            raw = await self._by_text(entry.scope_id, entry.content)
+            if raw is None:
+                raise SWError(
+                    "powercontext memory remember returned neither a new nor "
+                    f"an existing entry for {entry.content[:60]!r}"
+                )
+        out = pc_to_domain(entry.scope_id, raw)
         out.tags = entry.tags
         return out
 
@@ -104,23 +113,30 @@ class PowerContextMemory:
     async def list_entries(
         self, scope_id: str, include_inactive: bool = False
     ) -> list[MemoryEntry]:
+        return [
+            pc_to_domain(scope_id, entry)
+            for entry in await self._list_raw(scope_id, include_inactive)
+        ]
+
+    async def _list_raw(
+        self, scope_id: str, include_inactive: bool = True
+    ) -> list[dict]:
         res = await self._client.post(
             "/v1/memory/entries/list",
             {"scope_id": scope_id, "include_inactive": include_inactive},
         )
-        return [
-            pc_to_domain(scope_id, entry)
-            for entry in res.get("entries", [])
-        ]
+        return list(res.get("entries", []))
 
     async def _latest(self, scope_id: str, entry_id: str) -> dict | None:
-        res = await self._client.post(
-            "/v1/memory/entries/list",
-            {"scope_id": scope_id, "include_inactive": True},
-        )
-        for entry in res.get("entries", []):
+        for entry in await self._list_raw(scope_id):
             citation = entry.get("citation") or {}
             if citation.get("entry_id") == entry_id:
+                return entry
+        return None
+
+    async def _by_text(self, scope_id: str, text: str) -> dict | None:
+        for entry in await self._list_raw(scope_id):
+            if entry.get("text") == text:
                 return entry
         return None
 
