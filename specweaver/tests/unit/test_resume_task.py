@@ -172,5 +172,6 @@ def _draft(scope_id: str, objective: str):
     return HandoffDraft(
         scope_id=scope_id,
         objective=objective,
+        state=["schedule 时刻调整已完成"],
         next_steps=["核对下游占用与发布"],
     )

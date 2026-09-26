@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+
 from ....domain.ports.handoff import HandoffDraft, HandoffView
 from .client import PowerContextClient
 
@@ -43,7 +45,15 @@ class PowerContextHandoff:
         self._client = client
 
     async def prepare_current(self, draft: HandoffDraft) -> HandoffView:
-        source_id = draft.source_id or f"specweaver:{draft.scope_id}"
+        # PC contract (docs/02 §7.4 实测): state items and non-null
+        # next_action.text must be non-blank; same source_id with different
+        # content is a 409, so an unset source gets a unique milestone id.
+        state = [s.strip() for s in draft.state if s.strip()]
+        omissions = [o.strip() for o in draft.omissions if o.strip()]
+        next_steps = [n.strip() for n in draft.next_steps if n.strip()]
+        source_id = draft.source_id or (
+            f"sw-handoff-{draft.scope_id}-{uuid.uuid4().hex[:8]}"
+        )
         payload = {
             "scope_id": draft.scope_id,
             "source_id": source_id,
@@ -51,12 +61,12 @@ class PowerContextHandoff:
                 "schema": "powercontext.current-work-handoff.v1",
                 "trust": "untrusted_input",
                 "objective": draft.objective,
-                "state": [_claim(s) for s in draft.state],
+                "state": [_claim(s) for s in state],
                 "disposition": draft.disposition,
-                "next_action": _claim(
-                    draft.next_steps[0] if draft.next_steps else ""
+                "next_action": (
+                    _claim(next_steps[0]) if next_steps else None
                 ),
-                "omissions": draft.omissions,
+                "omissions": omissions,
             },
         }
         res = await self._client.post(

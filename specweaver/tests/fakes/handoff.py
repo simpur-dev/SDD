@@ -4,6 +4,7 @@ from specweaver.domain.ports.handoff import (
     HandoffDraft,
     HandoffView,
 )
+from specweaver.shared.errors import SWError
 
 
 class InMemoryHandoff:
@@ -14,12 +15,21 @@ class InMemoryHandoff:
     async def prepare_current(
         self, draft: HandoffDraft
     ) -> HandoffView:
+        # Mirrors the PowerContext prepare-current contract (docs/02 §7.4):
+        # non-blank objective and at least one non-blank state claim.
+        if not draft.objective.strip():
+            raise SWError("handoff requires a non-empty objective")
+        if not any(s.strip() for s in draft.state):
+            raise SWError("handoff requires at least one state claim")
+        first_next = next(
+            (n.strip() for n in draft.next_steps if n.strip()), ""
+        )
         return HandoffView(
             scope_id=draft.scope_id,
             objective=draft.objective,
-            progress="\n".join(draft.state),
-            next_steps=draft.next_steps,
-            unverified=draft.omissions,
+            progress="\n".join(s for s in draft.state if s.strip()),
+            next_steps=[first_next] if first_next else [],
+            unverified=[o for o in draft.omissions if o.strip()],
             raw={"draft": draft.model_dump()},
         )
 

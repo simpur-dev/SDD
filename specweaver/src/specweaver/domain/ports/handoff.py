@@ -6,7 +6,12 @@ from pydantic import BaseModel
 
 
 class HandoffDraft(BaseModel):
-    """Input for packaging the current task state into a handoff."""
+    """Input for packaging the current task state into a handoff.
+
+    Objective and at least one state claim are required. PowerContext's
+    ``next_action`` is a single field, so only the first ``next_steps``
+    entry is carried; put further steps into ``state``.
+    """
 
     scope_id: str
     source_id: str = ""

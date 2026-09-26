@@ -44,6 +44,7 @@ from ..application.engines.validity import (
     ValidityEngine,
 )
 from ..application.usecases.complete_task import CompleteTask
+from ..application.usecases.create_handoff import CreateHandoff
 from ..application.usecases.get_context import GetContext
 from ..application.usecases.ingest_project import IngestProject
 from ..application.usecases.resume_task import ResumeTask
@@ -198,6 +199,7 @@ async def run(settings: Settings | None = None):
             get_context_usecase,
             telemetry,
         ),
+        "create_handoff": CreateHandoff(handoff, telemetry),
     }
 
     app = SpecWeaverApp(
