@@ -1,0 +1,38 @@
+
+=== ruff: -m ruff check .
+PASS ruff: All checks passed!
+
+=== pytest: -m pytest -q
+PASS pytest: 262 passed in 28.83s
+
+=== gate summary ===
+  PASS  ruff
+  PASS  pytest
+GATE PASS (2 steps)
+{
+  "ok": true,
+  "seekdb": {
+    "name": "seekdb",
+    "ok": true,
+    "version": "5.7.25-OceanBase seekdb-v1.4.0.0"
+  },
+  "powercontext": {
+    "name": "powercontext",
+    "ok": true,
+    "detail": {
+      "status": "ready",
+      "checks": {
+        "runtime": "ready",
+        "database": "ready",
+        "artifact_processing_supervisor": "disabled",
+        "access_mode": "disabled",
+        "authentication_provider": "disabled",
+        "access_provider": "disabled",
+        "access_resource_kinds": "server,scope,artifact",
+        "access_artifact_families": "experience:enabled,handoff:enabled,memory:enabled,profile:enabled,prompt:enabled,skill:enabled"
+      }
+    }
+  },
+  "inference_provider": "none",
+  "inference_warning": null
+}
