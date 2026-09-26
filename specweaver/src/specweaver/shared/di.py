@@ -128,9 +128,11 @@ async def run(settings: Settings | None = None):
 
     # seekdb (engineering catalog + hybrid search)
     catalog = hybrid = activity = None
-    pc_client = PowerContextClient(resolved.powercontext)
+    pc_client = PowerContextClient(resolved.powercontext, telemetry=telemetry)
     try:
-        seek_client = SeekdbClient(resolved.seekdb, dimension)
+        seek_client = SeekdbClient(
+            resolved.seekdb, dimension, telemetry=telemetry
+        )
         await asyncio.to_thread(seek_client.initialize)
         catalog = SeekdbCatalog(seek_client)
         hybrid = SeekdbHybridSearch(seek_client)
@@ -151,7 +153,7 @@ async def run(settings: Settings | None = None):
     # retrieval / validity / assembly engines
     context_cfg = resolved.context
     retrieval_engine = RetrievalEngine(
-        QueryPlanner(llm),
+        QueryPlanner(llm, telemetry),
         embedding,
         hybrid,
         GraphExpander(catalog),

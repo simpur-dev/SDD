@@ -9,10 +9,13 @@ from ....shared.errors import BackendConnectionError, SWError
 class PowerContextClient:
     """Async HTTP client for the PowerContext server."""
 
-    def __init__(self, settings: PowerContextSettings) -> None:
+    def __init__(
+        self, settings: PowerContextSettings, telemetry=None
+    ) -> None:
         self._settings = settings
         self._http: httpx.AsyncClient | None = None
         self._scope_cache: dict[str, str] = {}
+        self._telemetry = telemetry
 
     def open(self) -> None:
         if self._http is None:
@@ -43,6 +46,8 @@ class PowerContextClient:
             raise BackendConnectionError(
                 f"powercontext unreachable: {exc}"
             ) from exc
+        if self._telemetry is not None:
+            self._telemetry.record_backend_call()
         if resp.status_code >= 400:
             raise SWError(
                 f"powercontext {resp.status_code} on {method} {path}: "

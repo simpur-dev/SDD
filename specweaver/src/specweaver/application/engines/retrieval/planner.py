@@ -64,8 +64,9 @@ def _coerce_str_list(values: object) -> list[str]:
 class QueryPlanner:
     """Plans retrieval: LLM intent extraction with a deterministic fallback."""
 
-    def __init__(self, llm=None) -> None:
+    def __init__(self, llm=None, telemetry=None) -> None:
         self._llm = llm
+        self._telemetry = telemetry
 
     async def plan(self, task: str) -> RetrievalPlan:
         structured: object = None
@@ -76,6 +77,11 @@ class QueryPlanner:
                     schema={"type": "object"},
                 )
                 structured = result.structured
+                if self._telemetry is not None:
+                    self._telemetry.record_llm_usage(
+                        result.usage.prompt_tokens,
+                        result.usage.completion_tokens,
+                    )
             except Exception:  # noqa: BLE001 - network/model failure -> fallback
                 structured = None
         if isinstance(structured, dict):

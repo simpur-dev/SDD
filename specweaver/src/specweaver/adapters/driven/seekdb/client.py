@@ -56,11 +56,24 @@ CREATE TABLE IF NOT EXISTS sw_test_run (
 class SeekdbClient:
     """Owns the pyseekdb remote client; artifacts use a Collection, relations use a SQL table."""
 
-    def __init__(self, settings: SeekDbSettings, dimension: int) -> None:
+    def __init__(
+        self, settings: SeekDbSettings, dimension: int, telemetry=None
+    ) -> None:
         self._settings = settings
         self._dimension = dimension
         self._client = None
-        self.artifacts = None
+        self._artifacts = None
+        self._telemetry = telemetry
+
+    def count_op(self) -> None:
+        """Count one logical backend operation on the open telemetry span."""
+        if self._telemetry is not None:
+            self._telemetry.record_backend_call()
+
+    @property
+    def artifacts(self):
+        self.count_op()
+        return self._artifacts
 
     def initialize(self) -> None:
         s = self._settings
@@ -90,7 +103,7 @@ class SeekdbClient:
         cfg = pyseekdb.HNSWConfiguration(
             dimension=self._dimension, distance="l2"
         )
-        self.artifacts = self._client.get_or_create_collection(
+        self._artifacts = self._client.get_or_create_collection(
             ARTIFACTS_COLLECTION, configuration=cfg, embedding_function=None
         )
         raw = self._client.get_raw_connection()
@@ -100,6 +113,7 @@ class SeekdbClient:
             cur.execute(_TESTRUN_DDL)
 
     def raw_connection(self):
+        self.count_op()
         return self._client.get_raw_connection()
 
     @staticmethod
