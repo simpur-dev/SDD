@@ -59,6 +59,8 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 
 ## 效果与证据（不美化）
 
+下表"出处"里裸写的 `scripts/…` 相对 `specweaver/`，其余路径相对仓库根。
+
 | 维度 | 现状数字 | 出处 |
 |---|---|---|
 | 自动化测试 | 262 项：256 项离线（unit 含 boundary 审计组 + CLI/后端适配器契约 + contract）+ 6 项真后端集成；语句覆盖 93%（`python -m pytest --cov=specweaver`）；`--live` 下任何 skip 直接判失败 | `scripts/gate.py` |
