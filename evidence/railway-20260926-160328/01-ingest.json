@@ -1,10 +1,10 @@
 {
-  "project_id": "railway-20260926-135730",
+  "project_id": "railway-20260926-160328",
   "added": 18,
   "updated": 0,
   "unchanged": 0,
   "skipped": 2,
-  "relations": 26,
+  "relations": 18,
   "changed_ids": [
     "DES-2",
     "DES-1",
@@ -25,5 +25,7 @@
     "TST-d4cf3c71d337",
     "TST-e9c84656fadf"
   ],
-  "source_registered": true
+  "source_registered": true,
+  "duplicate_ids": [],
+  "deprecated": 0
 }
