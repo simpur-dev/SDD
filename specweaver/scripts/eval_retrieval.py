@@ -203,6 +203,11 @@ def write_report(out_dir: Path, payload: dict) -> None:
             f"{kw['recall']}/{kw['f1']} | {sw['recall']}/{sw['f1']} | "
             f"{', '.join(sw['missed']) or '—'} |"
         )
+    occupancy = (
+        payload["bundle_bytes_mean"] / payload["budget_bytes"]
+        if payload["budget_bytes"]
+        else 0.0
+    )
     lines += [
         "",
         "## 代价与用量",
@@ -222,12 +227,19 @@ def write_report(out_dir: Path, payload: dict) -> None:
         "",
         "- 金标由本项目人工标注（非公开基准），语料是 20 构件的教学项目，"
         "结论只在该语料与该标注口径下成立；",
-        "- **小语料下预算不构成约束**：本次 bundle 平均 "
-        f"{payload['bundle_bytes_mean']} bytes / 预算 "
-        f"{payload['budget_bytes']}，precision 宏平均仅 "
-        f"{payload['macro']['specweaver']['precision']}——即"
-        "『最小充分』在未触及预算时退化为『接近全量交付』，"
-        "选择性必须靠紧预算与大语料实验来证明（见 report 中 `budget_bytes` 参数）；",
+        (
+            "- **预算这次是硬约束**：bundle 平均 "
+            f"{payload['bundle_bytes_mean']} bytes 用掉预算 "
+            f"{payload['budget_bytes']} 的 {occupancy:.0%}，条目额度被固定开销"
+            "（框架 + findings 份额）挤占，所以本行的 recall 才是裁剪策略的真实成绩单；"
+            if occupancy >= 0.8
+            else "- **小语料下预算不构成约束**：本次 bundle 平均 "
+            f"{payload['bundle_bytes_mean']} bytes / 预算 "
+            f"{payload['budget_bytes']}（占用 {occupancy:.0%}），precision 宏平均仅 "
+            f"{payload['macro']['specweaver']['precision']}——即"
+            "『最小充分』在未触及预算时退化为『接近全量交付』，"
+            "选择性必须靠紧预算与大语料实验来证明（见 report 中 `budget_bytes` 参数）；"
+        ),
         "- 单任务、无历史会话，不测多轮补召回；",
         "- keyword 臂不建索引、不看图、无约束保底，但**给了与 SpecWeaver 相同的"
         "字节预算且只保留有命中文档**，不是刻意做弱的对照；",

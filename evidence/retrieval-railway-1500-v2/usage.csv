@@ -1,0 +1,8 @@
+name,duration_ms,llm_calls,prompt_tokens,completion_tokens,backend_calls,status,error,metrics
+ingest_project,314.5137999963481,0,0,0,19,ok,,{}
+get_context,4688.329299999168,1,134,103,53,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.6, ""findings"": 1, ""bundle_bytes"": 1450, ""memory_notes"": 0}"
+get_context,5072.529700002633,1,126,101,59,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.3, ""findings"": 1, ""bundle_bytes"": 1450, ""memory_notes"": 0}"
+get_context,4729.3671000079485,1,123,105,55,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.7, ""findings"": 1, ""bundle_bytes"": 1450, ""memory_notes"": 0}"
+get_context,5104.1410000034375,1,126,101,55,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.5, ""findings"": 1, ""bundle_bytes"": 1315, ""memory_notes"": 0}"
+get_context,4757.9130999947665,1,122,107,61,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.3, ""findings"": 1, ""bundle_bytes"": 1450, ""memory_notes"": 0}"
+get_context,5078.927900001872,1,127,98,61,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.8, ""findings"": 1, ""bundle_bytes"": 1450, ""memory_notes"": 0}"
