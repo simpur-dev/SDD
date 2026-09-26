@@ -99,6 +99,8 @@ class CompleteTask(UseCase):
                     await self._catalog.upsert_artifact(artifact)
                 for artifact in result.superseded:
                     await self._catalog.upsert_artifact(artifact)
+                for relation in result.relations:
+                    await self._catalog.upsert_relation(relation)
                 if self._activity is not None:
                     await self._activity.record_change_set(
                         result.change_set

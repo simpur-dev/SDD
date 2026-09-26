@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from ....domain.entities import Artifact, ChangeSet
+from ....domain.entities import Artifact, ChangeSet, Relation
 from ....domain.ports.inference import EmbeddingGatewayPort
 from ....domain.ports.workspace import WorkspacePort
 from .artifact_sync import ArtifactSync
@@ -13,6 +13,7 @@ class ReconciliationResult(BaseModel):
     change_set: ChangeSet
     updated: list[Artifact]
     superseded: list[Artifact]
+    relations: list[Relation] = []
 
 
 class ReconciliationEngine:
@@ -52,4 +53,5 @@ class ReconciliationEngine:
             change_set=change_set,
             updated=output.rebuilt,
             superseded=output.superseded,
+            relations=output.relations,
         )

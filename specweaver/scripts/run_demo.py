@@ -168,7 +168,6 @@ async def run(out_root: Path, keep_temp: bool) -> int:
     settings = Settings()
     settings.workspace.root = str(workdir)
     pytest_cmd = f'"{sys.executable}" -m pytest -q'
-    usecases = {}
 
     def write(name: str, text: str) -> None:
         (evidence / name).write_text(text, encoding="utf-8")

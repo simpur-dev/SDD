@@ -7,7 +7,7 @@ from specweaver.application.engines.reconciliation import (
     ReconciliationEngine,
 )
 from specweaver.domain.entities import Artifact, FileChange
-from specweaver.domain.enums import ArtifactType, LifecycleStatus
+from specweaver.domain.enums import ArtifactType, LifecycleStatus, RelationKind
 
 
 async def test_reconcile_rebuilds_modified_code() -> None:
@@ -76,3 +76,43 @@ async def test_reconcile_marks_explicit_supersede() -> None:
     assert superseded.id == "REQ-1"
     assert superseded.status == LifecycleStatus.superseded
     assert superseded.superseded_by == "REQ-2"
+
+
+async def test_reconcile_remines_edges_against_catalog_context() -> None:
+    """Changed files must (re)emit edges toward unchanged catalog artifacts.
+
+    Found via the railway demo: REQ-6 had code/test layers on disk but the
+    realizes/covers edges were missing, producing false "no code layer" gaps.
+    """
+    content = '"""实现 REQ-1"""\ndef adjust():\n    return 1\n'
+    files = {"src/adjust.py": content}
+    changes = [FileChange(path="src/adjust.py", change_type="added")]
+    workspace = InMemoryWorkspace(files, ref="head3", changes=changes)
+    existing_req = Artifact(
+        id="REQ-1",
+        project_id="railway",
+        type=ArtifactType.requirement,
+        title="按站调整发车时间",
+    )
+    engine = ReconciliationEngine(ScriptedEmbedding(8))
+
+    result = await engine.run(
+        "railway",
+        "task-9",
+        workspace,
+        "base1",
+        "head3",
+        {"REQ-1": existing_req},
+        "cs-9",
+    )
+
+    new_id = result.updated[0].id
+    explicit = [
+        r
+        for r in result.relations
+        if r.src == new_id
+        and r.dst == "REQ-1"
+        and r.kind == RelationKind.realizes
+        and r.confidence == 0.95
+    ]
+    assert explicit, "changed code referencing REQ-1 must emit a realizes edge"
