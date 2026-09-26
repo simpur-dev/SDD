@@ -6,9 +6,8 @@ import typer
 from rich.console import Console
 
 from .... import __version__
+from ....shared import di
 from ....shared.config import Settings
-from ...driven.powercontext.health import check_powercontext
-from ...driven.seekdb.health import check_seekdb
 
 app = typer.Typer(help="SpecWeaver (规格织网) SDD engineering context tool")
 console = Console()
@@ -16,29 +15,33 @@ console = Console()
 
 @app.command()
 def doctor() -> None:
-    """Check seekdb / PowerContext connectivity and inference configuration."""
+    """Check the full assembly: seekdb, PowerContext and inference mode."""
     settings = Settings()
 
-    async def _run() -> bool:
-        all_ok = True
-        for name, coro in (
-            ("seekdb", check_seekdb(settings.seekdb)),
-            ("powercontext", check_powercontext(settings.powercontext)),
-        ):
-            try:
-                info = await coro
-                console.print(f"[green]OK  [/green] {name}: {info}")
-            except Exception as exc:  # noqa: BLE001
-                all_ok = False
-                console.print(f"[red]FAIL[/red] {name}: {exc}")
-        if settings.inference.provider == "none" or not settings.inference.api_key:
-            console.print(
-                "[yellow]WARN[/yellow] inference not configured -> rule (Basic) mode"
-            )
-        return all_ok
+    async def _run() -> dict:
+        async with di.run(settings) as sw:
+            return await sw.doctor()
 
-    ok = asyncio.run(_run())
-    raise typer.Exit(0 if ok else 1)
+    report = asyncio.run(_run())
+    all_ok = True
+    for name in ("seekdb", "powercontext"):
+        info = report.get(name, {})
+        if info.get("ok"):
+            console.print(f"[green]OK  [/green] {name}: {info}")
+        else:
+            all_ok = False
+            console.print(f"[red]FAIL[/red] {name}: {info}")
+    warning = report.get("bootstrap_errors", {}).get("inference")
+    provider = report.get("inference", {}).get("provider")
+    if provider == "none" or warning:
+        suffix = f" ({warning})" if warning else ""
+        console.print(
+            f"[yellow]WARN[/yellow] inference not configured "
+            f"-> rule (Basic) mode{suffix}"
+        )
+    else:
+        console.print(f"[green]OK  [/green] inference: {provider}")
+    raise typer.Exit(0 if all_ok else 1)
 
 
 @app.command()

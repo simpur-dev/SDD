@@ -90,6 +90,7 @@ class ContextBundle(BaseModel):
     goal_and_constraints: list[Artifact] = []
     design_and_implementation: list[Artifact] = []
     verification: list[Artifact] = []
+    last_test_run: TestRun | None = None
     findings: list[Finding] = []
     citations: list[Citation] = []
     budget: Budget | None = None

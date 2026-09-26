@@ -26,7 +26,7 @@ async def test_hybrid_contract() -> None:
 
 
 async def test_memory_contract() -> None:
-    await memory_suite(InMemoryMemory(), "scope-fake")
+    await memory_suite(InMemoryMemory(), "proj-fake")
 
 
 async def test_handoff_contract() -> None:

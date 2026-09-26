@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from ....domain.entities import Artifact, ContextBundle
+from ....domain.entities import Artifact, ContextBundle, TestRun
 from ....domain.enums import ArtifactType
 from ....domain.values import Citation, Finding
 
@@ -64,6 +64,17 @@ def findings_block(findings: list[Finding]) -> str:
     return "\n".join(_finding_line(f) for f in findings)
 
 
+def format_test_run(run: TestRun) -> str:
+    """One-line evidence summary of the most recent test run."""
+    outcome = "PASS" if run.failed == 0 else "FAIL"
+    return (
+        f"- last test run [{outcome}] task={run.task_id}: "
+        f"{run.passed}/{run.total} passed, {run.failed} failed, "
+        f"{run.skipped} skipped, ref={run.commit_ref or '(unknown)'}"
+        + (f", cmd={run.command}" if run.command else "")
+    )
+
+
 def _entries(artifacts: list[Artifact]) -> str:
     if not artifacts:
         return "_(none)_"
@@ -102,7 +113,12 @@ def render_markdown(bundle: ContextBundle) -> str:
         "## ② Related design and implementation\n"
         + _entries(bundle.design_and_implementation),
         "## ③ Verification method and results\n"
-        + _entries(bundle.verification),
+        + _entries(bundle.verification)
+        + (
+            "\n" + format_test_run(bundle.last_test_run)
+            if bundle.last_test_run is not None
+            else ""
+        ),
         "## ④ Task status and sources\n" + _status_lines(bundle),
         "## ⑤ Findings (conflicts · gaps · confirmations)\n"
         + findings_block(bundle.findings),

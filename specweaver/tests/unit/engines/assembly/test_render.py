@@ -6,7 +6,12 @@ from specweaver.application.engines.assembly import (
     entry_block,
     render_markdown,
 )
-from specweaver.domain.entities import Artifact, ContextBundle, Task
+from specweaver.domain.entities import (
+    Artifact,
+    ContextBundle,
+    Task,
+    TestRun,
+)
 from specweaver.domain.enums import (
     ArtifactType,
     FindingKind,
@@ -87,3 +92,21 @@ def test_truncated_budget_emits_warning() -> None:
     )
     markdown = render_markdown(bundle)
     assert "truncated to budget" in markdown
+
+
+def test_last_test_run_rendered_in_verification_section() -> None:
+    bundle = _bundle()
+    bundle.last_test_run = TestRun(
+        id="tr-1",
+        task_id="task-9",
+        command="pytest",
+        total=5,
+        passed=5,
+        failed=0,
+        commit_ref="abc123",
+    )
+    markdown = render_markdown(bundle)
+    verification = markdown.split("## ③")[1].split("## ④")[0]
+    assert "last test run [PASS]" in verification
+    assert "task-9" in verification
+    assert "ref=abc123" in verification

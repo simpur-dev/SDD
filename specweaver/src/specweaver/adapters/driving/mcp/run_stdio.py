@@ -1,13 +1,17 @@
 from __future__ import annotations
 
-from ....shared.config import Settings
-from .server import build_mcp
+import asyncio
+
+from ....shared import di
+
+
+async def _amain() -> None:
+    async with di.run() as app:
+        await app.mcp.run_async(transport="stdio")
 
 
 def main() -> None:
-    settings = Settings()
-    mcp = build_mcp(settings)
-    mcp.run(transport="stdio")
+    asyncio.run(_amain())
 
 
 if __name__ == "__main__":

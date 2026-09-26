@@ -6,7 +6,10 @@ from ..entities import ChangeSet, TestRun
 
 
 class ActivityLogPort(Protocol):
-    """Records task activity: structured change sets and test runs (evidence)."""
+    """Records task activity: structured change sets and test runs (evidence).
+
+    list_* return entries newest-first, so index 0 is the most recent.
+    """
 
     async def record_change_set(self, change_set: ChangeSet) -> None: ...
 

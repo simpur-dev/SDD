@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from ....domain.entities import Artifact, ContextBundle, Task
+from ....domain.entities import Artifact, ContextBundle, Task, TestRun
 from ....domain.rules import byte_size
 from ....domain.values import Budget
 from .budget import FIXED_CHROME_BYTES, Budgeter
-from .render import citations_for, findings_block
+from .render import citations_for, findings_block, format_test_run
 from .sections import map_sections
 
 
@@ -21,11 +21,14 @@ class AssemblyEngine:
         task: Task,
         valid: list[Artifact],
         findings,
+        last_test_run: TestRun | None = None,
     ) -> ContextBundle:
         sections = map_sections(valid)
         reserve = FIXED_CHROME_BYTES + byte_size(
             findings_block(findings)
         )
+        if last_test_run is not None:
+            reserve += byte_size(format_test_run(last_test_run)) + 1
         decision = Budgeter(self._max_bytes).apply(sections, reserve)
         kept = decision.sections
 
@@ -40,6 +43,7 @@ class AssemblyEngine:
             goal_and_constraints=kept.goal_and_constraints,
             design_and_implementation=kept.design_and_implementation,
             verification=kept.verification,
+            last_test_run=last_test_run,
             findings=findings,
             citations=citations_for(included),
             budget=Budget(

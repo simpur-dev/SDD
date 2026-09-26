@@ -18,7 +18,7 @@ class InMemoryActivityLog:
         self, project_id: str, task_id: str | None = None
     ) -> list[TestRun]:
         out = [
-            tr for tr in self.test_runs if tr.project_id == project_id
+            tr for tr in reversed(self.test_runs) if tr.project_id == project_id
         ]
         if task_id is not None:
             out = [tr for tr in out if tr.task_id == task_id]
@@ -28,7 +28,7 @@ class InMemoryActivityLog:
         self, project_id: str, task_id: str | None = None
     ) -> list[ChangeSet]:
         out = [
-            cs for cs in self.change_sets if cs.project_id == project_id
+            cs for cs in reversed(self.change_sets) if cs.project_id == project_id
         ]
         if task_id is not None:
             out = [cs for cs in out if cs.task_id == task_id]

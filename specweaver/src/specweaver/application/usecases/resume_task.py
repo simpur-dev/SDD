@@ -18,7 +18,7 @@ class StateMismatch(BaseModel):
 
 class ResumeTaskRequest(BaseModel):
     project_id: str
-    scope_id: str
+    scope_id: str = ""
     objective: str = ""
     handoff_rev: str = ""
     use_handoff: bool = True
@@ -60,6 +60,7 @@ class ResumeTask(UseCase):
             view = None
             if (
                 request.use_handoff
+                and request.scope_id
                 and request.handoff_rev
                 and self._handoff is not None
             ):

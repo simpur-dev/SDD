@@ -8,6 +8,9 @@ class InMemoryMemory:
     def __init__(self) -> None:
         self.entries: list[MemoryEntry] = []
 
+    async def resolve_scope(self, project_id: str) -> str:
+        return f"scp-{project_id}"
+
     async def remember(self, entry: MemoryEntry) -> MemoryEntry:
         eid = f"mem-{len(self.entries) + 1}"
         stored = entry.model_copy(

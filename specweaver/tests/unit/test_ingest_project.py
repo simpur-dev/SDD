@@ -65,3 +65,17 @@ async def test_second_ingest_is_incremental() -> None:
     )
     assert report.added == 0
     assert report.unchanged == 4
+
+
+async def test_ingest_without_scope_skips_source_registration() -> None:
+    catalog = InMemoryCatalog()
+    memory = InMemoryMemory()
+    workspace = InMemoryWorkspace(copy.deepcopy(FILES), ref="abc123")
+
+    report = await _usecase(catalog, memory, workspace)(
+        IngestProjectRequest(project_id="railway")
+    )
+
+    assert len(catalog.artifacts) == 4
+    assert report.source_registered is False
+    assert memory.entries == []

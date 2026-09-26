@@ -12,7 +12,7 @@ from .base import UseCase
 
 class IngestProjectRequest(BaseModel):
     project_id: str
-    scope_id: str
+    scope_id: str = ""
     register_source: bool = True
 
 
@@ -70,7 +70,11 @@ class IngestProject(UseCase):
                 await self._catalog.upsert_relation(relation)
 
             registered = False
-            if request.register_source and self._memory is not None:
+            if (
+                request.register_source
+                and self._memory is not None
+                and request.scope_id
+            ):
                 git_ref = await self._workspace.current_ref()
                 content = (
                     f"Ingested project at {git_ref}: +{result.added} "

@@ -1,16 +1,26 @@
 from __future__ import annotations
 
+import asyncio
+
 import uvicorn
 
-from ....shared.config import Settings
-from .server import build_mcp
+from ....shared import di
+
+
+async def _amain() -> None:
+    async with di.run() as app:
+        server_settings = app.settings.server
+        http_app = app.mcp.http_app(path=server_settings.mcp_path)
+        config = uvicorn.Config(
+            http_app,
+            host=server_settings.host,
+            port=server_settings.port,
+        )
+        await uvicorn.Server(config).serve()
 
 
 def main() -> None:
-    settings = Settings()
-    mcp = build_mcp(settings)
-    app = mcp.http_app(path=settings.server.mcp_path)
-    uvicorn.run(app, host=settings.server.host, port=settings.server.port)
+    asyncio.run(_amain())
 
 
 if __name__ == "__main__":

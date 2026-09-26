@@ -63,12 +63,12 @@ from .telemetry import Telemetry
 class SpecWeaverApp:
     settings: Settings
     telemetry: Telemetry
-    mcp: FastMCP
     workspace: GitWorkspace
     test_runner: SubprocessTestRunner
     llm: LLMGatewayPort
     embedding: EmbeddingGatewayPort
     pc_client: PowerContextClient
+    mcp: FastMCP | None = None
     catalog: CatalogPort | None = None
     hybrid: HybridSearchPort | None = None
     activity: ActivityLogPort | None = None
@@ -93,6 +93,12 @@ class SpecWeaverApp:
         if self.bootstrap_errors:
             result["bootstrap_errors"] = self.bootstrap_errors
         return result
+
+    async def ensure_scope(self, project_id: str, scope_id: str = "") -> str:
+        """Return the given scope id, resolving the project's PowerContext scope."""
+        if scope_id:
+            return scope_id
+        return await self.memory.resolve_scope(project_id)
 
     async def aclose(self) -> None:
         await self.pc_client.close()
@@ -167,6 +173,7 @@ async def run(settings: Settings | None = None):
         assembly_engine,
         telemetry,
         workspace,
+        activity,
     )
     usecases = {
         "ingest_project": IngestProject(
@@ -191,11 +198,9 @@ async def run(settings: Settings | None = None):
         ),
     }
 
-    mcp = build_mcp(resolved)
     app = SpecWeaverApp(
         settings=resolved,
         telemetry=telemetry,
-        mcp=mcp,
         workspace=workspace,
         test_runner=test_runner,
         llm=llm,
@@ -209,6 +214,7 @@ async def run(settings: Settings | None = None):
         usecases=usecases,
         bootstrap_errors=bootstrap_errors,
     )
+    app.mcp = build_mcp(app)
     try:
         yield app
     finally:

@@ -12,10 +12,10 @@ pytestmark = pytest.mark.integration
 
 
 async def test_powercontext_memory(pc_adapters) -> None:
-    client, scope_id, _source = pc_adapters
-    await memory_suite(PowerContextMemory(client), scope_id)
+    client, project, _scope_id, _source = pc_adapters
+    await memory_suite(PowerContextMemory(client), project)
 
 
 async def test_powercontext_handoff(pc_adapters) -> None:
-    client, scope_id, source = pc_adapters
+    client, _project, scope_id, source = pc_adapters
     await handoff_suite(PowerContextHandoff(client), scope_id, source)

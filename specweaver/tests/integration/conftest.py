@@ -6,7 +6,10 @@ import uuid
 
 import pytest
 
-from specweaver.adapters.driven.powercontext import PowerContextClient
+from specweaver.adapters.driven.powercontext import (
+    PowerContextClient,
+    PowerContextMemory,
+)
 from specweaver.adapters.driven.seekdb import SeekdbClient
 from specweaver.adapters.driven.seekdb.catalog import SeekdbCatalog
 from specweaver.adapters.driven.seekdb.hybrid import SeekdbHybridSearch
@@ -56,10 +59,9 @@ async def pc_adapters(run_id):
         pytest.skip("powercontext container is not available")
     settings = Settings()
     client = PowerContextClient(settings.powercontext)
-    scope_id = await client.ensure_scope(
-        f"sw:int:{run_id}", "SpecWeaver integration scope"
-    )
+    project = f"int-{run_id}"
+    scope_id = await PowerContextMemory(client).resolve_scope(project)
     try:
-        yield client, scope_id, f"src-int-{run_id}"
+        yield client, project, scope_id, f"src-int-{run_id}"
     finally:
         await client.close()

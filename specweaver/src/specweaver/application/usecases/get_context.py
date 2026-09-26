@@ -5,6 +5,7 @@ import uuid
 from pydantic import BaseModel
 
 from ...domain.entities import ContextBundle, Task
+from ...domain.ports.activity import ActivityLogPort
 from ..engines.assembly import AssemblyEngine, render_markdown
 from ..engines.retrieval import RetrievalEngine
 from ..engines.validity import ValidityEngine
@@ -36,12 +37,14 @@ class GetContext(UseCase):
         assembly: AssemblyEngine,
         telemetry,
         workspace=None,
+        activity: ActivityLogPort | None = None,
     ) -> None:
         super().__init__(telemetry)
         self._retrieval = retrieval
         self._validity = validity
         self._assembly = assembly
         self._workspace = workspace
+        self._activity = activity
 
     async def __call__(
         self, request: GetContextRequest
@@ -55,6 +58,12 @@ class GetContext(UseCase):
                 current_ref=request.base_ref,
                 workspace=self._workspace,
             )
+            last_test_run = None
+            if self._activity is not None:
+                runs = await self._activity.list_test_runs(
+                    request.project_id
+                )
+                last_test_run = runs[0] if runs else None
             task = Task(
                 id=f"task-{uuid.uuid4().hex[:10]}",
                 project_id=request.project_id,
@@ -66,6 +75,7 @@ class GetContext(UseCase):
                 task,
                 validity_result.valid,
                 validity_result.findings,
+                last_test_run=last_test_run,
             )
             return ContextResult(
                 bundle=bundle,

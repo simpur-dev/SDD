@@ -39,6 +39,11 @@ class PowerContextMemory:
     def __init__(self, client: PowerContextClient) -> None:
         self._client = client
 
+    async def resolve_scope(self, project_id: str) -> str:
+        return await self._client.ensure_scope(
+            f"sw:{project_id}", f"SpecWeaver scope for project {project_id}"
+        )
+
     async def remember(self, entry: MemoryEntry) -> MemoryEntry:
         res = await self._client.post(
             "/v1/memory/remember",

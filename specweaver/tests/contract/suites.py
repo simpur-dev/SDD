@@ -116,7 +116,11 @@ async def hybrid_suite(hybrid) -> None:
     assert "code-old" in [h.artifact.id for h in old_hits]
 
 
-async def memory_suite(memory, scope_id: str) -> None:
+async def memory_suite(memory, project_id: str) -> None:
+    scope_id = await memory.resolve_scope(project_id)
+    assert scope_id
+    assert await memory.resolve_scope(project_id) == scope_id
+
     e1 = await memory.remember(
         MemoryEntry(scope_id=scope_id, kind="constraint",
                     content="必须保留原有发车时刻计算行为")

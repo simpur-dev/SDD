@@ -3,6 +3,7 @@ from __future__ import annotations
 import httpx
 
 from ....shared.config import PowerContextSettings
+from ....shared.errors import BackendConnectionError, SWError
 
 
 class PowerContextClient:
@@ -34,10 +35,19 @@ class PowerContextClient:
     async def request(self, method, path, payload=None, params=None):
         if self._http is None:
             self.open()
-        resp = await self._http.request(
-            method, path, json=payload, params=params
-        )
-        resp.raise_for_status()
+        try:
+            resp = await self._http.request(
+                method, path, json=payload, params=params
+            )
+        except httpx.RequestError as exc:
+            raise BackendConnectionError(
+                f"powercontext unreachable: {exc}"
+            ) from exc
+        if resp.status_code >= 400:
+            raise SWError(
+                f"powercontext {resp.status_code} on {method} {path}: "
+                f"{resp.text[:200]}"
+            )
         if not resp.content:
             return {}
         return resp.json()

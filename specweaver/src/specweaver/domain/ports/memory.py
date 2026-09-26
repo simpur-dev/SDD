@@ -18,6 +18,10 @@ class MemoryEntry(BaseModel):
 
 
 class MemoryPort(Protocol):
+    async def resolve_scope(self, project_id: str) -> str:
+        """Idempotently bind a project to its PowerContext scope id."""
+        ...
+
     async def remember(self, entry: MemoryEntry) -> MemoryEntry: ...
 
     async def search(

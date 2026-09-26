@@ -18,7 +18,7 @@ from .base import UseCase
 class CompleteTaskRequest(BaseModel):
     project_id: str
     task_id: str
-    scope_id: str
+    scope_id: str = ""
     base_ref: str
     test_command: str = "pytest"
     register_outcome: bool = True
@@ -107,7 +107,11 @@ class CompleteTask(UseCase):
                 updated_ids = [a.id for a in result.updated]
                 superseded_ids = [a.id for a in result.superseded]
 
-            if request.register_outcome and self._memory is not None:
+            if (
+                request.register_outcome
+                and self._memory is not None
+                and request.scope_id
+            ):
                 await self._memory.remember(
                     MemoryEntry(
                         scope_id=request.scope_id,
