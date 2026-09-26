@@ -3,7 +3,7 @@ from __future__ import annotations
 from ....domain.ports.memory import MemoryEntry
 from ....domain.values import Citation, SourceRef
 from ....shared.errors import SWError
-from .client import PowerContextClient
+from .client import PowerContextClient, require
 
 _URI_PREFIX = "powercontext://memory/"
 
@@ -13,9 +13,10 @@ def scope_from_uri(uri: str) -> str:
 
 
 def pc_to_domain(scope_id: str, pc: dict) -> MemoryEntry:
-    citation = pc["citation"]
-    entry_id = citation["entry_id"]
-    revision = citation["memory_ref"]["revision"]
+    citation = require(pc, "citation", "memory entry")
+    entry_id = require(citation, "entry_id", "memory citation")
+    memory_ref = require(citation, "memory_ref", "memory citation")
+    revision = require(memory_ref, "revision", "memory reference")
     return MemoryEntry(
         id=entry_id,
         scope_id=scope_id,
@@ -53,7 +54,10 @@ class PowerContextMemory:
                 "text": entry.content,
             },
         )
-        out = pc_to_domain(entry.scope_id, res["entry"])
+        out = pc_to_domain(
+            entry.scope_id,
+            require(res, "entry", "memory remember response"),
+        )
         out.tags = entry.tags
         return out
 
@@ -71,8 +75,9 @@ class PowerContextMemory:
         )
         out: list[MemoryEntry] = []
         for hit in res.get("hits", []):
-            citation = hit["citation"]
-            entry_id = citation["entry_id"]
+            citation = require(hit, "citation", "memory search hit")
+            entry_id = require(citation, "entry_id", "memory citation")
+            memory_ref = require(citation, "memory_ref", "memory citation")
             out.append(
                 MemoryEntry(
                     id=entry_id,
@@ -85,7 +90,11 @@ class PowerContextMemory:
                             uri=f"{_URI_PREFIX}{scope_id}",
                             locator=entry_id,
                             kind="memory",
-                            checksum=str(citation["memory_ref"]["revision"]),
+                            checksum=str(
+                            require(
+                                memory_ref, "revision", "memory reference"
+                            )
+                        ),
                         ),
                     ),
                 )
@@ -110,7 +119,8 @@ class PowerContextMemory:
             {"scope_id": scope_id, "include_inactive": True},
         )
         for entry in res.get("entries", []):
-            if entry["citation"]["entry_id"] == entry_id:
+            citation = entry.get("citation") or {}
+            if citation.get("entry_id") == entry_id:
                 return entry
         return None
 
@@ -132,7 +142,9 @@ class PowerContextMemory:
                 "reason": reason or "revised by SpecWeaver",
             },
         )
-        return pc_to_domain(scope_id, res["entry"])
+        return pc_to_domain(
+            scope_id, require(res, "entry", "memory revise response")
+        )
 
     async def retire(self, citation: Citation, reason: str = "") -> None:
         scope_id = scope_from_uri(citation.source.uri)

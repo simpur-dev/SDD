@@ -63,7 +63,11 @@ class GitWorkspace:
     async def changed_files(
         self, base: str, head: str
     ) -> list[FileChange]:
-        text = await self._git("diff", "--name-status", base, head)
+        # --relative keeps paths consistent with list_files/read_file,
+        # which are workspace-root relative (git repo may be a parent).
+        text = await self._git(
+            "diff", "--name-status", "--relative", base, head
+        )
         changes: list[FileChange] = []
         for line in text.splitlines():
             parts = line.split("\t")

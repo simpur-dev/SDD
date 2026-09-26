@@ -3,19 +3,30 @@ from __future__ import annotations
 import uuid
 
 from ....domain.ports.handoff import HandoffDraft, HandoffView
-from .client import PowerContextClient
+from ....shared.errors import SWError
+from .client import PowerContextClient, require
 
 
 def encode_ref(ref: dict) -> str:
-    return f"{ref['family']}:{ref['artifact_id']}:{ref['revision']}"
+    return (
+        f"{require(ref, 'family', 'handoff reference')}:"
+        f"{require(ref, 'artifact_id', 'handoff reference')}:"
+        f"{require(ref, 'revision', 'handoff reference')}"
+    )
 
 
 def decode_ref(rev: str) -> dict:
-    family, artifact_id, revision = rev.split(":")
+    parts = rev.split(":")
+    if len(parts) != 3 or not parts[0] or not parts[1]:
+        raise SWError(f"malformed handoff revision: {rev!r}")
+    try:
+        revision = int(parts[2])
+    except ValueError as exc:
+        raise SWError(f"malformed handoff revision: {rev!r}") from exc
     return {
-        "family": family,
-        "artifact_id": artifact_id,
-        "revision": int(revision),
+        "family": parts[0],
+        "artifact_id": parts[1],
+        "revision": revision,
     }
 
 
@@ -72,7 +83,7 @@ class PowerContextHandoff:
         res = await self._client.post(
             "/v1/work/handoffs/prepare-current", payload
         )
-        prepared = res["handoff"]
+        prepared = require(res, "handoff", "prepare-current response")
         view = content_to_view(draft.scope_id, prepared["content"])
         view.raw = {"prepared": prepared, "source_id": source_id}
         return view
@@ -83,7 +94,9 @@ class PowerContextHandoff:
             "/v1/handoff/commit",
             {"scope_id": view.scope_id, "handoff": prepared},
         )
-        view.rev = encode_ref(res["reference"])
+        view.rev = encode_ref(
+            require(res, "reference", "handoff commit response")
+        )
         view.raw = dict(view.raw)
         view.raw["committed"] = res
         return view
@@ -97,7 +110,7 @@ class PowerContextHandoff:
                 "revision": decode_ref(rev),
             },
         )
-        content = res["content"]
+        content = require(res, "content", "handoff continue response")
         return content_to_view(scope_id, content)
 
     async def record_outcome(

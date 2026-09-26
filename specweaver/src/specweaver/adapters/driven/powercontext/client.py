@@ -1,9 +1,20 @@
 from __future__ import annotations
 
+from typing import Any
+
 import httpx
 
 from ....shared.config import PowerContextSettings
 from ....shared.errors import BackendConnectionError, SWError
+
+
+def require(payload: Any, key: str, what: str) -> Any:
+    """Read a mandatory response field without leaking KeyError upstream."""
+    if not isinstance(payload, dict) or payload.get(key) is None:
+        raise SWError(
+            f"powercontext {what} is missing field {key!r} in the response"
+        )
+    return payload[key]
 
 
 class PowerContextClient:
@@ -55,7 +66,13 @@ class PowerContextClient:
             )
         if not resp.content:
             return {}
-        return resp.json()
+        try:
+            return resp.json()
+        except ValueError as exc:
+            raise SWError(
+                f"powercontext returned a non-JSON body on {method} {path}: "
+                f"{resp.text[:200]}"
+            ) from exc
 
     async def post(self, path, payload):
         return await self.request("POST", path, payload)
@@ -69,7 +86,7 @@ class PowerContextClient:
             return self._scope_cache[title]
         page = await self.get("/v1/scopes")
         for item in page.get("items", []):
-            if item.get("title") == title:
+            if item.get("title") == title and item.get("scope_id"):
                 self._scope_cache[title] = item["scope_id"]
                 return item["scope_id"]
         created = await self.post(
@@ -80,6 +97,11 @@ class PowerContextClient:
                 "idempotency_key": f"sw-scope-{title}",
             },
         )
-        scope_id = created["scope_id"]
+        scope_id = created.get("scope_id")
+        if not isinstance(scope_id, str) or not scope_id:
+            raise SWError(
+                "powercontext scope creation returned no scope_id "
+                f"for title {title!r}"
+            )
         self._scope_cache[title] = scope_id
         return scope_id

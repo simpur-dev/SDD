@@ -5,8 +5,6 @@ executable evidence.
 """
 from __future__ import annotations
 
-import pytest
-
 from specweaver.application.engines.ingestion.normalize import (
     artifact_id,
     to_artifact,

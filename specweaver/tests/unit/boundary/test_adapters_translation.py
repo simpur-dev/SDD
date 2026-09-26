@@ -27,7 +27,6 @@ def _client(handler) -> PowerContextClient:
     return client
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-8: raw ValueError leak")
 async def test_non_json_200_body_translates_to_swerror() -> None:
     """Audit B-8: resp.json() on garbage body leaks ValueError."""
 
@@ -38,7 +37,6 @@ async def test_non_json_200_body_translates_to_swerror() -> None:
         await _client(handler).get("/v1/scopes")
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-9: raw KeyError leak")
 async def test_missing_entry_key_translates_to_swerror() -> None:
     """Audit B-9: unexpected response shape must not leak KeyError."""
 
@@ -52,7 +50,6 @@ async def test_missing_entry_key_translates_to_swerror() -> None:
         )
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-9b: raw KeyError leak")
 async def test_ensure_scope_missing_scope_id_translates() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         if request.method == "GET":
@@ -63,14 +60,12 @@ async def test_ensure_scope_missing_scope_id_translates() -> None:
         await _client(handler).ensure_scope("sw:x", "summary")
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-10: raw ValueError leak")
 def test_decode_ref_rejects_malformed_rev() -> None:
     """Audit B-10: garbage revision must raise SWError, not ValueError."""
     with pytest.raises(SWError):
         decode_ref("handoff:not-a-ref")
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-10b: raw ValueError leak")
 async def test_continue_with_malformed_rev_raises_swerror() -> None:
     handoff = PowerContextHandoff(_client(lambda r: httpx.Response(200, json={})))
     with pytest.raises(SWError):

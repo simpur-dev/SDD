@@ -53,6 +53,35 @@ def test_changed_files_reports_unicode_paths_verbatim(tmp_path: Path) -> None:
     assert [c.path for c in changes] == ["中文需求.md"]
 
 
+def test_nested_workspace_paths_are_readable(tmp_path: Path) -> None:
+    """Audit follow-up: workspace.root may be a git subdirectory; diff and
+    ls-files must speak the same (workspace-relative) path language."""
+    _git(tmp_path, "init", "-q")
+    _git(tmp_path, "config", "user.name", "t")
+    _git(tmp_path, "config", "user.email", "t@t")
+    nested = tmp_path / "sub"
+    nested.mkdir()
+    target = nested / "app.py"
+    target.write_text("def f():\n    return 1\n", encoding="utf-8")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "base")
+    base = _git(tmp_path, "rev-parse", "HEAD").strip()
+    target.write_text("def f():\n    return 2\n", encoding="utf-8")
+    _git(tmp_path, "add", "-A")
+    _git(tmp_path, "commit", "-q", "-m", "change")
+    head = _git(tmp_path, "rev-parse", "HEAD").strip()
+
+    workspace = GitWorkspace(WorkspaceSettings(root=str(nested)))
+    import asyncio
+
+    files = asyncio.run(workspace.list_files())
+    changes = asyncio.run(workspace.changed_files(base, head))
+    assert [c.path for c in changes] == files == ["app.py"]
+    # reconcile can actually read the reported paths:
+    content = asyncio.run(workspace.read_file(changes[0].path))
+    assert "return 2" in content
+
+
 def test_self_reference_edge_is_minted_today() -> None:
     """Audit B-15 (documented current behaviour): a file containing its own
     id token mints a self-loop edge (REQ-1 refines REQ-1)."""
