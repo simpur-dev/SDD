@@ -72,9 +72,11 @@ python scripts\gate.py --live --demo   # 再追加：铁路演示并写 evidence
 
 | 脚本 | 用途 |
 |---|---|
-| `scripts/gate.py` | 一键门禁（离线/在线） |
+| `scripts/gate.py` | 一键门禁（离线 ruff+pytest；`--live` 真后端链路；`--demo` 出证据） |
 | `scripts/run_demo.py` | 铁路调度教学演示 → `evidence/<project>-<ts>/` |
-| `scripts/run_off_on.py` | 工具 OFF/ON 双臂对照（Claude Code 驱动，隐藏验收判据） |
+| `scripts/run_off_on.py` | 工具 OFF/ON 双臂对照（Claude Code 驱动，隐藏验收判据；报告给中位数 + 最快/最慢） |
+| `scripts/eval_retrieval.py` | 金标检索质量：`keyword` / `specweaver` 两臂同字节公平，可选 `--pc-project` 加官方 `/v1/context/prepare` 第三臂；`--budget-bytes` 做紧预算压力实验 |
+| `scripts/scaling_probe.py` | 受控规模扫描（语料 × `CONTEXT__N_RESULTS` × 重复）→ `sweep.md` / `sweep.json` |
 | `scripts/verify_mcp.py` | 11 工具逐个真实调用（in-process MCP 客户端 + 真后端） |
 | `scripts/probe_metrics_http.py` | 起 streamable-http 服务，跑真实 MCP 流量后抓 `GET /metrics` |
 

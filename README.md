@@ -62,7 +62,8 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 | 维度 | 现状数字 | 出处 |
 |---|---|---|
 | 自动化测试 | 207 项（unit/contract；容器在位时含真后端集成，`--live` 下有 skip 即判失败） | `scripts/gate.py` |
-| 检索质量金标（6 任务，人工标注） | 预算 8000B：recall **1.0** vs 关键词基线 0.847（precision 0.204 vs 0.257）；**紧预算 1500B：0.319 vs 0.500，此时我们落后**，已挂账为下一条改进项 | `evidence/retrieval-railway-8000/`、`evidence/retrieval-railway-1500/` |
+| 检索质量金标（6 任务，人工标注，三方对照） | recall：SpecWeaver **1.0** / 朴素关键词 0.847 / 官方 `/v1/context/prepare` 0.208（记忆侧装配，工程构件本不在其中）；precision 仅 0.204；**紧预算 1500B：0.319 vs 基线 0.500，此时我们落后**（已挂账） | `evidence/retrieval-railway-{8000,1500}/` |
+| 受控规模扫描（2 语料 × 3 上限 × 8 重复） | `n_results=5` 时 18 与 354 构件语料均 40 次后端调用（与规模无关）；`40` 时 65 vs 178（增量来自核对循环与图扩展）；p95 5.47-6.74s 由单次 LLM 规划主导 | `evidence/scaling-sweep-20260927/sweep.md` |
 | 真实后端接口 | 11 个 MCP 工具逐个跑通（含 revise/retire/guard 探针与 `ToolAnnotations` 声明） | `evidence/m5-20260927-005855/` |
 | 全链路演示（M6 重跑） | 11/11 → 13/13 真实回归；`usage.csv` 含引擎级 `metrics` 列；Bundle ④段回读 PowerContext 工作记忆 | `evidence/railway-20260927-023632/` |
 | 规模两点对照（非受控扫描） | 语料 18→159 构件，`get_context` 后端调用 60-66 → 53（成本随召回量而非语料规模）；`ExplainSource` 改为按层批量读 | `evidence/scaling-20260927/scaling.md` |
