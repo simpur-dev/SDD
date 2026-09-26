@@ -86,6 +86,8 @@ class SeekdbClient:
             password=s.password.get_secret_value(),
             autocommit=True,
             connect_timeout=10,
+            read_timeout=30,
+            write_timeout=30,
         )
         try:
             bootstrap.cursor().execute(

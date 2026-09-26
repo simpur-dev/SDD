@@ -118,7 +118,14 @@ def _parse_summary(text: str, returncode: int):
 
 
 def _parse_junit(path: Path) -> TestRun:
-    root = ET.parse(path).getroot()
+    # docs/03 7.1: a broken or missing report is a traceable SWError, never a
+    # raw OSError/ParseError escaping the adapter
+    try:
+        root = ET.parse(path).getroot()
+    except OSError as exc:
+        raise SWError(f"junit report is unreadable: {path} ({exc})") from exc
+    except ET.ParseError as exc:
+        raise SWError(f"junit report is not valid XML: {path}") from exc
     total = passed = failed = skipped = 0
     for case in root.iter("testcase"):
         total += 1

@@ -17,6 +17,7 @@ async def check_seekdb(settings: SeekDbSettings) -> dict:
             user=settings.user,
             password=settings.password.get_secret_value(),
             connect_timeout=5,
+            read_timeout=10,
         )
         try:
             with conn.cursor() as cur:
