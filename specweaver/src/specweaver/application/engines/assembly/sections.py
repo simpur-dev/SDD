@@ -18,9 +18,18 @@ _TYPE_ORDER = {
 }
 
 
-def _sort_key(artifact: Artifact) -> tuple[int, str, str]:
+def _sort_key(
+    artifact: Artifact, relevance: dict[str, float]
+) -> tuple[int, float, str, str]:
+    """Link importance first (type), then retrieval relevance inside the type.
+
+    Relevance never re-orders across types: constraints and requirements keep
+    their place in the goal section regardless of score (docs/01 §4.4), so a
+    low-scoring rule cannot be pushed behind code.
+    """
     return (
         _TYPE_ORDER.get(artifact.type, 9),
+        -relevance.get(artifact.id, 0.0),
         artifact.module or "",
         artifact.id,
     )
@@ -33,7 +42,11 @@ class Sections:
     verification: list[Artifact]
 
 
-def map_sections(artifacts: list[Artifact]) -> Sections:
+def map_sections(
+    artifacts: list[Artifact],
+    relevance: dict[str, float] | None = None,
+) -> Sections:
+    scores = relevance or {}
     goal: list[Artifact] = []
     design: list[Artifact] = []
     verification: list[Artifact] = []
@@ -45,7 +58,11 @@ def map_sections(artifacts: list[Artifact]) -> Sections:
         elif artifact.type in VERIFY_TYPES:
             verification.append(artifact)
     return Sections(
-        goal_and_constraints=sorted(goal, key=_sort_key),
-        design_and_implementation=sorted(design, key=_sort_key),
-        verification=sorted(verification, key=_sort_key),
+        goal_and_constraints=sorted(goal, key=lambda a: _sort_key(a, scores)),
+        design_and_implementation=sorted(
+            design, key=lambda a: _sort_key(a, scores)
+        ),
+        verification=sorted(
+            verification, key=lambda a: _sort_key(a, scores)
+        ),
     )

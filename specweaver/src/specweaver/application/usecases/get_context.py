@@ -85,6 +85,10 @@ class GetContext(UseCase):
                 validity_result.valid,
                 validity_result.findings,
                 last_test_run=last_test_run,
+                relevance={
+                    scored.artifact.id: scored.score
+                    for scored in retrieved.scored
+                },
             )
             self.telemetry.record_metric(
                 "assembly_ms",
