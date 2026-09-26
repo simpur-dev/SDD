@@ -1,0 +1,9 @@
+name,duration_ms,llm_calls,prompt_tokens,completion_tokens,backend_calls,status,error
+ingest_project,483.5841000021901,0,0,0,38,ok,
+get_context,2501.8630999984453,1,146,97,58,ok,
+complete_task,796.6815000108909,0,0,0,20,ok,
+create_handoff,105.3171000094153,0,0,0,2,ok,
+get_context,2189.8859000066295,1,148,83,44,ok,
+resume_task,2298.107299997355,0,0,0,2,ok,
+complete_task,960.4047999891918,0,0,0,24,ok,
+get_context,2425.1017999922624,1,150,101,65,ok,

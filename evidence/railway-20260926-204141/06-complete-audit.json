@@ -1,0 +1,18 @@
+{
+  "task_id": "railway-20260926-204141-audit",
+  "success": true,
+  "test_total": 13,
+  "test_passed": 13,
+  "test_failed": 0,
+  "files_changed": 3,
+  "updated_ids": [
+    "REQ-6",
+    "CODE-2335993c1bbc",
+    "TST-bf4598def6a1"
+  ],
+  "superseded_ids": [
+    "REQ-1"
+  ],
+  "change_set_id": "cs-1790426510390-811e61",
+  "test_run_id": "tr-1790426509762-0c8461"
+}

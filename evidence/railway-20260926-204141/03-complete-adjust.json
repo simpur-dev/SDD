@@ -1,0 +1,16 @@
+{
+  "task_id": "railway-20260926-204141-adjust",
+  "success": true,
+  "test_total": 11,
+  "test_passed": 11,
+  "test_failed": 0,
+  "files_changed": 3,
+  "updated_ids": [
+    "CODE-e662196c212e",
+    "CODE-2335993c1bbc",
+    "TST-885ea3f0b041"
+  ],
+  "superseded_ids": [],
+  "change_set_id": "cs-1790426506856-7f630d",
+  "test_run_id": "tr-1790426506340-804065"
+}

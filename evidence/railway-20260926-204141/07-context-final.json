@@ -1,0 +1,988 @@
+{
+  "bundle": {
+    "task": {
+      "id": "task-d7ab95e5a6",
+      "project_id": "railway-20260926-204141",
+      "title": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
+      "objective": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
+      "phase": "analyzing",
+      "branch": null,
+      "base_ref": "82c3b1a58403b2e22c9c5fafe1cc84b53cbea5d0",
+      "handoff_rev": null,
+      "created_at": null,
+      "closed_at": null
+    },
+    "goal_and_constraints": [
+      {
+        "id": "RULE-3",
+        "project_id": "railway-20260926-204141",
+        "type": "rule",
+        "module": "publish",
+        "title": "冲突禁发",
+        "content": "---\nid: RULE-03\ntype: rule\nmodule: publish\nversion: 1.0.0\nstatus: active\ntitle: 冲突禁发\n---\n\n# 冲突禁发\n\n- 检测到占用冲突时禁止发布\n",
+        "version": "1.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "rules/publish-rule.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:e581831bd28f63c57908ee28fec772cd1f4bff978a313be84165fedadd17c304"
+        },
+        "checksum": "sha256:e581831bd28f63c57908ee28fec772cd1f4bff978a313be84165fedadd17c304",
+        "tags": [
+          "rule"
+        ],
+        "based_on": [
+          "RULE-3"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "RULE-1",
+        "project_id": "railway-20260926-204141",
+        "type": "rule",
+        "module": "schedule",
+        "title": "最小站间隔（现行规章）",
+        "content": "---\nid: RULE-01\ntype: rule\nmodule: schedule\nversion: 1.0.0\nstatus: active\ntitle: 最小站间隔（现行规章）\n---\n\n# 最小站间隔\n\n- 相邻站间隔不得低于 3 分钟\n",
+        "version": "1.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "rules/interval-rule.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:c996e9494a44b6511ff841294bc85892f79958c82803f422659f0bd7bd7155ea"
+        },
+        "checksum": "sha256:c996e9494a44b6511ff841294bc85892f79958c82803f422659f0bd7bd7155ea",
+        "tags": [
+          "rule"
+        ],
+        "based_on": [
+          "RULE-1"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "REQ-2",
+        "project_id": "railway-20260926-204141",
+        "type": "requirement",
+        "module": "occupancy",
+        "title": "车辆占用检查",
+        "content": "---\nid: REQ-02\ntype: requirement\nmodule: occupancy\nversion: 1.0.0\nstatus: active\ntitle: 车辆占用检查\n---\n\n# 车辆占用检查\n\n- 调整时刻后必须对照该车辆当日其他任务检查时间窗冲突\n",
+        "version": "1.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "specs/requirement-occupancy.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:979f1286035abff3293e7cd8ee9f1842daff108bde3d02bfe576392942193d0e"
+        },
+        "checksum": "sha256:979f1286035abff3293e7cd8ee9f1842daff108bde3d02bfe576392942193d0e",
+        "tags": [
+          "requirement"
+        ],
+        "based_on": [
+          "REQ-2"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "REQ-3",
+        "project_id": "railway-20260926-204141",
+        "type": "requirement",
+        "module": "publish",
+        "title": "发布判断",
+        "content": "---\nid: REQ-03\ntype: requirement\nmodule: publish\nversion: 1.0.0\nstatus: active\ntitle: 发布判断\n---\n\n# 发布判断\n\n- 发布前必须复核车辆占用，存在冲突时阻止发布\n",
+        "version": "1.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "specs/requirement-publish.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:f1653b8230330c0d4b4049563e18e658a246f7a378fb53919fa3fe8c3b6594d7"
+        },
+        "checksum": "sha256:f1653b8230330c0d4b4049563e18e658a246f7a378fb53919fa3fe8c3b6594d7",
+        "tags": [
+          "requirement"
+        ],
+        "based_on": [
+          "REQ-3"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "REQ-6",
+        "project_id": "railway-20260926-204141",
+        "type": "requirement",
+        "module": "schedule",
+        "title": "按站调整发车时间（升版：含审计）",
+        "content": "---\nid: REQ-06\ntype: requirement\nmodule: schedule\nversion: 2.0.0\nstatus: active\nsupersedes: REQ-01\ntitle: 按站调整发车时间（升版：含审计）\n---\n\n# 按站调整发车时间（升版）\n\n本需求为 REQ-1 的升版：\n\n- 调度员应能按站点修改发车时间并自动重算后续各站时刻\n- 每次调整必须记录审计日志\n",
+        "version": "2.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": "REQ-1",
+        "superseded_by": null,
+        "source": {
+          "uri": "specs/requirement-schedule-v2.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:ae563037b3eb6057496db1292443411ecec66ea61bdb5108ab779d5773390115"
+        },
+        "checksum": "sha256:ae563037b3eb6057496db1292443411ecec66ea61bdb5108ab779d5773390115",
+        "tags": [
+          "requirement"
+        ],
+        "based_on": [
+          "REQ-6",
+          "REQ-1"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      }
+    ],
+    "design_and_implementation": [
+      {
+        "id": "DES-2",
+        "project_id": "railway-20260926-204141",
+        "type": "design",
+        "module": "publish",
+        "title": "发布链路设计",
+        "content": "---\nid: DES-02\ntype: design\nmodule: publish\nversion: 1.0.0\nstatus: active\ntitle: 发布链路设计\n---\n\n# 发布链路设计\n\npublish 模块把停站时刻折算为占用时间窗，交由 occupancy 复核，\n覆盖 REQ-3 并遵守 RULE-3 的禁止发布约束。\n",
+        "version": "1.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "design/publish-design.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:197d0df5e4334d60eca399e383664819f463d73285b184a3c28d50d91f3c87c5"
+        },
+        "checksum": "sha256:197d0df5e4334d60eca399e383664819f463d73285b184a3c28d50d91f3c87c5",
+        "tags": [
+          "design"
+        ],
+        "based_on": [
+          "DES-2",
+          "REQ-3",
+          "RULE-3"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "DES-1",
+        "project_id": "railway-20260926-204141",
+        "type": "design",
+        "module": "schedule",
+        "title": "时刻计算设计",
+        "content": "---\nid: DES-01\ntype: design\nmodule: schedule\nversion: 1.0.0\nstatus: active\ntitle: 时刻计算设计\n---\n\n# 时刻计算设计\n\nschedule 模块以\"始发时刻 + 站间运行时分\"推导各站时刻，实现 REQ-1。\n调整发车时间时平移始发时刻即可重算后续各站。\n",
+        "version": "1.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "design/schedule-design.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:36c387f6d674d69c3e06509d450f515f47fd86f9adf8a52b49fa12868b481422"
+        },
+        "checksum": "sha256:36c387f6d674d69c3e06509d450f515f47fd86f9adf8a52b49fa12868b481422",
+        "tags": [
+          "design"
+        ],
+        "based_on": [
+          "DES-1",
+          "REQ-1"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "CODE-e662196c212e",
+        "project_id": "railway-20260926-204141",
+        "type": "code",
+        "module": "api",
+        "title": "api",
+        "content": "\"\"\"页面/接口：选择目标站点、提交新车发时间（功能入口）。\n\n需求依据见 REQ-4。\n\"\"\"\n\nfrom publish import can_publish\nfrom schedule import Train, arrival_times\n\n\ndef show_timetable(train: Train) -> dict[str, str]:\n    \"\"\"展示各站时刻。\"\"\"\n    return arrival_times(train)\n\n\ndef submit_publish(train: Train, fleet: list) -> tuple[bool, str]:\n    \"\"\"提交发布：先经占用与发布判断。\"\"\"\n    return can_publish(train, fleet)\n\n\ndef submit_adjust_departure(\n    train: Train, new_start: str\n) -> dict[str, str]:\n    \"\"\"提交新始发时刻并返回调整后的时刻表（REQ-4 入口）。\"\"\"\n    from schedule import adjust_departure\n\n    return arrival_times(adjust_departure(train, new_start))\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "src/api.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:f669436d893f78ff9eb8df0532077be926ddd004e801c379785ec247d714071c"
+        },
+        "checksum": "sha256:f669436d893f78ff9eb8df0532077be926ddd004e801c379785ec247d714071c",
+        "tags": [
+          "code"
+        ],
+        "based_on": [
+          "REQ-4"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "CODE-4bfabc68a8f6",
+        "project_id": "railway-20260926-204141",
+        "type": "code",
+        "module": "occupancy",
+        "title": "occupancy",
+        "content": "\"\"\"车辆占用检查：对照车辆其他任务检查时间窗冲突。\n\n需求依据见 REQ-2。\n\"\"\"\n\nfrom dataclasses import dataclass\n\n\n@dataclass\nclass Occupation:\n    \"\"\"一段车辆占用：车号 + 起止分钟。\"\"\"\n\n    train_id: str\n    start_min: int\n    end_min: int\n\n\ndef conflicts(left: Occupation, right: Occupation) -> bool:\n    \"\"\"同一车辆的两段占用时间窗是否重叠。\"\"\"\n    if left.train_id != right.train_id:\n        return False\n    return left.start_min < right.end_min and right.start_min < left.end_min\n\n\ndef has_conflicts(items: list[Occupation]) -> bool:\n    for index, left in enumerate(items):\n        for right in items[index + 1:]:\n            if conflicts(left, right):\n                return True\n    return False\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "src/occupancy.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:240c30a7f07794f4da0e1c6dba57b14df43473af3192538fb769dfcf8ddbc5c6"
+        },
+        "checksum": "sha256:240c30a7f07794f4da0e1c6dba57b14df43473af3192538fb769dfcf8ddbc5c6",
+        "tags": [
+          "code"
+        ],
+        "based_on": [
+          "REQ-2"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "CODE-12d4b7620710",
+        "project_id": "railway-20260926-204141",
+        "type": "code",
+        "module": "publish",
+        "title": "publish",
+        "content": "\"\"\"发布判断：检测到冲突则阻止发布（受 RULE-3 约束）。\n\n需求依据见 REQ-3。\n\"\"\"\n\nfrom occupancy import Occupation, has_conflicts\nfrom schedule import Train, arrival_times, to_minutes\n\n\ndef windows_for(train: Train) -> list[Occupation]:\n    \"\"\"按停站时刻近似为占用区间（教学模型：站间即为占用）。\"\"\"\n    stops = train.stops()\n    times = arrival_times(train)\n    return [\n        Occupation(\n            train_id=train.train_id,\n            start_min=to_minutes(times[stops[index]]),\n            end_min=to_minutes(times[stops[index + 1]]),\n        )\n        for index in range(len(stops) - 1)\n    ]\n\n\ndef can_publish(\n    train: Train, fleet: list[Occupation]\n) -> tuple[bool, str]:\n    \"\"\"本车占用与车队既有占用冲突则禁止发布。\"\"\"\n    mine = windows_for(train)\n    if has_conflicts([*mine, *fleet]):\n        return False, \"occupied: 存在车辆占用冲突，禁止发布\"\n    return True, \"publish ok\"\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "src/publish.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:71aaba2afdc5c6c03c7fe4be60f23aa95669d0de038698b4d2e784af90bd47f3"
+        },
+        "checksum": "sha256:71aaba2afdc5c6c03c7fe4be60f23aa95669d0de038698b4d2e784af90bd47f3",
+        "tags": [
+          "code"
+        ],
+        "based_on": [
+          "RULE-3",
+          "REQ-3"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "CODE-2335993c1bbc",
+        "project_id": "railway-20260926-204141",
+        "type": "code",
+        "module": "schedule",
+        "title": "schedule",
+        "content": "\"\"\"时刻计算：更新当前站发车时间、重算后续各站时间。\n\n需求依据见 REQ-1。\n\"\"\"\n\nfrom dataclasses import dataclass, field\n\n\ndef to_minutes(hhmm: str) -> int:\n    hours, minutes = hhmm.split(\":\")\n    return int(hours) * 60 + int(minutes)\n\n\ndef to_hhmm(total: int) -> str:\n    return f\"{total // 60 % 24:02d}:{total % 60:02d}\"\n\n\n@dataclass\nclass Train:\n    \"\"\"一趟车：始发时刻 + 各站间运行时分（\"A->B\" -> 分钟）。\"\"\"\n\n    train_id: str\n    start: str\n    legs: dict[str, int] = field(default_factory=dict)\n\n    def stops(self) -> list[str]:\n        \"\"\"按 leg 顺序推导站序：首站 + 各 leg 的终点。\"\"\"\n        stops: list[str] = []\n        for leg in self.legs:\n            origin, _, destination = leg.partition(\"->\")\n            if not stops:\n                stops.append(origin)\n            stops.append(destination)\n        return stops\n\n\ndef arrival_times(train: Train) -> dict[str, str]:\n    \"\"\"各站时刻 = 始发时刻 + 累计运行时分。\"\"\"\n    stops = train.stops()\n    clock = to_minutes(train.start)\n    times = {stops[0]: to_hhmm(clock)}\n    for index, minutes in enumerate(train.legs.values()):\n        clock += minutes\n        times[stops[index + 1]] = to_hhmm(clock)\n    return times\n\n\ndef adjust_departure(train: Train, new_start: str) -> Train:\n    \"\"\"按站调整发车时间：以新始发时刻平移整条时刻表（REQ-1）。\"\"\"\n    return Train(\n        train_id=train.train_id, start=new_start, legs=dict(train.legs)\n    )\n\n\nADJUST_AUDIT: list[tuple[str, str, str]] = []\n\n\ndef adjust_departure_logged(train: Train, new_start: str) -> Train:\n    \"\"\"调整发车时间并记录审计日志（REQ-6 增量）。\"\"\"\n    adjusted = adjust_departure(train, new_start)\n    ADJUST_AUDIT.append((train.train_id, train.start, new_start))\n    return adjusted\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "src/schedule.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:6ff1fac53ebcbf934b15535623b9d3d5bbe8c4095c155ee7882dc7b1953b1d99"
+        },
+        "checksum": "sha256:6ff1fac53ebcbf934b15535623b9d3d5bbe8c4095c155ee7882dc7b1953b1d99",
+        "tags": [
+          "code"
+        ],
+        "based_on": [
+          "REQ-1",
+          "REQ-6"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      }
+    ],
+    "verification": [
+      {
+        "id": "TST-885ea3f0b041",
+        "project_id": "railway-20260926-204141",
+        "type": "test",
+        "module": "adjust",
+        "title": "test_adjust",
+        "content": "\"\"\"发车时间调整回归测试（REQ-1 新行为）。\"\"\"\n\nfrom schedule import Train, adjust_departure, arrival_times\n\n\ndef make_train() -> Train:\n    return Train(train_id=\"K1\", start=\"08:00\", legs={\"A->B\": 10, \"B->C\": 15})\n\n\ndef test_adjust_departure_shifts_whole_timetable() -> None:\n    adjusted = adjust_departure(make_train(), \"08:30\")\n    assert arrival_times(adjusted) == {\n        \"A\": \"08:30\", \"B\": \"08:40\", \"C\": \"08:55\",\n    }\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "tests/test_adjust.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:b49b81ad66e0c445ba34f25f6206e9a45c4c61999de0734bcab0bb1a7f60ef17"
+        },
+        "checksum": "sha256:b49b81ad66e0c445ba34f25f6206e9a45c4c61999de0734bcab0bb1a7f60ef17",
+        "tags": [
+          "test"
+        ],
+        "based_on": [
+          "REQ-1"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "TST-bf4598def6a1",
+        "project_id": "railway-20260926-204141",
+        "type": "test",
+        "module": "audit",
+        "title": "test_audit",
+        "content": "\"\"\"调整联动回归测试（REQ-6 审计 + REQ-2 占用复核）。\"\"\"\n\nfrom occupancy import Occupation\nfrom publish import can_publish\nfrom schedule import ADJUST_AUDIT, Train, adjust_departure_logged\n\n\ndef make_train() -> Train:\n    return Train(train_id=\"K1\", start=\"08:00\", legs={\"A->B\": 10, \"B->C\": 15})\n\n\ndef test_audit_log_records_adjustment() -> None:\n    before = len(ADJUST_AUDIT)\n    adjust_departure_logged(make_train(), \"09:00\")\n    assert len(ADJUST_AUDIT) == before + 1\n\n\ndef test_adjusted_train_still_checked_for_occupancy() -> None:\n    adjusted = adjust_departure_logged(make_train(), \"08:05\")\n    busy = [Occupation(\"K1\", 486, 494)]\n    ok, _ = can_publish(adjusted, busy)\n    assert not ok\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "tests/test_audit.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:66d63e4917e6f1baf9fd40a812a639a9e9cfe83969e2ebe2f9a8f056837d2dc5"
+        },
+        "checksum": "sha256:66d63e4917e6f1baf9fd40a812a639a9e9cfe83969e2ebe2f9a8f056837d2dc5",
+        "tags": [
+          "test"
+        ],
+        "based_on": [
+          "REQ-6",
+          "REQ-2"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "TST-da7154c71d35",
+        "project_id": "railway-20260926-204141",
+        "type": "test",
+        "module": "occupancy",
+        "title": "test_occupancy",
+        "content": "\"\"\"占用检查回归测试（REQ-2）。\"\"\"\n\nfrom occupancy import Occupation, conflicts, has_conflicts\n\n\ndef test_same_train_overlap_conflicts() -> None:\n    a = Occupation(\"K1\", 480, 500)\n    b = Occupation(\"K1\", 495, 520)\n    assert conflicts(a, b)\n\n\ndef test_different_trains_never_conflict() -> None:\n    a = Occupation(\"K1\", 480, 500)\n    b = Occupation(\"K2\", 495, 520)\n    assert not conflicts(a, b)\n\n\ndef test_adjacent_windows_do_not_conflict() -> None:\n    a = Occupation(\"K1\", 480, 500)\n    b = Occupation(\"K1\", 500, 520)\n    assert not has_conflicts([a, b])\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "tests/test_occupancy.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:acbafc56d34b77831bf339ab8453835be3523fbc5ed95a718a0c2421c1050940"
+        },
+        "checksum": "sha256:acbafc56d34b77831bf339ab8453835be3523fbc5ed95a718a0c2421c1050940",
+        "tags": [
+          "test"
+        ],
+        "based_on": [
+          "REQ-2"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "TST-d4cf3c71d337",
+        "project_id": "railway-20260926-204141",
+        "type": "test",
+        "module": "publish",
+        "title": "test_publish",
+        "content": "\"\"\"发布判断回归测试（REQ-3、RULE-3）。\"\"\"\n\nfrom occupancy import Occupation\nfrom publish import can_publish\nfrom schedule import Train\n\n\ndef make_train() -> Train:\n    return Train(train_id=\"K1\", start=\"08:00\", legs={\"A->B\": 10, \"B->C\": 15})\n\n\ndef test_publish_allowed_without_conflict() -> None:\n    ok, reason = can_publish(make_train(), [])\n    assert ok, reason\n\n\ndef test_publish_blocked_by_conflict() -> None:\n    busy = [Occupation(\"K1\", 485, 495)]\n    ok, reason = can_publish(make_train(), busy)\n    assert not ok\n    assert \"禁止发布\" in reason\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "tests/test_publish.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:9d01405b293794e902e198d0906ff1462fe6f1624048e42895cfc836831b8df3"
+        },
+        "checksum": "sha256:9d01405b293794e902e198d0906ff1462fe6f1624048e42895cfc836831b8df3",
+        "tags": [
+          "test"
+        ],
+        "based_on": [
+          "REQ-3",
+          "RULE-3"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "TST-e9c84656fadf",
+        "project_id": "railway-20260926-204141",
+        "type": "test",
+        "module": "schedule",
+        "title": "test_schedule",
+        "content": "\"\"\"时刻计算回归测试（REQ-1）。\"\"\"\n\nfrom schedule import Train, arrival_times, to_hhmm, to_minutes\n\n\ndef make_train() -> Train:\n    return Train(\n        train_id=\"K1\",\n        start=\"08:00\",\n        legs={\"A->B\": 10, \"B->C\": 15},\n    )\n\n\ndef test_stop_order() -> None:\n    assert make_train().stops() == [\"A\", \"B\", \"C\"]\n\n\ndef test_arrival_times_accumulate() -> None:\n    assert arrival_times(make_train()) == {\n        \"A\": \"08:00\",\n        \"B\": \"08:10\",\n        \"C\": \"08:25\",\n    }\n\n\ndef test_minute_helpers_roundtrip() -> None:\n    assert to_minutes(\"09:30\") == 570\n    assert to_hhmm(570) == \"09:30\"\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "tests/test_schedule.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:a1479502e81a6cb7ba7bd93f49a87196216c20735d083bfc5a42266f07ebaf4f"
+        },
+        "checksum": "sha256:a1479502e81a6cb7ba7bd93f49a87196216c20735d083bfc5a42266f07ebaf4f",
+        "tags": [
+          "test"
+        ],
+        "based_on": [
+          "REQ-1"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      }
+    ],
+    "last_test_run": {
+      "id": "tr-1790426509762-0c8461",
+      "project_id": "railway-20260926-204141",
+      "task_id": "railway-20260926-204141-audit",
+      "command": "\"E:\\2026ob_projects\\SDD\\.venv\\Scripts\\python.exe\" -m pytest -q",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "report_ref": null,
+      "commit_ref": "82c3b1a58403b2e22c9c5fafe1cc84b53cbea5d0"
+    },
+    "findings": [
+      {
+        "kind": "gap",
+        "severity": "warning",
+        "message": "Requirement '调度操作入口' has no design layer",
+        "refs": [
+          {
+            "artifact_id": "REQ-4",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-api.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:1a0e41a8a5323c329ad53d4a80d517aba05bde3c04a728c3b1affd886991ebba"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Add a design realizing this requirement.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "gap",
+        "severity": "warning",
+        "message": "Requirement '发布前预览接口' has no design layer",
+        "refs": [
+          {
+            "artifact_id": "REQ-5",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-dryrun.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:300606445a287ea6a807ba62a3e942a129f834d1fc03b9cf36ba477c90ede09e"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Add a design realizing this requirement.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "gap",
+        "severity": "warning",
+        "message": "Requirement '发布前预览接口' has no code layer",
+        "refs": [
+          {
+            "artifact_id": "REQ-5",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-dryrun.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:300606445a287ea6a807ba62a3e942a129f834d1fc03b9cf36ba477c90ede09e"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Add an implementation of this requirement.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "gap",
+        "severity": "warning",
+        "message": "Requirement '发布前预览接口' has no test layer",
+        "refs": [
+          {
+            "artifact_id": "REQ-5",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-dryrun.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:300606445a287ea6a807ba62a3e942a129f834d1fc03b9cf36ba477c90ede09e"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Add tests covering the implementation.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "gap",
+        "severity": "warning",
+        "message": "Requirement '车辆占用检查' has no design layer",
+        "refs": [
+          {
+            "artifact_id": "REQ-2",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-occupancy.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:979f1286035abff3293e7cd8ee9f1842daff108bde3d02bfe576392942193d0e"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Add a design realizing this requirement.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'时刻计算设计' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "DES-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "design/schedule-design.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:36c387f6d674d69c3e06509d450f515f47fd86f9adf8a52b49fa12868b481422"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'schedule' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "CODE-2335993c1bbc",
+            "version": "0.1.0",
+            "source": {
+              "uri": "src/schedule.py",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:6ff1fac53ebcbf934b15535623b9d3d5bbe8c4095c155ee7882dc7b1953b1d99"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'按站调整发车时间（升版：含审计）' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "REQ-6",
+            "version": "2.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule-v2.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:ae563037b3eb6057496db1292443411ecec66ea61bdb5108ab779d5773390115"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'test_schedule' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "TST-e9c84656fadf",
+            "version": "0.1.0",
+            "source": {
+              "uri": "tests/test_schedule.py",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:a1479502e81a6cb7ba7bd93f49a87196216c20735d083bfc5a42266f07ebaf4f"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'test_adjust' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "TST-885ea3f0b041",
+            "version": "0.1.0",
+            "source": {
+              "uri": "tests/test_adjust.py",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:b49b81ad66e0c445ba34f25f6206e9a45c4c61999de0734bcab0bb1a7f60ef17"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      }
+    ],
+    "citations": [
+      {
+        "artifact_id": "RULE-3",
+        "version": "1.0.0",
+        "source": {
+          "uri": "rules/publish-rule.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:e581831bd28f63c57908ee28fec772cd1f4bff978a313be84165fedadd17c304"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "RULE-1",
+        "version": "1.0.0",
+        "source": {
+          "uri": "rules/interval-rule.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:c996e9494a44b6511ff841294bc85892f79958c82803f422659f0bd7bd7155ea"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "REQ-2",
+        "version": "1.0.0",
+        "source": {
+          "uri": "specs/requirement-occupancy.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:979f1286035abff3293e7cd8ee9f1842daff108bde3d02bfe576392942193d0e"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "REQ-3",
+        "version": "1.0.0",
+        "source": {
+          "uri": "specs/requirement-publish.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:f1653b8230330c0d4b4049563e18e658a246f7a378fb53919fa3fe8c3b6594d7"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "REQ-6",
+        "version": "2.0.0",
+        "source": {
+          "uri": "specs/requirement-schedule-v2.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:ae563037b3eb6057496db1292443411ecec66ea61bdb5108ab779d5773390115"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "DES-2",
+        "version": "1.0.0",
+        "source": {
+          "uri": "design/publish-design.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:197d0df5e4334d60eca399e383664819f463d73285b184a3c28d50d91f3c87c5"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "DES-1",
+        "version": "1.0.0",
+        "source": {
+          "uri": "design/schedule-design.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:36c387f6d674d69c3e06509d450f515f47fd86f9adf8a52b49fa12868b481422"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "CODE-e662196c212e",
+        "version": "0.1.0",
+        "source": {
+          "uri": "src/api.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:f669436d893f78ff9eb8df0532077be926ddd004e801c379785ec247d714071c"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "CODE-4bfabc68a8f6",
+        "version": "0.1.0",
+        "source": {
+          "uri": "src/occupancy.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:240c30a7f07794f4da0e1c6dba57b14df43473af3192538fb769dfcf8ddbc5c6"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "CODE-12d4b7620710",
+        "version": "0.1.0",
+        "source": {
+          "uri": "src/publish.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:71aaba2afdc5c6c03c7fe4be60f23aa95669d0de038698b4d2e784af90bd47f3"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "CODE-2335993c1bbc",
+        "version": "0.1.0",
+        "source": {
+          "uri": "src/schedule.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:6ff1fac53ebcbf934b15535623b9d3d5bbe8c4095c155ee7882dc7b1953b1d99"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "TST-885ea3f0b041",
+        "version": "0.1.0",
+        "source": {
+          "uri": "tests/test_adjust.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:b49b81ad66e0c445ba34f25f6206e9a45c4c61999de0734bcab0bb1a7f60ef17"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "TST-bf4598def6a1",
+        "version": "0.1.0",
+        "source": {
+          "uri": "tests/test_audit.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:66d63e4917e6f1baf9fd40a812a639a9e9cfe83969e2ebe2f9a8f056837d2dc5"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "TST-da7154c71d35",
+        "version": "0.1.0",
+        "source": {
+          "uri": "tests/test_occupancy.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:acbafc56d34b77831bf339ab8453835be3523fbc5ed95a718a0c2421c1050940"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "TST-d4cf3c71d337",
+        "version": "0.1.0",
+        "source": {
+          "uri": "tests/test_publish.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:9d01405b293794e902e198d0906ff1462fe6f1624048e42895cfc836831b8df3"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "TST-e9c84656fadf",
+        "version": "0.1.0",
+        "source": {
+          "uri": "tests/test_schedule.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:a1479502e81a6cb7ba7bd93f49a87196216c20735d083bfc5a42266f07ebaf4f"
+        },
+        "updated_at": null
+      }
+    ],
+    "budget": {
+      "max_bytes": 8000,
+      "used_bytes": 6981,
+      "truncated": false
+    },
+    "generated_at": "2026-09-26T20:41:53.173657"
+  },
+  "excluded": [
+    {
+      "id": "REQ-1",
+      "reasons": [
+        "status is superseded",
+        "superseded by REQ-6"
+      ]
+    }
+  ]
+}
