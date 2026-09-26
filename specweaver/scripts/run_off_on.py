@@ -172,9 +172,13 @@ def mcp_config(workdir: Path, path: Path) -> None:
     path.write_text(json.dumps(config), encoding="utf-8")
 
 
-def run_agent(arm: str, workdir: Path, pid: str, outdir: Path,
-              cfg: Path, timeout: int, task: str,
-              arm_hint: str = "flow") -> dict:
+def _arm_invocation(arm: str, pid: str, cfg: Path, task: str,
+                    arm_hint: str) -> tuple[list[str], str]:
+    """Resolve the command and prompt an arm would run.
+
+    Shared by the real run and --dry-run so the preflight can never drift from
+    what actually executes.
+    """
     prompt = (
         (TASK_HARD if task == "hard" else TASK_CORE).format(pid=pid)
         + (HINTS[arm_hint] if arm == "on" else "")
@@ -186,6 +190,13 @@ def run_agent(arm: str, workdir: Path, pid: str, outdir: Path,
     ]
     if arm == "on":
         cmd += ["--mcp-config", str(cfg), "--strict-mcp-config"]
+    return cmd, prompt
+
+
+def run_agent(arm: str, workdir: Path, pid: str, outdir: Path,
+              cfg: Path, timeout: int, task: str,
+              arm_hint: str = "flow") -> dict:
+    cmd, prompt = _arm_invocation(arm, pid, cfg, task, arm_hint)
     started = time.time()
     try:
         proc = subprocess.run(
@@ -319,6 +330,47 @@ def write_report(root: Path, runs: list[dict], n: int,
     (root / "report.md").write_text("\n".join(lines), encoding="utf-8")
 
 
+def dry_run(args: argparse.Namespace) -> None:
+    """Preflight every arm: resolve the run, launch nothing.
+
+    The ON-arm coverage run needs approval to spend inference, so the parts
+    that can fail without spending anything are checked here instead - the
+    workspace copy, the generated mcp config, the prompt, and whether the agent
+    binary is even on PATH.
+    """
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    plan: list[dict] = []
+    for arm in [a.strip() for a in args.arms.split(",") if a.strip()]:
+        pid = f"offon-{arm}-0-{stamp}"
+        temp = Path(tempfile.mkdtemp(prefix=f"offon-dry-{arm}-"))
+        workdir = temp / "railway"
+        cfg = temp / "mcp.json"
+        try:
+            prepare(workdir)
+            mcp_config(workdir, cfg)
+            cmd, prompt = _arm_invocation(
+                arm, pid, cfg, args.task, args.hint
+            )
+            server = json.loads(
+                cfg.read_text(encoding="utf-8")
+            )["mcpServers"]["specweaver"]
+            plan.append({
+                "arm": arm,
+                "agent_binary": shutil.which("claude") or "(not on PATH)",
+                "workspace_copied": (workdir / "pyproject.toml").exists(),
+                "server_command": server["command"],
+                "server_workspace_root": server["env"]["WORKSPACE__ROOT"],
+                "env_keys_set": sorted(server["env"]),
+                "cmd": cmd,
+                "prompt_chars": len(prompt),
+                "prompt_tail": prompt[-220:],
+            })
+        finally:
+            shutil.rmtree(temp, ignore_errors=True)
+    print(json.dumps(plan, ensure_ascii=False, indent=2))
+    print("dry-run only: no agent launched, no inference spent")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--n", type=int, default=3)
@@ -335,7 +387,17 @@ def main() -> None:
         "the published A/B runs); full = require the whole 11-tool "
         "lifecycle, for the coverage demonstration",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="resolve everything an arm would run - workspace copy, mcp "
+        "config, prompt, agent binary - then stop: no agent is launched and "
+        "no inference is spent",
+    )
     args = parser.parse_args()
+    if args.dry_run:
+        dry_run(args)
+        return
     stamp = time.strftime("%Y%m%d-%H%M%S")
     root = Path(args.out) / stamp
     root.mkdir(parents=True, exist_ok=True)
