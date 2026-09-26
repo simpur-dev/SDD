@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import sys
 
 from fastmcp import Client
 
@@ -42,19 +44,39 @@ async def main() -> None:
                     "project_id": "mcp-verify",
                     "task_id": "mcp-verify-task",
                     "base_ref": "HEAD~1",
-                    "test_command": "python -m pytest -q",
+                    "test_command": f'"{sys.executable}" -m pytest -q',
                 },
             )
             print("sw_complete_task ->", done.content[0].text[:300])
+
+            hand = await client.call_tool(
+                "sw_handoff",
+                {
+                    "project_id": "mcp-verify",
+                    "objective": "doctor 命令 装配 检查",
+                    "state": ["MCP 全链路验证已执行"],
+                    "next_steps": ["新会话接续并三方核对"],
+                    "omissions": ["批 4/5 演示尚未执行"],
+                },
+            )
+            rev = json.loads(hand.content[0].text)["handoff_rev"]
+            print("sw_handoff ->", rev)
 
             resumed = await client.call_tool(
                 "sw_resume_task",
                 {
                     "project_id": "mcp-verify",
                     "objective": "doctor 命令 装配 检查",
+                    "handoff_rev": rev,
                 },
             )
-            print("sw_resume_task ->", resumed.content[0].text[:400])
+            resume_payload = json.loads(resumed.content[0].text)
+            print(
+                "sw_resume_task ->",
+                f"handoff_resumed={resume_payload['handoff_resumed']} "
+                f"next_steps={resume_payload['next_steps']} "
+                f"mismatches={len(resume_payload['mismatches'])}",
+            )
 
             ctx2 = await client.call_tool(
                 "sw_get_context",

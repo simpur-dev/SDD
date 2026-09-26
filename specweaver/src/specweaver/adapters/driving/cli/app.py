@@ -10,11 +10,13 @@ from rich.console import Console
 from .... import __version__
 from ....application.engines.assembly import render_json
 from ....application.usecases.complete_task import CompleteTaskRequest
+from ....application.usecases.create_handoff import CreateHandoffRequest
 from ....application.usecases.get_context import GetContextRequest
 from ....application.usecases.ingest_project import IngestProjectRequest
 from ....application.usecases.resume_task import ResumeTaskRequest
 from ....shared import di
 from ....shared.config import Settings
+from ....shared.errors import SWError
 
 app = typer.Typer(help="SpecWeaver (规格织网) SDD engineering context tool")
 console = Console()
@@ -22,6 +24,15 @@ console = Console()
 _JSON = typer.Option(False, "--json", help="Machine-readable JSON output.")
 _USAGE = typer.Option(
     "", "--usage-out", help="Write telemetry span records (CSV) to this path."
+)
+_STATE = typer.Option(
+    [], "--state", help="Completed-state claim (repeatable)."
+)
+_NEXT_STEP = typer.Option(
+    [], "--next-step", help="Planned next work (repeatable)."
+)
+_OMISSION = typer.Option(
+    [], "--omission", help="Unverified item (repeatable)."
 )
 
 
@@ -32,7 +43,13 @@ def _execute(
 
     async def _main() -> Any:
         async with di.run(Settings()) as sw:
-            result = await op(sw)
+            try:
+                result = await op(sw)
+            except SWError as exc:
+                if usage_out:
+                    sw.telemetry.to_csv(usage_out)
+                console.print(f"[red]ERROR[/red] [{exc.code}] {exc.message}")
+                raise typer.Exit(2) from exc
             if usage_out:
                 sw.telemetry.to_csv(usage_out)
             return result
@@ -190,6 +207,43 @@ def finish(
             f"change_set={report.change_set_id} test_run={report.test_run_id}"
         )
     raise typer.Exit(0 if report.success else 1)
+
+
+@app.command()
+def handoff(
+    project_id: str,
+    objective: str = typer.Option("", help="Task objective to hand over."),
+    state: list[str] = _STATE,
+    next_step: list[str] = _NEXT_STEP,
+    omission: list[str] = _OMISSION,
+    scope_id: str = typer.Option("", help="PowerContext scope id."),
+    as_json: bool = _JSON,
+    usage_out: str = _USAGE,
+) -> None:
+    """Commit a handoff snapshot; print the rev for `resume --handoff-rev`."""
+
+    async def _op(sw: di.SpecWeaverApp) -> Any:
+        sid = await sw.ensure_scope(project_id, scope_id)
+        return await sw.usecases["create_handoff"](
+            CreateHandoffRequest(
+                project_id=project_id,
+                scope_id=sid,
+                objective=objective,
+                state=list(state),
+                next_steps=list(next_step),
+                omissions=list(omission),
+            )
+        )
+
+    report = _execute(_op, usage_out)
+    if as_json:
+        console.print_json(data=report.model_dump(mode="json"))
+    else:
+        console.print(
+            f"handoff committed: rev={report.handoff_rev} "
+            f"scope={report.scope_id} next_steps={len(report.next_steps)} "
+            f"unverified={len(report.unverified)}"
+        )
 
 
 @app.command()

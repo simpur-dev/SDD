@@ -6,6 +6,7 @@ from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from ....application.usecases.complete_task import CompleteTaskRequest
+from ....application.usecases.create_handoff import CreateHandoffRequest
 from ....application.usecases.get_context import GetContextRequest
 from ....application.usecases.ingest_project import IngestProjectRequest
 from ....application.usecases.resume_task import ResumeTaskRequest
@@ -111,6 +112,36 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
                 scope_id=scope_id,
                 test_command=test_command,
                 register_outcome=register_outcome,
+            ),
+        )
+        return _payload(report)
+
+    @mcp.tool
+    async def sw_handoff(
+        project_id: str,
+        objective: str = "",
+        state: list[str] | None = None,
+        next_steps: list[str] | None = None,
+        omissions: list[str] | None = None,
+        scope_id: str = "",
+    ) -> dict:
+        """Commit a handoff snapshot of the current task state.
+
+        ``state`` needs at least one completed claim (PowerContext
+        contract); ``next_steps`` the planned work, ``omissions`` what
+        remains unverified; the returned ``handoff_rev`` feeds
+        ``sw_resume_task`` after an interruption.
+        """
+        scope_id = await app.ensure_scope(project_id, scope_id)
+        report = await _invoke(
+            "create_handoff",
+            CreateHandoffRequest(
+                project_id=project_id,
+                scope_id=scope_id,
+                objective=objective,
+                state=state or [],
+                next_steps=next_steps or [],
+                omissions=omissions or [],
             ),
         )
         return _payload(report)
