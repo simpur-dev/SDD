@@ -104,6 +104,7 @@ class _RecordingAssembly(AssemblyEngine):
         findings,
         last_test_run=None,
         relevance=None,
+        memory_notes=None,
     ):
         self.seen_relevance = relevance
         return await super().run(
@@ -112,6 +113,7 @@ class _RecordingAssembly(AssemblyEngine):
             findings,
             last_test_run=last_test_run,
             relevance=relevance,
+            memory_notes=memory_notes,
         )
 
 
