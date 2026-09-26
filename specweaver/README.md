@@ -56,7 +56,7 @@ specweaver resume  <project_id> [--objective ...] [--handoff-rev ...] [--use-han
 specweaver version
 ```
 
-公共选项 `--json`（机器可读）、`--usage-out <path>`（导出跨度 CSV，含引擎级 `metrics` JSON 列）。退出码：0 正常 / 1 `finish` 测试未过或 `doctor` 自检不通过 / 2 用例或后端错误 / 3 `--usage-out` 写入失败。
+公共选项：`--json`（机器可读）适用于除 `version` 外的全部 6 个命令；`--usage-out <path>`（导出跨度 CSV，含引擎级 `metrics` JSON 列）适用于真正会跑用例的 `ingest`/`context`/`finish`/`handoff`/`resume`。退出码：0 正常 / 1 `finish` 测试未过或 `doctor` 自检不通过 / 2 用例或后端错误 / 3 `--usage-out` 写入失败。
 
 ## 测试与门禁
 

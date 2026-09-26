@@ -68,7 +68,7 @@ def _execute(
 
 
 @app.command()
-def doctor() -> None:
+def doctor(as_json: bool = _JSON) -> None:
     """Check the full assembly: seekdb, PowerContext and inference mode."""
     settings = Settings()
 
@@ -77,16 +77,26 @@ def doctor() -> None:
             return await sw.doctor()
 
     report = asyncio.run(_run())
-    all_ok = True
-    for name in ("seekdb", "powercontext"):
-        info = report.get(name, {})
+    checks = {
+        name: report.get(name, {}) for name in ("seekdb", "powercontext")
+    }
+    all_ok = all(bool(info.get("ok")) for info in checks.values())
+    warning = report.get("bootstrap_errors", {}).get("inference")
+    provider = report.get("inference", {}).get("provider")
+    if as_json:
+        console.print_json(data={
+            "ok": all_ok,
+            **checks,
+            "inference_provider": provider,
+            "inference_warning": warning,
+        })
+        raise typer.Exit(0 if all_ok else 1)
+    for name, info in checks.items():
         if info.get("ok"):
             console.print(f"[green]OK  [/green] {name}: {info}")
         else:
             all_ok = False
             console.print(f"[red]FAIL[/red] {name}: {info}")
-    warning = report.get("bootstrap_errors", {}).get("inference")
-    provider = report.get("inference", {}).get("provider")
     if provider == "none" or warning:
         suffix = f" ({warning})" if warning else ""
         console.print(
