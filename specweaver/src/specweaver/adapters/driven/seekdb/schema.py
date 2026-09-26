@@ -66,8 +66,13 @@ def record_to_artifact(
 ) -> Artifact:
     m = metadata or {}
     source_uri = m.get("source_uri", "")
+    source_checksum = m.get("checksum") or None
     source = (
-        SourceRef(uri=source_uri, locator=m.get("source_locator") or None)
+        SourceRef(
+            uri=source_uri,
+            locator=m.get("source_locator") or None,
+            checksum=source_checksum,
+        )
         if source_uri
         else None
     )
