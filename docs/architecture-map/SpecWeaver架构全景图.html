@@ -132,12 +132,12 @@
       <span class="sub">参数校验 · 鉴权 · 序列化</span>
     </div>
     <div class="grid g2">
-      <div class="cell"><h3>MCP Server</h3><p>stdio（本地拉起）/ streamable-http（共享服务）；10 个工具</p></div>
-      <div class="cell"><h3>CLI</h3><p>init · ingest · task · context · finish · handoff · resume · doctor</p></div>
+      <div class="cell"><h3>MCP Server</h3><p>stdio（本地拉起）/ streamable-http（共享服务，同端口 <code>GET /metrics</code>）；11 个工具（ping · doctor · ingest_project · get_context · complete_task · handoff · resume_task · record_decision · report_progress · verify · explain_source）</p></div>
+      <div class="cell"><h3>CLI</h3><p>doctor · ingest · context · finish · handoff · resume · version</p></div>
     </div>
   </div>
 
-  <div class="flow-arrow">▼ <span class="lbl">任务编排器 Orchestrator 串联生命周期并留痕</span></div>
+  <div class="flow-arrow">▼ <span class="lbl">生命周期由外部开发 Agent 串联（不自建无人值守编排器，见《03》6.2）</span></div>
 
   <!-- ===== Layer 3：自研核心引擎 ===== -->
   <div class="layer" style="border-color:#bfe6e1">

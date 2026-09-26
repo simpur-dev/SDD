@@ -6,7 +6,7 @@
 
 - 工程资料库与混合检索：**OceanBase seekdb**（关键词 + 语义 + 版本/状态/模块收窄，RRF 融合）
 - 工作记忆与任务交接：**PowerContext**（Memory remember/revise/retire、Handoff 提交与接续）
-- 对 Agent 的接口：**MCP**（stdio / streamable-http，11 个工具）与 **CLI**（6 个命令）
+- 对 Agent 的接口：**MCP**（stdio / streamable-http，11 个工具）与 **CLI**（7 个命令：doctor · ingest · context · finish · handoff · resume · version）
 - 推理后端不绑定品牌：`none | minimax | deepseek | qianwen`（OpenAI 兼容 chat + 各家 embeddings 差异由适配器吸收）
 
 ## 架构（冻结）
@@ -50,10 +50,10 @@ MCP 配置样例（把 `python.exe` 与 `WORKSPACE__ROOT` 换成你机器上的�
 docs/                         01 架构说明书 · 02 调研纪要 · 03 工程骨架设计 · architecture-map/
 specweaver/src/specweaver/    工具源码（domain/application/adapters/shared）
 specweaver/tests/             unit（含 boundary 审计组）· contract · integration（真后端）· fakes
-specweaver/scripts/           gate.py · run_demo.py · run_off_on.py · verify_mcp.py · probe_metrics_http.py
+specweaver/scripts/           gate.py · run_demo.py · run_off_on.py · verify_mcp.py · probe_metrics_http.py · eval_retrieval.py · scaling_probe.py
 specweaver/deploy/            docker-compose + WSL 脚本 + mcp.*.json 样例
-demo/railway/                 铁路调度教学项目（演示标的）
-evidence/                     railway-* 全链路证据 · off-on-* 效率对照 · m5-* 接口与指标实测
+demo/railway/                 铁路调度教学项目（演示标的）+ gold/ 检索金标标注
+evidence/                     railway-* 全链路 · retrieval-* 金标质量 · scaling-* 规模扫描 · off-on-* 效率对照 · m5-* / http-transport-* 接口与指标实测
 research/                     调研克隆（spec-kit / powercontext，不随交付）
 ```
 
@@ -61,14 +61,14 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 
 | 维度 | 现状数字 | 出处 |
 |---|---|---|
-| 自动化测试 | 207 项（unit/contract；容器在位时含真后端集成，`--live` 下有 skip 即判失败） | `scripts/gate.py` |
-| 检索质量金标（6 任务，人工标注，三方对照） | recall：SpecWeaver **1.0** / 朴素关键词 0.847 / 官方 `/v1/context/prepare` 0.208（记忆侧装配，工程构件本不在其中）；precision 仅 0.204；**紧预算 1500B：0.26-0.32 vs 基线 0.50-0.67，此时我们落后**（两次运行均记录，"仅引用"紧凑渲染已试并因无增益回退） | `evidence/retrieval-railway-{8000,1500}/` |
-| 受控规模扫描（2 语料 × 3 上限 × 8 重复） | `n_results=5` 时 18 与 354 构件语料均 40 次后端调用（与规模无关）；`40` 时 65 vs 178（增量来自核对循环与图扩展）；p95 5.47-6.74s 由单次 LLM 规划主导 | `evidence/scaling-sweep-20260927/sweep.md` |
-| 真实后端接口 | 11 个 MCP 工具逐个跑通（含 revise/retire/guard 探针与 `ToolAnnotations` 声明） | `evidence/m5-20260927-005855/` |
-| 全链路演示（M6 重跑） | 11/11 → 13/13 真实回归；`usage.csv` 含引擎级 `metrics` 列；Bundle ④段回读 PowerContext 工作记忆 | `evidence/railway-20260927-023632/` |
+| 自动化测试 | 208 项（unit 含 boundary 审计组 + contract；容器在位时另跑 integration 真后端套件，`--live` 下有 skip 即判失败） | `scripts/gate.py` |
+| 检索质量金标（6 任务，人工标注，三方对照） | recall：SpecWeaver **1.0** / 朴素关键词 0.847 / 官方 `/v1/context/prepare` 0.208（记忆侧装配，工程构件本不在其中）；precision 仅 0.204；**紧预算 1500B：我们 0.319 / 0.264 vs 关键词基线两跑均 0.500，此时我们落后**（第二次运行的原始数据在 git 历史 `a8c22e4`；"仅引用"紧凑渲染已试并因无增益回退） | `evidence/retrieval-railway-{8000,1500}/` |
 | 受控规模扫描（2 语料 × 3 召回上限 × 8 重复） | `n_results=5` 时 18 与 354 构件语料均 40 次后端调用（与规模无关）；`40` 时 65 vs 178（增量来自核对循环与图扩展）；p95 5.47-6.74s 由单次 LLM 规划主导 | `evidence/scaling-sweep-20260927/sweep.md` |
+| 真实后端接口（进程内） | 11 个 MCP 工具逐个跑通（含 revise/retire/guard 探针与 `ToolAnnotations` 声明） | `evidence/m5-20260927-005855/` |
+| 真实后端接口（streamable-http 传输） | 11 工具经真实 HTTP 传输全跑一遍：9/9 用例 span 全部出现、0 error、`sw_span_duration_ms` 直方图在位（span 缺失即判失败，用于区分"请求被应答"与"打到应用层"） | `evidence/http-transport-20260927-033036/probe.txt` |
+| 全链路演示（M6 重跑） | 11/11 → 13/13 真实回归；`usage.csv` 含引擎级 `metrics` 列；Bundle ④段回读 PowerContext 工作记忆（该部署记忆侧只有 fts 词面召回，命中 0 属正常，见《02》§7.6） | `evidence/railway-20260927-023632/` |
 | 效率对照（hard 档，N=3） | 成功率 3/3 vs 3/3；ON 中位耗时 46.1s vs OFF 82.3s，输出 tokens 中位 8185 vs 14500；**均值 -26%/-28%，但 ON 最差一次劣于全部 OFF** | `evidence/off-on/20260926-235601/` |
-| 上下文组装用量 | 真实 planner 调用 177/103 tokens、53 次后端往返、bundle 7864 bytes（8000 预算内） | `evidence/m5-20260927-005855/metrics-probe.txt` |
+| 上下文组装用量（同一次 HTTP 探针内） | `get_context` 3 次真实 planner 调用：prompt/completion 336/292 tokens、召回 57 条（有效 9、排除 48）、装配 7322 bytes；整条 11 工具链共 381 次后端往返 | `evidence/http-transport-20260927-033036/probe.txt` |
 
 已知局限（检索质量缺金标指标、大仓库全量核对成本、演示基线只有"无工具"一臂、`/metrics` 无鉴权等）诚实记录在《01》§11 与各 `evidence/*/report.md` 内。
 

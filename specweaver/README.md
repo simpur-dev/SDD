@@ -12,7 +12,7 @@
 
 ```powershell
 # 在仓库根 E:\2026ob_projects\SDD 执行
-..\.\.venv\Scripts\python -m pip install -e ".\specweaver[seekdb,powercontext,mcp,cli,server,dev]"
+.\.venv\Scripts\python -m pip install -e ".\specweaver[seekdb,powercontext,mcp,cli,server,dev]"
 ```
 
 | extra | 内容 | 何时需要 |
@@ -56,7 +56,7 @@ specweaver resume  <project_id> [--objective ...] [--handoff-rev ...] [--use-han
 specweaver version
 ```
 
-公共选项 `--json`（机器可读）、`--usage-out <path>`（导出跨度 CSV，含引擎级 `metrics` JSON 列）。退出码：0 正常 / 1 测试未过（`finish`）/ 2 用例或后端错误 / 3 `--usage-out` 写入失败。
+公共选项 `--json`（机器可读）、`--usage-out <path>`（导出跨度 CSV，含引擎级 `metrics` JSON 列）。退出码：0 正常 / 1 `finish` 测试未过或 `doctor` 自检不通过 / 2 用例或后端错误 / 3 `--usage-out` 写入失败。
 
 ## 测试与门禁
 
