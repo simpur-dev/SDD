@@ -6,13 +6,31 @@ from .complete_task import (
     CompleteTaskReport,
     CompleteTaskRequest,
 )
+from .consistency import StateMismatch
+from .create_handoff import CreateHandoff, CreateHandoffRequest
+from .explain_source import (
+    ExplainSource,
+    ExplainSourceReport,
+    ExplainSourceRequest,
+    SourceNode,
+)
 from .get_context import ContextResult, GetContext
 from .ingest_project import IngestProject, IngestProjectRequest
-from .resume_task import (
-    ResumeReport,
-    ResumeTask,
-    ResumeTaskRequest,
-    StateMismatch,
+from .record_decision import (
+    RecordDecision,
+    RecordDecisionReport,
+    RecordDecisionRequest,
+)
+from .report_progress import (
+    ReportProgress,
+    ReportProgressReport,
+    ReportProgressRequest,
+)
+from .resume_task import ResumeReport, ResumeTask, ResumeTaskRequest
+from .verify_state import (
+    VerifyState,
+    VerifyStateReport,
+    VerifyStateRequest,
 )
 
 __all__ = [
@@ -23,8 +41,23 @@ __all__ = [
     "CompleteTask",
     "CompleteTaskRequest",
     "CompleteTaskReport",
+    "CreateHandoff",
+    "CreateHandoffRequest",
     "ResumeTask",
     "ResumeTaskRequest",
     "ResumeReport",
     "StateMismatch",
+    "RecordDecision",
+    "RecordDecisionRequest",
+    "RecordDecisionReport",
+    "ReportProgress",
+    "ReportProgressRequest",
+    "ReportProgressReport",
+    "VerifyState",
+    "VerifyStateRequest",
+    "VerifyStateReport",
+    "ExplainSource",
+    "ExplainSourceRequest",
+    "ExplainSourceReport",
+    "SourceNode",
 ]

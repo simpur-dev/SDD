@@ -46,9 +46,13 @@ from ..application.engines.validity import (
 )
 from ..application.usecases.complete_task import CompleteTask
 from ..application.usecases.create_handoff import CreateHandoff
+from ..application.usecases.explain_source import ExplainSource
 from ..application.usecases.get_context import GetContext
 from ..application.usecases.ingest_project import IngestProject
+from ..application.usecases.record_decision import RecordDecision
+from ..application.usecases.report_progress import ReportProgress
 from ..application.usecases.resume_task import ResumeTask
+from ..application.usecases.verify_state import VerifyState
 from ..domain.ports.activity import ActivityLogPort
 from ..domain.ports.catalog import CatalogPort, HybridSearchPort
 from ..domain.ports.handoff import HandoffPort
@@ -211,6 +215,7 @@ async def run(settings: Settings | None = None):
         workspace,
         activity,
     )
+    create_handoff_usecase = CreateHandoff(handoff, telemetry)
     usecases = {
         "ingest_project": IngestProject(
             ingestion_engine, catalog, workspace, telemetry, memory
@@ -232,7 +237,15 @@ async def run(settings: Settings | None = None):
             get_context_usecase,
             telemetry,
         ),
-        "create_handoff": CreateHandoff(handoff, telemetry),
+        "create_handoff": create_handoff_usecase,
+        "record_decision": RecordDecision(telemetry, memory),
+        "report_progress": ReportProgress(
+            telemetry, memory, create_handoff_usecase
+        ),
+        "verify_state": VerifyState(
+            catalog, workspace, telemetry, activity, memory, test_runner
+        ),
+        "explain_source": ExplainSource(catalog, telemetry),
     }
 
     app = SpecWeaverApp(

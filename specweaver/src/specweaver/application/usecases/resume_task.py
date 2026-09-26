@@ -2,19 +2,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from ...domain.ports.catalog import ArtifactFilter, CatalogPort
+from ...domain.ports.catalog import CatalogPort
 from ...domain.ports.handoff import HandoffPort
 from ...domain.ports.workspace import WorkspacePort
 from ...shared.errors import SWError
 from ..engines.validity.lifecycle import LifecycleValidator
 from .base import UseCase
+from .consistency import StateMismatch, workspace_mismatches
 from .get_context import ContextResult, GetContext, GetContextRequest
-
-
-class StateMismatch(BaseModel):
-    artifact_id: str
-    source_uri: str
-    issue: str
 
 
 class ResumeTaskRequest(BaseModel):
@@ -87,26 +82,12 @@ class ResumeTask(UseCase):
 
             mismatches: list[StateMismatch] = []
             if self._catalog is not None:
-                artifacts = await self._catalog.list_artifacts(
-                    ArtifactFilter(project_id=request.project_id)
+                mismatches = await workspace_mismatches(
+                    self._catalog,
+                    self._workspace,
+                    request.project_id,
+                    self._lifecycle,
                 )
-                for artifact in artifacts:
-                    issue = await self._lifecycle.verify_engineering(
-                        artifact, self._workspace
-                    )
-                    if issue is not None:
-                        uri = (
-                            artifact.source.uri
-                            if artifact.source is not None
-                            else ""
-                        )
-                        mismatches.append(
-                            StateMismatch(
-                                artifact_id=artifact.id,
-                                source_uri=uri,
-                                issue=issue,
-                            )
-                        )
 
             objective = objective or "resume current work"
             current_ref = await self._workspace.current_ref()
