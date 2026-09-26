@@ -1,11 +1,14 @@
 """inference adapters (LLM + embeddings)."""
 
-from .minimax import MiniMaxEmbedding, MiniMaxLLM
+from .minimax import MiniMaxEmbedding
 from .null import DeterministicEmbedding, NullLLM
+from .openai_chat import OpenAIChatLLM
+from .openai_embeddings import OpenAIEmbedding
 
 __all__ = [
     "MiniMaxEmbedding",
-    "MiniMaxLLM",
+    "OpenAIChatLLM",
+    "OpenAIEmbedding",
     "DeterministicEmbedding",
     "NullLLM",
 ]

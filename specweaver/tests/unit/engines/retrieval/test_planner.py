@@ -64,7 +64,9 @@ async def test_planner_uses_llm_json() -> None:
 
 async def test_planner_falls_back_when_llm_raises() -> None:
     plan = await QueryPlanner(RaisingLLM()).plan("调整发车时间")
-    assert plan.rationale == "rule-based planning"
+    # degrade loudly: the failure reason must be visible in the rationale
+    assert plan.rationale.startswith("rule-based planning (llm unavailable:")
+    assert "model unavailable" in plan.rationale
     assert plan.keywords  # rule keywords are still produced
 
 
@@ -92,7 +94,7 @@ async def test_planner_counts_failed_llm_fallback_nothing() -> None:
     planner = QueryPlanner(RaisingLLM(), tel)
     with tel.span("get_context") as rec:
         plan = await planner.plan("调整发车时间")
-    assert plan.rationale == "rule-based planning"
+    assert plan.rationale.startswith("rule-based planning (llm unavailable:")
     assert rec.llm_calls == 0
 
 
@@ -104,3 +106,31 @@ async def test_planner_without_span_does_not_crash() -> None:
     )
     await planner.plan("任意任务")
     assert tel.records == []
+
+
+async def test_planner_whitelists_modules_against_known_list() -> None:
+    llm = ScriptedLLM(
+        [
+            '{"objective":"按站调整发车",'
+            '"keywords":["发车"],'
+            '"modules":["schedule","不存在的模块"],'
+            '"types":[]}'
+        ]
+    )
+    plan = await QueryPlanner(llm).plan(
+        "任意任务", known_modules=["schedule", "publish"]
+    )
+    assert plan.modules == ["schedule"]
+    assert "Known project modules" in llm.calls[0]
+    assert "schedule, publish" in llm.calls[0]
+
+
+async def test_planner_keeps_modules_when_no_known_list() -> None:
+    llm = ScriptedLLM(
+        [
+            '{"objective":"o","keywords":[],'
+            '"modules":["guessed"],"types":[]}'
+        ]
+    )
+    plan = await QueryPlanner(llm).plan("任务")
+    assert plan.modules == ["guessed"]

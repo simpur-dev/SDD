@@ -1,3 +1,4 @@
+"""Standard OpenAI-compatible /embeddings adapter (Qianwen gateway etc.)."""
 from __future__ import annotations
 
 import httpx
@@ -7,27 +8,22 @@ from ....shared.errors import BackendConnectionError, SWError
 from .openai_chat import require_key
 
 
-class MiniMaxEmbedding:
-    """MiniMax embo-01 embeddings (non-standard texts/vectors schema)."""
-
-    dim = 1536
+class OpenAIEmbedding:
+    """POST {base_url}/embeddings with {model, input} -> data[].embedding."""
 
     def __init__(
         self, settings: InferenceSettings, transport=None
     ) -> None:
         self._settings = settings
         self._transport = transport
+        self.dim = settings.dim
 
     async def embed(
         self, texts: list[str], kind: str = "db"
     ) -> list[list[float]]:
         settings = self._settings
         url = f"{settings.base_url.rstrip('/')}/embeddings"
-        body = {
-            "model": settings.embed_model,
-            "texts": texts,
-            "type": kind,
-        }
+        body = {"model": settings.embed_model, "input": texts}
         try:
             async with httpx.AsyncClient(
                 timeout=60.0, transport=self._transport
@@ -55,9 +51,16 @@ class MiniMaxEmbedding:
                 "embedding endpoint returned a non-JSON body: "
                 f"{resp.text[:200]}"
             ) from exc
-        vectors = data.get("vectors")
-        if not isinstance(vectors, list):
+        items = data.get("data")
+        if not isinstance(items, list) or not items:
             raise SWError(
-                "embedding endpoint response is missing 'vectors'"
+                "embedding endpoint response is missing 'data' entries"
+            )
+        vectors = [item["embedding"] for item in items]
+        if any(len(v) != self.dim for v in vectors):
+            raise SWError(
+                "embedding dimension mismatch: configured "
+                f"INFERENCE__DIM={self.dim}, provider returned "
+                f"{sorted({len(v) for v in vectors})}"
             )
         return vectors

@@ -21,6 +21,16 @@ PLANNER_INSTRUCTION = (
 )
 
 
+def planner_prompt(task: str, known_modules: list[str] | None) -> str:
+    prompt = f"{PLANNER_INSTRUCTION}\n\nTask: {task}"
+    if known_modules:
+        prompt += (
+            "\n\nKnown project modules (ONLY choose module names from this "
+            f"list, or leave modules empty): {', '.join(known_modules)}"
+        )
+    return prompt
+
+
 class RetrievalPlan(BaseModel):
     objective: str
     keywords: list[str] = []
@@ -68,12 +78,15 @@ class QueryPlanner:
         self._llm = llm
         self._telemetry = telemetry
 
-    async def plan(self, task: str) -> RetrievalPlan:
+    async def plan(
+        self, task: str, known_modules: list[str] | None = None
+    ) -> RetrievalPlan:
         structured: object = None
+        llm_error = ""
         if self._llm is not None:
             try:
                 result = await self._llm.complete(
-                    f"{PLANNER_INSTRUCTION}\n\nTask: {task}",
+                    planner_prompt(task, known_modules),
                     schema={"type": "object"},
                 )
                 structured = result.structured
@@ -82,14 +95,27 @@ class QueryPlanner:
                         result.usage.prompt_tokens,
                         result.usage.completion_tokens,
                     )
-            except Exception:  # noqa: BLE001 - network/model failure -> fallback
+            except Exception as exc:  # noqa: BLE001 - network/model failure -> fallback
                 structured = None
+                # degrade loudly: the reason must be visible downstream
+                llm_error = str(exc)[:120]
         if isinstance(structured, dict):
+            modules = _coerce_str_list(structured.get("modules"))
+            if known_modules:
+                # hallucinated module names would filter the catalog to
+                # empty; keep only modules that actually exist
+                allowed = set(known_modules)
+                modules = [m for m in modules if m in allowed]
             return RetrievalPlan(
                 objective=str(structured.get("objective") or task),
                 keywords=_coerce_str_list(structured.get("keywords")),
-                modules=_coerce_str_list(structured.get("modules")),
+                modules=modules,
                 types=_coerce_types(structured.get("types")),
                 rationale="llm planning",
             )
-        return RetrievalPlan(objective=task, keywords=rule_keywords(task))
+        rationale = "rule-based planning"
+        if llm_error:
+            rationale = f"rule-based planning (llm unavailable: {llm_error})"
+        return RetrievalPlan(
+            objective=task, keywords=rule_keywords(task), rationale=rationale
+        )

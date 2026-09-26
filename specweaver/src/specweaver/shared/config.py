@@ -19,7 +19,7 @@ class PowerContextSettings(BaseModel):
 
 
 class InferenceSettings(BaseModel):
-    provider: str = "none"  # none | minimax
+    provider: str = "none"  # none | minimax | deepseek | qianwen
     api_key: SecretStr | None = None
     base_url: str = "https://api.minimax.chat/v1"
     model: str = "MiniMax-Text-01"
@@ -48,6 +48,8 @@ class ContextSettings(BaseModel):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_nested_delimiter="__",
+        env_file=".env",
+        env_file_encoding="utf-8",
         extra="ignore",
     )
 

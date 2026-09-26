@@ -9,8 +9,9 @@ from fastmcp import FastMCP
 from ..adapters.driven.inference import (
     DeterministicEmbedding,
     MiniMaxEmbedding,
-    MiniMaxLLM,
     NullLLM,
+    OpenAIChatLLM,
+    OpenAIEmbedding,
 )
 from ..adapters.driven.powercontext import (
     PowerContextClient,
@@ -105,26 +106,57 @@ class SpecWeaverApp:
         await self.pc_client.close()
 
 
+@dataclass
+class InferenceStack:
+    llm: LLMGatewayPort
+    embedding: EmbeddingGatewayPort
+    warning: str | None = None
+
+
+def build_inference(settings: Settings) -> InferenceStack:
+    """Pick the LLM/embedding adapters for the configured provider.
+
+    Chat is OpenAI-compatible across providers; embeddings differ:
+    minimax uses its texts/vectors schema, qianwen the standard one, and
+    deepseek has no embeddings endpoint (measured 404, docs/02 §7.3) so it
+    keeps deterministic vectors.
+    """
+    inference = settings.inference
+    provider = inference.provider
+    chat_providers = ("minimax", "deepseek", "qianwen")
+    if provider not in chat_providers:
+        return InferenceStack(
+            NullLLM(), DeterministicEmbedding(inference.dim)
+        )
+    if not inference.api_key:
+        return InferenceStack(
+            NullLLM(),
+            DeterministicEmbedding(inference.dim),
+            warning=(
+                f"provider={provider} but no api_key; falling back to "
+                "rule mode"
+            ),
+        )
+    if provider == "minimax":
+        embedding = MiniMaxEmbedding(inference)
+    elif provider == "qianwen":
+        embedding = OpenAIEmbedding(inference)
+    else:
+        embedding = DeterministicEmbedding(inference.dim)
+    return InferenceStack(OpenAIChatLLM(inference), embedding)
+
+
 @asynccontextmanager
 async def run(settings: Settings | None = None):
     resolved = settings or Settings()
     telemetry = Telemetry()
     bootstrap_errors: dict = {}
 
-    # inference (real MiniMax or local fallback)
-    inference_warning = None
-    if resolved.inference.provider == "minimax" and not resolved.inference.api_key:
-        inference_warning = (
-            "provider=minimax but no api_key; falling back to rule mode"
-        )
-    if resolved.inference.provider == "minimax" and resolved.inference.api_key:
-        llm = MiniMaxLLM(resolved.inference)
-        embedding = MiniMaxEmbedding(resolved.inference)
-    else:
-        llm = NullLLM()
-        embedding = DeterministicEmbedding(resolved.inference.dim)
-    if inference_warning:
-        bootstrap_errors["inference"] = inference_warning
+    # inference (provider-backed or rule-mode fallback)
+    stack = build_inference(resolved)
+    llm, embedding = stack.llm, stack.embedding
+    if stack.warning:
+        bootstrap_errors["inference"] = stack.warning
     dimension = resolved.inference.dim
 
     # seekdb (engineering catalog + hybrid search)
@@ -159,6 +191,7 @@ async def run(settings: Settings | None = None):
         hybrid,
         GraphExpander(catalog),
         n_results=context_cfg.n_results,
+        catalog=catalog,
     )
     validity_engine = ValidityEngine(
         LifecycleValidator(),
