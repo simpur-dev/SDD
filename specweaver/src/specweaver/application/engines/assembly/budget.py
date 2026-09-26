@@ -21,7 +21,17 @@ FINDINGS_SHARE = 0.35
 
 
 def entry_cost(artifact) -> int:
-    return byte_size(entry_block(artifact)) + _ENTRY_GAP_BYTES
+    """Conservative UTF-8 cost of emitting one artifact.
+
+    Beyond its own block, an entry also appends its id to the ④ "sources
+    cited" line, so that is charged here; measuring the full render afterwards
+    is what catches whatever this still under-counts.
+    """
+    return (
+        byte_size(entry_block(artifact))
+        + _ENTRY_GAP_BYTES
+        + byte_size(artifact.id)
+    )
 
 
 @dataclass
