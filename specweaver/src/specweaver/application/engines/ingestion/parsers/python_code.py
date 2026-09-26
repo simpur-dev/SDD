@@ -57,7 +57,12 @@ class PythonCodeParser:
         checksum: str | None,
         declared_type: ArtifactType,
     ) -> ParsedDocument:
-        tree = ast.parse(text)
+        try:
+            tree = ast.parse(text)
+        except SyntaxError:
+            # A non-parseable file must not abort the whole ingestion; index its
+            # raw text (still searchable) without extracting symbols/imports.
+            tree = ast.Module(body=[], type_ignores=[])
         symbols: list[ParsedSymbol] = []
         imports: list[str] = []
         for node in tree.body:
