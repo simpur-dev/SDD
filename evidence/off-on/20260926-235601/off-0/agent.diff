@@ -1,0 +1,140 @@
+diff --git a/src/api.py b/src/api.py
+index f039144..4f706a4 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -4,7 +4,7 @@
+ """
+ 
+ from publish import can_publish
+-from schedule import Train, arrival_times
++from schedule import Train, adjust_departure, arrival_times
+ 
+ 
+ def show_timetable(train: Train) -> dict[str, str]:
+@@ -15,3 +15,8 @@ def show_timetable(train: Train) -> dict[str, str]:
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
++
++
++def submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:
++    """提交新的发车时间，返回重算后的各站时刻表。"""
++    return arrival_times(adjust_departure(train, new_start))
+diff --git a/src/schedule.py b/src/schedule.py
+index 08042fc..7ba3b21 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -15,6 +15,11 @@ def to_hhmm(total: int) -> str:
+     return f"{total // 60 % 24:02d}:{total % 60:02d}"
+ 
+ 
++# REQ-01 要求站间隔不低于 5 分钟；RULE-01 的规章下限为 3 分钟。
++# 取两者中更严格的下限（>=5 同时也满足 >=3），故此处采用 5。
++MIN_INTERVAL_MINUTES = 5
++
++
+ @dataclass
+ class Train:
+     """一趟车：始发时刻 + 各站间运行时分（"A->B" -> 分钟）。"""
+@@ -43,3 +48,27 @@ def arrival_times(train: Train) -> dict[str, str]:
+         clock += minutes
+         times[stops[index + 1]] = to_hhmm(clock)
+     return times
++
++
++def _check_min_interval(train: Train) -> None:
++    """相邻站间隔不得低于 MIN_INTERVAL_MINUTES（REQ-01，兼容 RULE-01）。"""
++    for leg, minutes in train.legs.items():
++        if minutes < MIN_INTERVAL_MINUTES:
++            raise ValueError(
++                f"{leg} 站间运行时分 {minutes} 分钟低于最小站间隔 "
++                f"{MIN_INTERVAL_MINUTES} 分钟"
++            )
++
++
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """调整始发发车时间并返回平移后的新车次，后续各站时刻随之重算。
++
++    按设计 DES-01：平移始发时刻即可，站间运行时分不变。
++    """
++    to_minutes(new_start)  # 校验 new_start 为合法 "HH:MM"
++    _check_min_interval(train)
++    return Train(
++        train_id=train.train_id,
++        start=new_start,
++        legs=dict(train.legs),
++    )
+diff --git a/tests/test_adjust.py b/tests/test_adjust.py
+new file mode 100644
+index 0000000..96a1da1
+--- /dev/null
++++ b/tests/test_adjust.py
+@@ -0,0 +1,68 @@
++"""发车时间调整回归测试（REQ-01、REQ-02、REQ-03）。"""
++
++import pytest
++
++from api import submit_adjust_departure
++from occupancy import Occupation
++from publish import can_publish
++from schedule import Train, adjust_departure, arrival_times
++
++
++def make_train() -> Train:
++    return Train(train_id="K1", start="08:00", legs={"A->B": 10, "B->C": 15})
++
++
++def test_adjust_shifts_and_recalculates_later_stops() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    assert isinstance(adjusted, Train)
++    assert adjusted.train_id == "K1"
++    assert arrival_times(adjusted) == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_adjust_does_not_mutate_original() -> None:
++    original = make_train()
++    adjust_departure(original, "09:00")
++    assert arrival_times(original) == {"A": "08:00", "B": "08:10", "C": "08:25"}
++
++
++def test_adjust_accepts_earlier_departure() -> None:
++    adjusted = adjust_departure(make_train(), "07:30")
++    assert arrival_times(adjusted)["C"] == "07:55"
++
++
++def test_adjust_rejects_interval_below_requirement() -> None:
++    short = Train(train_id="K2", start="08:00", legs={"A->B": 4})
++    with pytest.raises(ValueError):
++        adjust_departure(short, "09:00")
++
++
++def test_adjust_accepts_interval_at_minimum() -> None:
++    edge = Train(train_id="K3", start="08:00", legs={"A->B": 5})
++    assert arrival_times(adjust_departure(edge, "09:00"))["B"] == "09:05"
++
++
++def test_submit_adjust_departure_returns_timetable() -> None:
++    assert submit_adjust_departure(make_train(), "09:00") == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_adjusted_train_still_passes_publish_gating() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    ok, _ = can_publish(adjusted, [])
++    assert ok
++
++
++def test_adjusted_train_still_blocked_by_occupation_conflict() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    # 09:05-09:15 与 A->B（09:00-09:10）重叠。
++    busy = [Occupation("K1", 545, 555)]
++    ok, reason = can_publish(adjusted, busy)
++    assert not ok
++    assert "禁止发布" in reason

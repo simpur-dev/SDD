@@ -1,0 +1,224 @@
+[
+  {
+    "arm": "off",
+    "run": 0,
+    "project_id": "offon-off-0-20260926-234841",
+    "rc": 0,
+    "sw_calls": [],
+    "usage": {
+      "input_tokens": 19959,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 223488,
+      "output_tokens": 3481,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 23875.914335250854,
+    "num_turns": 20,
+    "result_text": "All 15 tests pass (9 existing + 6 new).\n\n## Summary\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start) -> Train`:\n- Returns a new `Train` with `new_start` and the same legs (copied via `dict(train.legs)` so the original and the new train don't share mutable state); the original is untouched.\n\n**`src/api.py`** — added `submit_adjust_departure(train, new_start) -> dict[str, str]`:\n- Delegates to `adjust_departure` then `arrival_times`, returning the shifted per-stop times. Existing `show_timetable`/`submit_publish` behavior is unchanged.\n\n**Tests added:**\n- `tests/test_schedule.p",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "18 passed in 0.04s",
+    "success": true
+  },
+  {
+    "arm": "off",
+    "run": 1,
+    "project_id": "offon-off-1-20260926-234841",
+    "rc": 0,
+    "sw_calls": [],
+    "usage": {
+      "input_tokens": 22219,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 134784,
+      "output_tokens": 4423,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 23578.2470703125,
+    "num_turns": 28,
+    "result_text": "Green — 15 passed (was 7 baseline, +8 new).\n\n**Changes**\n- `src/schedule.py`: added `adjust_departure(train, new_start) -> Train` — returns a new `Train` with `start=new_start`, `train_id` and legs unchanged (legs copied), so `arrival_times` shifts the whole timetable.\n- `src/api.py`: added `submit_adjust_departure(train, new_start) -> dict[str, str]` returning `arrival_times(adjust_departure(...))`.\n- `tests/test_schedule.py`: shifted-timetable, new-object/legs-preserved, and no-mutation-of-original cases.\n- `tests/test_api.py`: `submit_adjust_departure` returns adjusted times.\n- `tests/test_",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "18 passed in 0.05s",
+    "success": true
+  },
+  {
+    "arm": "off",
+    "run": 2,
+    "project_id": "offon-off-2-20260926-234841",
+    "rc": 0,
+    "sw_calls": [],
+    "usage": {
+      "input_tokens": 19913,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 244224,
+      "output_tokens": 3988,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 24526.367902755737,
+    "num_turns": 21,
+    "result_text": "Green — 16 passed (10 existing + 6 new).\n\n## What I changed\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start) -> Train`: returns a brand-new `Train` with `start=new_start` and `legs` copied unchanged (`dict(train.legs)`), so the whole timetable shifts and the original train is untouched.\n\n**`src/api.py`** — added `submit_adjust_departure(train, new_start) -> dict[str, str]`: applies `adjust_departure` then returns `arrival_times(...)`.\n\n**Tests**\n- `tests/test_schedule.py`: new train identity, shifted start, legs/stops preserved, shifted arrival times, original not mutated.\n- ",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "19 passed in 0.05s",
+    "success": true
+  },
+  {
+    "arm": "on",
+    "run": 0,
+    "project_id": "offon-on-0-20260926-234841",
+    "rc": 0,
+    "sw_calls": [
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task"
+    ],
+    "usage": {
+      "input_tokens": 23756,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 146304,
+      "output_tokens": 4767,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 32569.117069244385,
+    "num_turns": 24,
+    "result_text": "Done. `python -m pytest -q` → **16 passed**, and SpecWeaver recorded the task as successful.\n\n## Changes\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start) -> Train`. Returns a brand-new `Train` with the new start and a copied `legs` dict, so the caller's train is never mutated and the whole timetable shifts by the same delta.\n\n**`src/api.py`** — added `submit_adjust_departure(train, new_start) -> dict[str, str]`, which adjusts then returns `arrival_times(...)`.\n\n**Regression tests added (5):**\n- `test_schedule.py`: whole-timetable shift; input not mutated; `legs` copied (no al",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "19 passed in 0.03s",
+    "success": true
+  },
+  {
+    "arm": "on",
+    "run": 1,
+    "project_id": "offon-on-1-20260926-234841",
+    "rc": 0,
+    "sw_calls": [
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task"
+    ],
+    "usage": {
+      "input_tokens": 23083,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 198912,
+      "output_tokens": 5891,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 37527.67491340637,
+    "num_turns": 27,
+    "result_text": "Done. `python -m pytest -q` → **15 passed**.\n\n## What changed\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start) -> Train`. Builds a brand-new `Train` with `start=new_start`, same `train_id`, and a copied `legs` dict. The caller's train is never mutated, so the whole timetable shifts purely by re-deriving from the new start.\n\n**`src/api.py`** — added `submit_adjust_departure(train, new_start) -> dict[str, str]`, which shifts via `adjust_departure` and returns `arrival_times` for the adjusted train. Existing `show_timetable` / `submit_publish` are untouched.\n\n**Regression tests*",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "18 passed in 0.04s",
+    "success": true
+  },
+  {
+    "arm": "on",
+    "run": 2,
+    "project_id": "offon-on-2-20260926-234841",
+    "rc": 0,
+    "sw_calls": [
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task"
+    ],
+    "usage": {
+      "input_tokens": 23370,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 175744,
+      "output_tokens": 5471,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 36142.88640022278,
+    "num_turns": 32,
+    "result_text": "Done — `python -m pytest -q` → **15 passed**.\n\n## Changes\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start)`:\n```python\ndef adjust_departure(train: Train, new_start: str) -> Train:\n    return Train(train_id=train.train_id, start=new_start, legs=dict(train.legs))\n```\nReturns a new `Train`, copies legs (so the original isn't aliased or mutated), and `arrival_times` then shifts the whole timetable.\n\n**`src/api.py`** — added `submit_adjust_departure(train, new_start)` returning `arrival_times(adjust_departure(...))`.\n\n**Tests** (5 new, 15 total):\n- `test_schedule.py`: returns a ne",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "18 passed in 0.03s",
+    "success": true
+  }
+]

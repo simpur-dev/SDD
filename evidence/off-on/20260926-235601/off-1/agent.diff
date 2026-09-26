@@ -1,0 +1,96 @@
+diff --git a/src/api.py b/src/api.py
+index f039144..f18d87f 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -4,7 +4,7 @@
+ """
+ 
+ from publish import can_publish
+-from schedule import Train, arrival_times
++from schedule import Train, adjust_departure, arrival_times
+ 
+ 
+ def show_timetable(train: Train) -> dict[str, str]:
+@@ -12,6 +12,12 @@ def show_timetable(train: Train) -> dict[str, str]:
+     return arrival_times(train)
+ 
+ 
++def submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:
++    """提交新车发时间，返回重算后的各站时刻（REQ-1、REQ-4）。"""
++    adjusted = adjust_departure(train, new_start)
++    return arrival_times(adjusted)
++
++
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
+diff --git a/src/schedule.py b/src/schedule.py
+index 08042fc..a3512c0 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -43,3 +43,13 @@ def arrival_times(train: Train) -> dict[str, str]:
+         clock += minutes
+         times[stops[index + 1]] = to_hhmm(clock)
+     return times
++
++
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """调整始发时刻并自动重算后续各站时刻（REQ-1）。
++
++    按 DES-01：平移始发时刻即可，各站间运行时分不变。
++    就地更新并返回同一趟车，便于调整后继续做占用复核与发布判断。
++    """
++    train.start = new_start
++    return train
+diff --git a/tests/test_adjust_departure.py b/tests/test_adjust_departure.py
+new file mode 100644
+index 0000000..ee679c4
+--- /dev/null
++++ b/tests/test_adjust_departure.py
+@@ -0,0 +1,46 @@
++"""调整发车时间及其全链路回归测试（REQ-1、REQ-2、REQ-3）。"""
++
++from api import submit_adjust_departure
++from occupancy import Occupation
++from publish import can_publish
++from schedule import Train, adjust_departure, arrival_times
++
++
++def make_train() -> Train:
++    return Train(train_id="K1", start="08:00", legs={"A->B": 10, "B->C": 15})
++
++
++def test_adjust_departure_shifts_all_later_stops() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    assert adjusted.start == "09:00"
++    assert arrival_times(adjusted) == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_adjust_departure_wraps_past_midnight() -> None:
++    adjusted = adjust_departure(make_train(), "23:50")
++    assert arrival_times(adjusted) == {
++        "A": "23:50",
++        "B": "00:00",
++        "C": "00:15",
++    }
++
++
++def test_submit_adjust_departure_returns_timetable() -> None:
++    result = submit_adjust_departure(make_train(), "09:00")
++    assert result == {"A": "09:00", "B": "09:10", "C": "09:25"}
++
++
++def test_occupancy_recheck_sees_adjusted_windows() -> None:
++    # 08:00 时占用窗口为 480-505，与 545-548 不冲突；调整后才冲突。
++    busy = [Occupation("K1", 545, 548)]
++    train = make_train()
++    assert can_publish(train, busy)[0]
++
++    adjusted = adjust_departure(train, "09:00")
++    ok, reason = can_publish(adjusted, busy)
++    assert not ok
++    assert "禁止发布" in reason

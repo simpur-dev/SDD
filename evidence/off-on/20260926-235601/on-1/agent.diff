@@ -1,0 +1,154 @@
+diff --git a/src/api.py b/src/api.py
+index f039144..1fc931b 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -4,7 +4,7 @@
+ """
+ 
+ from publish import can_publish
+-from schedule import Train, arrival_times
++from schedule import Train, adjust_departure, arrival_times
+ 
+ 
+ def show_timetable(train: Train) -> dict[str, str]:
+@@ -12,6 +12,11 @@ def show_timetable(train: Train) -> dict[str, str]:
+     return arrival_times(train)
+ 
+ 
++def submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:
++    """提交新车发时间入口（REQ-4）：返回重算后的各站时刻 stop -> "HH:MM"。"""
++    return arrival_times(adjust_departure(train, new_start))
++
++
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
+diff --git a/src/schedule.py b/src/schedule.py
+index 08042fc..5ef48ad 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -3,7 +3,7 @@
+ 需求依据见 REQ-1。
+ """
+ 
+-from dataclasses import dataclass, field
++from dataclasses import dataclass, field, replace
+ 
+ 
+ def to_minutes(hhmm: str) -> int:
+@@ -43,3 +43,12 @@ def arrival_times(train: Train) -> dict[str, str]:
+         clock += minutes
+         times[stops[index + 1]] = to_hhmm(clock)
+     return times
++
++
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """调整始发时刻，返回平移后的新车次（原车次不变）。
++
++    实现 REQ-1 与 DES-1：平移始发时刻即可由 arrival_times 重算后续各站时刻，
++    站间运行时分（legs）保持不变。
++    """
++    return replace(train, start=new_start)
+diff --git a/tests/test_api.py b/tests/test_api.py
+index ef60359..8c89265 100644
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -1,6 +1,8 @@
+ """入口冒烟测试（REQ-4）。"""
+ 
+-from api import show_timetable, submit_publish
++from api import show_timetable, submit_adjust_departure, submit_publish
++from occupancy import Occupation
++from publish import can_publish
+ from schedule import Train
+ 
+ 
+@@ -15,3 +17,33 @@ def test_show_timetable() -> None:
+ def test_submit_publish_passes_through() -> None:
+     ok, _ = submit_publish(make_train(), [])
+     assert ok
++
++
++def test_submit_adjust_departure_returns_shifted_timetable() -> None:
++    assert submit_adjust_departure(make_train(), "09:00") == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_submit_adjust_departure_does_not_mutate_original() -> None:
++    train = make_train()
++    submit_adjust_departure(train, "09:00")
++    assert show_timetable(train)["C"] == "08:25"
++
++
++def test_chain_rechecks_occupancy_and_publish_after_adjust() -> None:
++    """调整后整车链路：占用复核 -> 发布门禁仍生效（REQ-2/REQ-3/RULE-3）。"""
++    from schedule import adjust_departure, arrival_times, to_minutes
++
++    train = make_train()
++    # 08:00 发车时 A->B 占用 [480,490)，与既有占用冲突 -> 禁止发布
++    busy = [Occupation("K1", 485, 490)]
++    assert can_publish(train, busy)[0] is False
++
++    adjusted = adjust_departure(train, "09:00")
++    assert arrival_times(adjusted)["A"] == "09:00"
++    # 平移后占用窗口避开既有任务 -> 允许发布
++    assert to_minutes(arrival_times(adjusted)["A"]) == 540
++    assert can_publish(adjusted, busy)[0] is True
+diff --git a/tests/test_schedule.py b/tests/test_schedule.py
+index 00eef5f..92bb2a6 100644
+--- a/tests/test_schedule.py
++++ b/tests/test_schedule.py
+@@ -1,6 +1,12 @@
+ """时刻计算回归测试（REQ-1）。"""
+ 
+-from schedule import Train, arrival_times, to_hhmm, to_minutes
++from schedule import (
++    Train,
++    adjust_departure,
++    arrival_times,
++    to_hhmm,
++    to_minutes,
++)
+ 
+ 
+ def make_train() -> Train:
+@@ -26,3 +32,36 @@ def test_arrival_times_accumulate() -> None:
+ def test_minute_helpers_roundtrip() -> None:
+     assert to_minutes("09:30") == 570
+     assert to_hhmm(570) == "09:30"
++
++
++def test_adjust_departure_shifts_all_later_stops() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    assert isinstance(adjusted, Train)
++    assert arrival_times(adjusted) == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_adjust_departure_does_not_mutate_original() -> None:
++    train = make_train()
++    adjust_departure(train, "09:00")
++    assert train.start == "08:00"
++    assert arrival_times(train)["C"] == "08:25"
++
++
++def test_adjust_departure_preserves_legs_and_id() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    assert adjusted.train_id == "K1"
++    assert adjusted.legs == make_train().legs
++    assert adjusted.stops() == ["A", "B", "C"]
++
++
++def test_adjust_departure_wraps_past_midnight() -> None:
++    adjusted = adjust_departure(make_train(), "23:50")
++    assert arrival_times(adjusted) == {
++        "A": "23:50",
++        "B": "00:00",
++        "C": "00:15",
++    }

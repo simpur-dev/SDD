@@ -1,0 +1,135 @@
+diff --git a/src/api.py b/src/api.py
+index f039144..c1e6f43 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -4,7 +4,7 @@
+ """
+ 
+ from publish import can_publish
+-from schedule import Train, arrival_times
++from schedule import Train, adjust_departure, arrival_times
+ 
+ 
+ def show_timetable(train: Train) -> dict[str, str]:
+@@ -15,3 +15,8 @@ def show_timetable(train: Train) -> dict[str, str]:
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
++
++
++def submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:
++    """提交新车发时间：返回调整后各站到达时刻。"""
++    return arrival_times(adjust_departure(train, new_start))
+diff --git a/src/schedule.py b/src/schedule.py
+index 08042fc..7ca6161 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -34,6 +34,14 @@ class Train:
+         return stops
+ 
+ 
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """按站调整发车时间：平移始发时刻，站间运行时分保持不变。
++
++    返回新的 Train，不修改入参；后续各站时刻整体平移。
++    """
++    return Train(train_id=train.train_id, start=new_start, legs=dict(train.legs))
++
++
+ def arrival_times(train: Train) -> dict[str, str]:
+     """各站时刻 = 始发时刻 + 累计运行时分。"""
+     stops = train.stops()
+diff --git a/tests/test_api.py b/tests/test_api.py
+index ef60359..0592435 100644
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -1,6 +1,6 @@
+ """入口冒烟测试（REQ-4）。"""
+ 
+-from api import show_timetable, submit_publish
++from api import show_timetable, submit_adjust_departure, submit_publish
+ from schedule import Train
+ 
+ 
+@@ -15,3 +15,8 @@ def test_show_timetable() -> None:
+ def test_submit_publish_passes_through() -> None:
+     ok, _ = submit_publish(make_train(), [])
+     assert ok
++
++
++def test_submit_adjust_departure_returns_shifted_times() -> None:
++    result = submit_adjust_departure(make_train(), "08:30")
++    assert result == {"A": "08:30", "B": "08:40", "C": "08:55"}
+diff --git a/tests/test_publish.py b/tests/test_publish.py
+index 03c5b23..08463b4 100644
+--- a/tests/test_publish.py
++++ b/tests/test_publish.py
+@@ -2,7 +2,7 @@
+ 
+ from occupancy import Occupation
+ from publish import can_publish
+-from schedule import Train
++from schedule import Train, adjust_departure
+ 
+ 
+ def make_train() -> Train:
+@@ -19,3 +19,12 @@ def test_publish_blocked_by_conflict() -> None:
+     ok, reason = can_publish(make_train(), busy)
+     assert not ok
+     assert "禁止发布" in reason
++
++
++def test_adjusted_train_still_blocked_by_existing_occupation() -> None:
++    # 08:30 发车后占用区间为 510-520、520-535，与既有 515-525 窗口重叠。
++    adjusted = adjust_departure(make_train(), "08:30")
++    busy = [Occupation("K1", 515, 525)]
++    ok, reason = can_publish(adjusted, busy)
++    assert not ok
++    assert "禁止发布" in reason
+diff --git a/tests/test_schedule.py b/tests/test_schedule.py
+index 00eef5f..05b3e0c 100644
+--- a/tests/test_schedule.py
++++ b/tests/test_schedule.py
+@@ -1,6 +1,12 @@
+ """时刻计算回归测试（REQ-1）。"""
+ 
+-from schedule import Train, arrival_times, to_hhmm, to_minutes
++from schedule import (
++    Train,
++    adjust_departure,
++    arrival_times,
++    to_hhmm,
++    to_minutes,
++)
+ 
+ 
+ def make_train() -> Train:
+@@ -26,3 +32,28 @@ def test_arrival_times_accumulate() -> None:
+ def test_minute_helpers_roundtrip() -> None:
+     assert to_minutes("09:30") == 570
+     assert to_hhmm(570) == "09:30"
++
++
++def test_adjust_departure_returns_new_train_with_new_start() -> None:
++    original = make_train()
++    adjusted = adjust_departure(original, "08:30")
++    assert adjusted is not original
++    assert adjusted.train_id == "K1"
++    assert adjusted.start == "08:30"
++    assert adjusted.legs == original.legs
++
++
++def test_adjust_departure_does_not_mutate_original() -> None:
++    original = make_train()
++    adjust_departure(original, "08:30")
++    assert original.start == "08:00"
++    assert arrival_times(original)["C"] == "08:25"
++
++
++def test_adjust_departure_shifts_whole_timetable() -> None:
++    adjusted = adjust_departure(make_train(), "08:30")
++    assert arrival_times(adjusted) == {
++        "A": "08:30",
++        "B": "08:40",
++        "C": "08:55",
++    }

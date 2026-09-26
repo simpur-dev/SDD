@@ -1,0 +1,121 @@
+diff --git a/src/api.py b/src/api.py
+index f039144..85a6285 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -4,7 +4,7 @@
+ """
+ 
+ from publish import can_publish
+-from schedule import Train, arrival_times
++from schedule import Train, adjust_departure, arrival_times
+ 
+ 
+ def show_timetable(train: Train) -> dict[str, str]:
+@@ -12,6 +12,16 @@ def show_timetable(train: Train) -> dict[str, str]:
+     return arrival_times(train)
+ 
+ 
++def submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:
++    """提交新车发时间：重算并返回各站新时刻（REQ-4）。
++
++    返回 dict[站名 -> "HH:MM"]；需要复核发布时可将该结果对应的调整后
++    列车继续交给 can_publish（发布链路保持不变）。
++    """
++    adjusted = adjust_departure(train, new_start)
++    return arrival_times(adjusted)
++
++
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
+diff --git a/src/schedule.py b/src/schedule.py
+index 08042fc..66ffa83 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -3,7 +3,7 @@
+ 需求依据见 REQ-1。
+ """
+ 
+-from dataclasses import dataclass, field
++from dataclasses import dataclass, field, replace
+ 
+ 
+ def to_minutes(hhmm: str) -> int:
+@@ -43,3 +43,13 @@ def arrival_times(train: Train) -> dict[str, str]:
+         clock += minutes
+         times[stops[index + 1]] = to_hhmm(clock)
+     return times
++
++
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """按站调整发车时间：平移始发时刻，后续各站随之重算（REQ-1）。
++
++    站间运行时分（legs）保持不变，故相邻站间隔不受影响，仍满足现行规章
++    RULE-1（>=3 分钟）。返回新的 Train，不改动入参。
++    """
++    to_minutes(new_start)  # 提前校验 "HH:MM" 格式
++    return replace(train, start=new_start)
+diff --git a/tests/test_adjust.py b/tests/test_adjust.py
+new file mode 100644
+index 0000000..15136bb
+--- /dev/null
++++ b/tests/test_adjust.py
+@@ -0,0 +1,58 @@
++"""发车时间调整回归测试（REQ-1、REQ-2、REQ-4、RULE-2、RULE-3）。"""
++
++from api import show_timetable, submit_adjust_departure, submit_publish
++from occupancy import Occupation
++from publish import can_publish
++from schedule import Train, adjust_departure, arrival_times
++
++
++def make_train() -> Train:
++    return Train(train_id="K1", start="08:00", legs={"A->B": 10, "B->C": 15})
++
++
++def test_adjust_departure_recalculates_all_later_stops() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    assert adjusted.start == "09:00"
++    assert arrival_times(adjusted) == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_adjust_departure_does_not_mutate_original() -> None:
++    original = make_train()
++    adjust_departure(original, "09:00")
++    assert original.start == "08:00"
++    assert show_timetable(original)["C"] == "08:25"
++
++
++def test_adjust_departure_keeps_stop_order_and_legs() -> None:
++    original = make_train()
++    adjusted = adjust_departure(original, "09:00")
++    assert adjusted.stops() == original.stops()
++    assert adjusted.legs == original.legs
++
++
++def test_submit_adjust_departure_returns_stop_times() -> None:
++    assert submit_adjust_departure(make_train(), "09:00") == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_occupancy_recheck_after_adjustment_blocks_conflict() -> None:
++    # 08:00 出发时 K1 占用 480-505，与车队 485-495 冲突，禁止发布。
++    assert not can_publish(make_train(), [Occupation("K1", 485, 495)])[0]
++
++    # 调整到 09:00 后重算占用为 540-565，与 485-495 不再冲突，可以发布。
++    adjusted = adjust_departure(make_train(), "09:00")
++    ok, reason = can_publish(adjusted, [Occupation("K1", 485, 495)])
++    assert ok, reason
++
++
++def test_submit_publish_still_passes_through_after_adjustment() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    ok, _ = submit_publish(adjusted, [])
++    assert ok

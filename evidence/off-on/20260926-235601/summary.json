@@ -1,0 +1,224 @@
+[
+  {
+    "arm": "off",
+    "run": 0,
+    "project_id": "offon-off-0-20260926-235601",
+    "rc": 0,
+    "sw_calls": [],
+    "usage": {
+      "input_tokens": 21759,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 273280,
+      "output_tokens": 12884,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 68496.20389938354,
+    "num_turns": 28,
+    "result_text": "Done. `python -m pytest -q` → **18 passed** (10 existing + 8 new).\n\n## What I changed\n\n**`src/schedule.py`**\n- `adjust_departure(train, new_start) -> Train` — validates the `HH:MM` format, shifts the origin time, and returns a new `Train` (same `train_id`/legs, so `arrival_times` recalculates every later stop via the existing cumulative-leg logic). The input train is left untouched.\n- `_check_min_interval` — enforces the minimum adjacent-stop interval.\n- `MIN_INTERVAL_MINUTES = 5`.\n\n**`src/api.py`**\n- `submit_adjust_departure(train, new_start) -> dict[str, str]` — adjusts, then returns `arriva",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "21 passed in 0.04s",
+    "success": true
+  },
+  {
+    "arm": "off",
+    "run": 1,
+    "project_id": "offon-off-1-20260926-235601",
+    "rc": 0,
+    "sw_calls": [],
+    "usage": {
+      "input_tokens": 23162,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 354048,
+      "output_tokens": 14500,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 82293.16687583923,
+    "num_turns": 34,
+    "result_text": "Done. `python -m pytest -q` → **14 passed**.\n\n## What I changed\n\n**`src/schedule.py`** — added the contract function:\n```python\ndef adjust_departure(train: Train, new_start: str) -> Train:\n    train.start = new_start   # DES-01: shift origin; leg durations unchanged\n    return train\n```\nBecause schedule derives every stop as `start + cumulative legs`, shifting `start` automatically recalculates all later stops (including midnight wrap via the existing `to_hhmm`).\n\n**`src/api.py`** — added:\n```python\ndef submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:\n    adjusted = adj",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "17 passed in 0.04s",
+    "success": true
+  },
+  {
+    "arm": "off",
+    "run": 2,
+    "project_id": "offon-off-2-20260926-235601",
+    "rc": 0,
+    "sw_calls": [],
+    "usage": {
+      "input_tokens": 23449,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 543360,
+      "output_tokens": 18290,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 99828.02295684814,
+    "num_turns": 37,
+    "result_text": "Done — full suite green (17 passed: 10 baseline + 7 new).\n\n## What changed\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start) -> Train`:\n- Validates/normalizes `new_start` (raises `ValueError` on malformed/out-of-range times).\n- Returns a **new** `Train` with the shifted start (original untouched), so `arrival_times` recomputes every subsequent stop from the fixed leg runtimes.\n\n**`src/api.py`** — added `submit_adjust_departure(train, new_start) -> dict[str, str]`:\n- Adjusts then returns the recalculated `stop -> \"HH:MM\"` timetable.\n\n**Chain stays intact automatically:** `publi",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "20 passed in 0.05s",
+    "success": true
+  },
+  {
+    "arm": "on",
+    "run": 0,
+    "project_id": "offon-on-0-20260926-235601",
+    "rc": 0,
+    "sw_calls": [
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task"
+    ],
+    "usage": {
+      "input_tokens": 26617,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 596352,
+      "output_tokens": 17540,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 95276.34024620056,
+    "num_turns": 38,
+    "result_text": "Done. Full suite green: **17 passed**.\n\n## What changed\n\n**`src/schedule.py`**\n- Added `adjust_departure(train, new_start) -> Train`: validates the clock and station intervals, then returns a new `Train` with the start shifted. Legs are preserved, so `arrival_times` automatically recalculates every later stop. The input train is not mutated.\n- Added `MIN_INTERVAL_MIN = 3`, `_parse_clock`, and `check_intervals`.\n- Added `from __future__ import annotations` so the `Train` annotation on the pre-class helper resolves correctly (caught before it could break import).\n\n**`src/api.py`**\n- Added `submi",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "20 passed in 0.03s",
+    "success": true
+  },
+  {
+    "arm": "on",
+    "run": 1,
+    "project_id": "offon-on-1-20260926-235601",
+    "rc": 0,
+    "sw_calls": [
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task"
+    ],
+    "usage": {
+      "input_tokens": 24916,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 192512,
+      "output_tokens": 8185,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 46103.31869125366,
+    "num_turns": 34,
+    "result_text": "Done. Task complete and suite green.\n\n## What changed\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start) -> Train`:\n```python\ndef adjust_departure(train: Train, new_start: str) -> Train:\n    return replace(train, start=new_start)\n```\nPer DES-1 (\"调整发车时间时平移始发时刻即可重算后续各站\"), shifting the start is all that's needed — `arrival_times` derives every stop from `start` + cumulative leg times, so all later stops recalculate automatically. Returns a **new** `Train` (via `dataclasses.replace`), leaving the original untouched; `legs`/`train_id` are preserved.\n\n**`src/api.py`** — added the dis",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "20 passed in 0.03s",
+    "success": true
+  },
+  {
+    "arm": "on",
+    "run": 2,
+    "project_id": "offon-on-2-20260926-235601",
+    "rc": 0,
+    "sw_calls": [
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task"
+    ],
+    "usage": {
+      "input_tokens": 24146,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 186624,
+      "output_tokens": 7136,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 44743.79467964172,
+    "num_turns": 30,
+    "result_text": "Done. `python -m pytest -q` → **16 passed**, and `sw_complete_task` succeeded (16/16, change set `cs-1790438601401-9e6e37`).\n\n## What I changed\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start) -> Train`:\n- Shifts the start time and returns a **new** `Train` via `dataclasses.replace`, leaving the original untouched. Because `arrival_times` derives every stop as `start + cumulative legs`, all later stops recalculate automatically (matches DES-01: \"平移始发时刻即可重算后续各站\").\n- Legs/stop order are preserved, so inter-station intervals are unchanged.\n\n**`src/api.py`** — added `submit_adjus",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "19 passed in 0.03s",
+    "success": true
+  }
+]

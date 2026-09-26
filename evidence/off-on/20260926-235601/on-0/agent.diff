@@ -1,0 +1,266 @@
+diff --git a/design/api-design.md b/design/api-design.md
+new file mode 100644
+index 0000000..659c1e4
+--- /dev/null
++++ b/design/api-design.md
+@@ -0,0 +1,19 @@
++---
++id: DES-03
++type: design
++module: api
++version: 1.0.0
++status: active
++title: 调度入口设计
++---
++
++# 调度入口设计
++
++api 模块是页面与计算层之间的薄入口，实现 REQ-4：
++
++- `show_timetable(train)` 直接返回 `schedule.arrival_times` 的结果；
++- `submit_publish(train, fleet)` 转交 `publish.can_publish` 做占用复核与发布门禁；
++- `submit_adjust_departure(train, new_start)` 先经 `schedule.adjust_departure`
++  得到重算后的新车，再返回各站时刻（站名 -> "HH:MM"），供页面刷新。
++
++各入口均不复制时刻计算逻辑，保证调整、占用复核、发布门禁共用同一条链路。
+diff --git a/design/schedule-design.md b/design/schedule-design.md
+index 575099a..20f899d 100644
+--- a/design/schedule-design.md
++++ b/design/schedule-design.md
+@@ -11,3 +11,14 @@ title: 时刻计算设计
+ 
+ schedule 模块以"始发时刻 + 站间运行时分"推导各站时刻，实现 REQ-1。
+ 调整发车时间时平移始发时刻即可重算后续各站。
++
++## 调整发车入口
++
++`adjust_departure(train, new_start) -> Train`：校验新时刻与站间间隔后，
++返回一个始发时刻被平移的新 `Train`（站间运行时分不变，入参不被修改）；
++后续各站时刻由既有的 `arrival_times` 自动重算，不新增计算路径。
++
++## 约束
++
++相邻站最小间隔取 RULE-01 现行规章的 3 分钟（REQ-1 原 5 分钟表述已按现行规章对齐）；
++低于该间隔的列车在调整入口即抛出 `ValueError`，避免发布链路继续流转。
+diff --git a/specs/requirement-schedule.md b/specs/requirement-schedule.md
+index 2722910..980c860 100644
+--- a/specs/requirement-schedule.md
++++ b/specs/requirement-schedule.md
+@@ -2,7 +2,7 @@
+ id: REQ-01
+ type: requirement
+ module: schedule
+-version: 1.0.0
++version: 1.0.1
+ status: active
+ title: 按站调整发车时间
+ ---
+@@ -10,4 +10,4 @@ title: 按站调整发车时间
+ # 按站调整发车时间
+ 
+ - 调度员应能按站点修改发车时间并自动重算后续各站时刻
+-- 相邻站间隔不得低于 5 分钟
++- 相邻站间隔不得低于 3 分钟（以 RULE-01 现行规章为准）
+diff --git a/src/api.py b/src/api.py
+index f039144..d0a99d5 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -4,7 +4,7 @@
+ """
+ 
+ from publish import can_publish
+-from schedule import Train, arrival_times
++from schedule import Train, adjust_departure, arrival_times
+ 
+ 
+ def show_timetable(train: Train) -> dict[str, str]:
+@@ -15,3 +15,9 @@ def show_timetable(train: Train) -> dict[str, str]:
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
++
++
++def submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:
++    """提交新车发时间，返回重算后的各站时刻（站名 -> "HH:MM"）。"""
++    adjusted = adjust_departure(train, new_start)
++    return show_timetable(adjusted)
+diff --git a/src/schedule.py b/src/schedule.py
+index 08042fc..f9c4418 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -3,6 +3,8 @@
+ 需求依据见 REQ-1。
+ """
+ 
++from __future__ import annotations
++
+ from dataclasses import dataclass, field
+ 
+ 
+@@ -15,6 +17,34 @@ def to_hhmm(total: int) -> str:
+     return f"{total // 60 % 24:02d}:{total % 60:02d}"
+ 
+ 
++# 相邻站最小间隔（分钟）。依据 RULE-1（现行规章，3 分钟）为准；
++# REQ-1 中的 5 分钟为过时表述，已按现行规章对齐。
++MIN_INTERVAL_MIN = 3
++
++
++def _parse_clock(value: str) -> int:
++    """解析 HH:MM 为分钟；非法时刻抛出 ValueError。"""
++    parts = value.split(":") if isinstance(value, str) else []
++    if len(parts) != 2:
++        raise ValueError(f"非法时刻: {value!r}，应为 HH:MM")
++    try:
++        hours, minutes = int(parts[0]), int(parts[1])
++    except ValueError:
++        raise ValueError(f"非法时刻: {value!r}，应为 HH:MM") from None
++    if not (0 <= hours < 24 and 0 <= minutes < 60):
++        raise ValueError(f"非法时刻: {value!r}，应在 00:00-23:59 之间")
++    return hours * 60 + minutes
++
++
++def check_intervals(train: Train) -> None:
++    """校验各站间运行时分不低于最小站间间隔（RULE-1）。"""
++    for leg, minutes in train.legs.items():
++        if minutes < MIN_INTERVAL_MIN:
++            raise ValueError(
++                f"{leg} 间隔 {minutes} 分钟，低于最小站间间隔 {MIN_INTERVAL_MIN} 分钟"
++            )
++
++
+ @dataclass
+ class Train:
+     """一趟车：始发时刻 + 各站间运行时分（"A->B" -> 分钟）。"""
+@@ -43,3 +73,15 @@ def arrival_times(train: Train) -> dict[str, str]:
+         clock += minutes
+         times[stops[index + 1]] = to_hhmm(clock)
+     return times
++
++
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """按新的始发时刻平移时刻表并重算后续各站。
++
++    - 校验新时刻与各站间间隔（RULE-1：相邻站不低于 3 分钟）；
++    - 站间运行时分不变，后续各站由 ``arrival_times`` 自动重算；
++    - 返回新的 ``Train``，不修改入参。
++    """
++    _parse_clock(new_start)
++    check_intervals(train)
++    return Train(train_id=train.train_id, start=new_start, legs=dict(train.legs))
+diff --git a/tests/test_api.py b/tests/test_api.py
+index ef60359..8a3ca91 100644
+--- a/tests/test_api.py
++++ b/tests/test_api.py
+@@ -1,6 +1,6 @@
+ """入口冒烟测试（REQ-4）。"""
+ 
+-from api import show_timetable, submit_publish
++from api import show_timetable, submit_adjust_departure, submit_publish
+ from schedule import Train
+ 
+ 
+@@ -15,3 +15,11 @@ def test_show_timetable() -> None:
+ def test_submit_publish_passes_through() -> None:
+     ok, _ = submit_publish(make_train(), [])
+     assert ok
++
++
++def test_submit_adjust_departure_returns_recalculated_timetable() -> None:
++    assert submit_adjust_departure(make_train(), "09:00") == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
+diff --git a/tests/test_publish.py b/tests/test_publish.py
+index 03c5b23..6b662ad 100644
+--- a/tests/test_publish.py
++++ b/tests/test_publish.py
+@@ -2,7 +2,7 @@
+ 
+ from occupancy import Occupation
+ from publish import can_publish
+-from schedule import Train
++from schedule import Train, adjust_departure
+ 
+ 
+ def make_train() -> Train:
+@@ -19,3 +19,11 @@ def test_publish_blocked_by_conflict() -> None:
+     ok, reason = can_publish(make_train(), busy)
+     assert not ok
+     assert "禁止发布" in reason
++
++
++def test_adjusted_train_is_rechecked_against_fleet() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    # 新车时刻 09:00-09:10-09:25，与 08:xx 的既有占用不再冲突。
++    assert can_publish(adjusted, [Occupation("K1", 485, 495)])[0]
++    # 与平移后 09:05-09:20 的占用冲突，仍被门禁拦截。
++    assert not can_publish(adjusted, [Occupation("K1", 545, 560)])[0]
+diff --git a/tests/test_schedule.py b/tests/test_schedule.py
+index 00eef5f..16bb0e9 100644
+--- a/tests/test_schedule.py
++++ b/tests/test_schedule.py
+@@ -1,6 +1,15 @@
+ """时刻计算回归测试（REQ-1）。"""
+ 
+-from schedule import Train, arrival_times, to_hhmm, to_minutes
++import pytest
++
++from schedule import (
++    MIN_INTERVAL_MIN,
++    Train,
++    adjust_departure,
++    arrival_times,
++    to_hhmm,
++    to_minutes,
++)
+ 
+ 
+ def make_train() -> Train:
+@@ -26,3 +35,45 @@ def test_arrival_times_accumulate() -> None:
+ def test_minute_helpers_roundtrip() -> None:
+     assert to_minutes("09:30") == 570
+     assert to_hhmm(570) == "09:30"
++
++
++def test_adjust_departure_recalculates_later_stops() -> None:
++    train = make_train()
++    adjusted = adjust_departure(train, "09:00")
++
++    assert adjusted is not train
++    assert adjusted.train_id == train.train_id
++    assert adjusted.legs == train.legs
++    assert arrival_times(adjusted) == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++    # 原车保持不变，后续链路仍基于原对象可用。
++    assert train.start == "08:00"
++    assert arrival_times(train)["C"] == "08:25"
++
++
++def test_adjust_departure_keeps_night_crossing_consistent() -> None:
++    adjusted = adjust_departure(make_train(), "23:50")
++    assert arrival_times(adjusted) == {
++        "A": "23:50",
++        "B": "00:00",
++        "C": "00:15",
++    }
++
++
++def test_adjust_departure_rejects_interval_below_minimum() -> None:
++    bad = Train(train_id="K1", start="08:00", legs={"A->B": MIN_INTERVAL_MIN - 1})
++    with pytest.raises(ValueError):
++        adjust_departure(bad, "09:00")
++
++
++def test_adjust_departure_accepts_minimum_interval() -> None:
++    ok = Train(train_id="K1", start="08:00", legs={"A->B": MIN_INTERVAL_MIN})
++    assert adjust_departure(ok, "09:00").start == "09:00"
++
++
++def test_adjust_departure_rejects_invalid_clock() -> None:
++    with pytest.raises(ValueError):
++        adjust_departure(make_train(), "25:00")
