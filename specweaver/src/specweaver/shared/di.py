@@ -46,6 +46,7 @@ from ..application.engines.validity import (
 from ..application.usecases.complete_task import CompleteTask
 from ..application.usecases.get_context import GetContext
 from ..application.usecases.ingest_project import IngestProject
+from ..application.usecases.resume_task import ResumeTask
 from .config import Settings
 from .telemetry import Telemetry
 
@@ -145,16 +146,18 @@ async def run(settings: Settings | None = None):
     assembly_engine = AssemblyEngine(context_cfg.budget_bytes)
     reconciliation_engine = ReconciliationEngine(embedding)
 
+    get_context_usecase = GetContext(
+        retrieval_engine,
+        validity_engine,
+        assembly_engine,
+        telemetry,
+        workspace,
+    )
     usecases = {
         "ingest_project": IngestProject(
             ingestion_engine, catalog, workspace, telemetry, memory
         ),
-        "get_context": GetContext(
-            retrieval_engine,
-            validity_engine,
-            assembly_engine,
-            telemetry,
-        ),
+        "get_context": get_context_usecase,
         "complete_task": CompleteTask(
             reconciliation_engine,
             catalog,
@@ -163,6 +166,13 @@ async def run(settings: Settings | None = None):
             test_runner,
             telemetry,
             memory,
+        ),
+        "resume_task": ResumeTask(
+            catalog,
+            handoff,
+            workspace,
+            get_context_usecase,
+            telemetry,
         ),
     }
 
