@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 
 from specweaver.domain.entities import Artifact, Relation
 from specweaver.domain.enums import LifecycleStatus
@@ -32,6 +33,18 @@ class InMemoryCatalog:
         self, project_id: str, artifact_id: str
     ) -> Artifact | None:
         return self.artifacts.get((project_id, artifact_id))
+
+    async def get_artifacts(
+        self, project_id: str, artifact_ids: Sequence[str]
+    ) -> list[Artifact]:
+        return [
+            found
+            for found in (
+                self.artifacts.get((project_id, artifact_id))
+                for artifact_id in artifact_ids
+            )
+            if found is not None
+        ]
 
     async def list_artifacts(
         self, flt: ArtifactFilter

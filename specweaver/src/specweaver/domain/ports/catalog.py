@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from typing import Protocol
 
 from pydantic import BaseModel
@@ -45,6 +46,12 @@ class CatalogPort(Protocol):
     async def get_artifact(
         self, project_id: str, artifact_id: str
     ) -> Artifact | None: ...
+
+    async def get_artifacts(
+        self, project_id: str, artifact_ids: Sequence[str]
+    ) -> list[Artifact]:
+        """Batch read: one round trip instead of one per id."""
+        ...
 
     async def list_artifacts(self, filter: ArtifactFilter) -> list[Artifact]: ...
 

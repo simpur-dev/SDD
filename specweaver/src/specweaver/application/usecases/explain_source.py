@@ -88,23 +88,30 @@ class ExplainSource(UseCase):
             seen = {root.id}
             frontier = [root]
             for _ in range(depth):
+                wanted = sorted(
+                    {
+                        ref
+                        for artifact in frontier
+                        for ref in artifact.based_on
+                        if ref != artifact.id and ref not in seen
+                    }
+                )
+                if not wanted:
+                    break
+                resolved = await self._catalog.get_artifacts(
+                    request.project_id, wanted
+                )
+                by_id = {artifact.id: artifact for artifact in resolved}
                 next_frontier: list[Artifact] = []
-                for artifact in frontier:
-                    for ref in artifact.based_on:
-                        if ref == artifact.id:
-                            continue
-                        upstream = await self._catalog.get_artifact(
-                            request.project_id, ref
-                        )
-                        if upstream is None:
-                            if ref not in report.missing_refs:
-                                report.missing_refs.append(ref)
-                            continue
-                        if upstream.id in seen:
-                            continue
-                        seen.add(upstream.id)
-                        report.upstream.append(_node(upstream))
-                        next_frontier.append(upstream)
+                for ref in wanted:
+                    upstream = by_id.get(ref)
+                    if upstream is None:
+                        if ref not in report.missing_refs:
+                            report.missing_refs.append(ref)
+                        continue
+                    seen.add(upstream.id)
+                    report.upstream.append(_node(upstream))
+                    next_frontier.append(upstream)
                 frontier = next_frontier
                 if not frontier:
                     break

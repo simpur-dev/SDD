@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from ....domain.entities import Artifact, Relation
 from ....domain.ports.catalog import ArtifactFilter
 from .client import RELATIONS_TABLE, SeekdbClient
@@ -56,6 +58,45 @@ class SeekdbCatalog:
             )
 
         return await self._client.run_op(_op, "get_artifact")
+
+    async def get_artifacts(
+        self, project_id: str, artifact_ids: Sequence[str]
+    ) -> list[Artifact]:
+        if not artifact_ids:
+            return []
+        collection = self._client.artifacts
+        logical = list(artifact_ids)
+
+        def _op() -> list[Artifact]:
+            res = collection.get(
+                ids=[
+                    storage_key(project_id, artifact_id)
+                    for artifact_id in logical
+                ],
+                include=["documents", "metadatas", "embeddings"],
+            )
+            return [
+                record_to_artifact(
+                    stored_id,
+                    document,
+                    metadata,
+                    (res.get("embeddings") or [None] * len(logical))[index],
+                )
+                for index, (
+                    stored_id,
+                    document,
+                    metadata,
+                ) in enumerate(
+                    zip(
+                        res["ids"],
+                        res["documents"],
+                        res["metadatas"],
+                        strict=True,
+                    )
+                )
+            ]
+
+        return await self._client.run_op(_op, "get_artifacts")
 
     async def list_artifacts(self, flt: ArtifactFilter) -> list[Artifact]:
         collection = self._client.artifacts
