@@ -65,7 +65,7 @@ def main() -> int:
     py = sys.executable
     steps: list[tuple[str, list[str]]] = [
         ("ruff", [py, "-m", "ruff", "check", "."]),
-        ("pytest", [py, "-m", "pytest", "-q"]),
+        ("pytest", [py, "-m", "pytest", "-q", "-rs"]),
     ]
     if args.live:
         if not (_port_open(SEEKDB_PORT) and _port_open(PC_PORT)):
