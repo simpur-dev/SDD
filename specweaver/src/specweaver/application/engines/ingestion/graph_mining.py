@@ -16,9 +16,9 @@ class _EdgeKey:
     kind: RelationKind
 
 
-def edge_id(src: str, kind: RelationKind, dst: str) -> str:
-    """Deterministic edge id; must match the seekdb sw_relations convention."""
-    raw = f"{src}|{kind}|{dst}"
+def edge_id(project_id: str, src: str, kind: RelationKind, dst: str) -> str:
+    """Deterministic project-scoped edge id (seekdb uq_edge convention)."""
+    raw = f"{project_id}|{src}|{kind}|{dst}"
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()[:16]
 
 
@@ -71,7 +71,7 @@ class _EdgeAccumulator:
         for key, (confidence, evidence) in self._edges.items():
             out.append(
                 Relation(
-                    id=edge_id(key.src, key.kind, key.dst),
+                    id=edge_id(project_id, key.src, key.kind, key.dst),
                     project_id=project_id,
                     src=key.src,
                     dst=key.dst,

@@ -76,7 +76,7 @@ async def test_complete_task_success_records_and_updates() -> None:
     assert len(activity.test_runs) == 1
     assert len(activity.change_sets) == 1
     assert activity.change_sets[0].test_run_id == "tr-1"
-    stored = await catalog.get_artifact(report.updated_ids[0])
+    stored = await catalog.get_artifact("railway", report.updated_ids[0])
     assert stored is not None
     entries = await memory.list_entries("scp-1")
     assert any(e.kind == "task_outcome" for e in entries)

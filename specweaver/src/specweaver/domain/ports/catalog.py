@@ -37,16 +37,25 @@ class ScoredArtifact(BaseModel):
 
 
 class CatalogPort(Protocol):
+    """Project-scoped catalog: artifact ids collide across projects (e.g.
+    REQ-1), so every single-artifact access must carry its project_id."""
+
     async def upsert_artifact(self, artifact: Artifact) -> None: ...
 
-    async def get_artifact(self, artifact_id: str) -> Artifact | None: ...
+    async def get_artifact(
+        self, project_id: str, artifact_id: str
+    ) -> Artifact | None: ...
 
     async def list_artifacts(self, filter: ArtifactFilter) -> list[Artifact]: ...
 
     async def upsert_relation(self, relation: Relation) -> None: ...
 
     async def neighbors(
-        self, artifact_id: str, kinds: list[RelationKind], depth: int = 1
+        self,
+        project_id: str,
+        artifact_id: str,
+        kinds: list[RelationKind],
+        depth: int = 1,
     ) -> list[Artifact]: ...
 
 

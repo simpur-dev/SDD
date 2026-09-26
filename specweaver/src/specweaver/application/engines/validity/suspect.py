@@ -19,7 +19,9 @@ class SuspectDetector:
         findings: list[Finding] = []
         for artifact in artifacts:
             for ref in artifact.based_on:
-                upstream = await self._catalog.get_artifact(ref)
+                upstream = await self._catalog.get_artifact(
+                    artifact.project_id, ref
+                )
                 if upstream is None or upstream.status == LifecycleStatus.active:
                     continue
                 findings.append(

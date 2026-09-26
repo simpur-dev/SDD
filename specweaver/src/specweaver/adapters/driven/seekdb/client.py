@@ -7,8 +7,8 @@ import pyseekdb
 
 from ....shared.config import SeekDbSettings
 
-ARTIFACTS_COLLECTION = "sw_artifacts"
-RELATIONS_TABLE = "sw_relations"
+ARTIFACTS_COLLECTION = "sw_artifacts_v2"
+RELATIONS_TABLE = "sw_relations_v2"
 
 _RELATIONS_DDL = f"""
 CREATE TABLE IF NOT EXISTS {RELATIONS_TABLE} (
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS {RELATIONS_TABLE} (
   kind        VARCHAR(32),
   confidence  DOUBLE,
   evidence    VARCHAR(1024),
-  UNIQUE KEY uq_edge (src_id, dst_id, kind)
+  UNIQUE KEY uq_edge (project_id, src_id, dst_id, kind)
 ) ORGANIZATION HEAP
 """
 
@@ -117,6 +117,8 @@ class SeekdbClient:
         return self._client.get_raw_connection()
 
     @staticmethod
-    def edge_id(src: str, kind: str, dst: str) -> str:
-        digest = hashlib.sha1(f"{src}|{kind}|{dst}".encode()).hexdigest()
+    def edge_id(project: str, src: str, kind: str, dst: str) -> str:
+        digest = hashlib.sha1(
+            f"{project}|{src}|{kind}|{dst}".encode()
+        ).hexdigest()
         return digest[:16]

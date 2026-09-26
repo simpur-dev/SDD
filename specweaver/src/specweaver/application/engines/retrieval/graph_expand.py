@@ -33,7 +33,10 @@ class GraphExpander:
         extra: dict[str, ScoredArtifact] = {}
         for seed in seeds:
             peers = await self._catalog.neighbors(
-                seed.artifact.id, EXPAND_KINDS, self._depth
+                seed.artifact.project_id,
+                seed.artifact.id,
+                EXPAND_KINDS,
+                self._depth,
             )
             for peer in peers:
                 candidate = ScoredArtifact(

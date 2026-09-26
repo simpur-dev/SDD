@@ -38,7 +38,7 @@ class GapDetector:
         ]
         for requirement in requirements:
             connected = await self._catalog.neighbors(
-                requirement.id, _CHAIN_KINDS, depth=2
+                requirement.project_id, requirement.id, _CHAIN_KINDS, depth=2
             )
             present = {artifact.type for artifact in connected}
             for layer, label, hint in _LAYERS:

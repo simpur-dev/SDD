@@ -8,6 +8,7 @@ from fakes import (
 )
 
 from .suites import (
+    catalog_isolation_suite,
     catalog_suite,
     handoff_suite,
     hybrid_suite,
@@ -17,6 +18,10 @@ from .suites import (
 
 async def test_catalog_contract() -> None:
     await catalog_suite(InMemoryCatalog())
+
+
+async def test_catalog_isolation_contract() -> None:
+    await catalog_isolation_suite(InMemoryCatalog())
 
 
 async def test_hybrid_contract() -> None:

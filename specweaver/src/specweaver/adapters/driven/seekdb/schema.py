@@ -29,10 +29,16 @@ def _loads_list(value: str | None) -> list:
         return []
 
 
+def storage_key(project_id: str, artifact_id: str) -> str:
+    """Collection record key: logical ids collide across projects (REQ-1)."""
+    return f"{project_id}:{artifact_id}"
+
+
 def artifact_to_record(artifact: Artifact) -> dict:
     """Map an Artifact to a pyseekdb collection record (id/document/embedding/metadata)."""
     source = artifact.source
     metadata = {
+        "id": artifact.id,
         "project_id": artifact.project_id,
         "type": artifact.type.value,
         "module": artifact.module or "",
@@ -67,6 +73,7 @@ def record_to_artifact(
     m = metadata or {}
     source_uri = m.get("source_uri", "")
     source_checksum = m.get("checksum") or None
+    logical_id = m.get("id") or artifact_id
     source = (
         SourceRef(
             uri=source_uri,
@@ -77,7 +84,7 @@ def record_to_artifact(
         else None
     )
     return Artifact(
-        id=artifact_id,
+        id=logical_id,
         project_id=m.get("project_id", ""),
         type=ArtifactType(m.get("type", "requirement")),
         module=m.get("module") or None,

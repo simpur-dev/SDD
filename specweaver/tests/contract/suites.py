@@ -52,7 +52,7 @@ async def catalog_suite(catalog) -> None:
     for artifact in artifacts:
         await catalog.upsert_artifact(artifact)
 
-    got = await catalog.get_artifact("code-1")
+    got = await catalog.get_artifact("p", "code-1")
     assert got is not None
     assert got.title == "schedule.py"
     assert got.embedding[0] == artifacts[2].embedding[0]
@@ -85,17 +85,47 @@ async def catalog_suite(catalog) -> None:
         )
 
     one_hop = await catalog.neighbors(
-        "req-1", [RelationKind.refines], depth=1
+        "p", "req-1", [RelationKind.refines], depth=1
     )
     assert {a.id for a in one_hop} == {"des-1"}
 
     chain = await catalog.neighbors(
+        "p",
         "req-1",
         [RelationKind.refines, RelationKind.realizes,
          RelationKind.tests],
         depth=3,
     )
     assert {a.id for a in chain} == {"des-1", "code-1", "test-1"}
+
+
+async def catalog_isolation_suite(catalog) -> None:
+    """Artifact ids collide across projects (REQ-1); access must stay scoped."""
+    shared = make_artifacts("iso-a") + make_artifacts("iso-b")
+    for artifact in shared:
+        await catalog.upsert_artifact(artifact)
+
+    only_a = await catalog.get_artifact("iso-a", "code-1")
+    other = await catalog.get_artifact("iso-b", "code-1")
+    assert only_a is not None and other is not None
+    assert {only_a.project_id, other.project_id} == {"iso-a", "iso-b"}
+
+    await catalog.upsert_relation(
+        Relation(
+            project_id="iso-a", src="req-1", dst="des-1",
+            kind=RelationKind.refines,
+        )
+    )
+    await catalog.upsert_relation(
+        Relation(
+            project_id="iso-b", src="req-1", dst="code-old",
+            kind=RelationKind.refines,
+        )
+    )
+    from_a = await catalog.neighbors(
+        "iso-a", "req-1", [RelationKind.refines], depth=2
+    )
+    assert {a.id for a in from_a} == {"des-1"}
 
 
 async def hybrid_suite(hybrid) -> None:

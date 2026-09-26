@@ -5,7 +5,7 @@ import asyncio
 from ....domain.entities import Artifact, Relation
 from ....domain.ports.catalog import ArtifactFilter
 from .client import RELATIONS_TABLE, SeekdbClient
-from .schema import artifact_to_record, record_to_artifact
+from .schema import artifact_to_record, record_to_artifact, storage_key
 
 
 def _scalar_where(flt: ArtifactFilter) -> dict | None:
@@ -30,7 +30,7 @@ class SeekdbCatalog:
 
         def _op() -> None:
             collection.upsert(
-                ids=rec["id"],
+                ids=[storage_key(artifact.project_id, artifact.id)],
                 documents=rec["document"],
                 embeddings=rec["embedding"],
                 metadatas=rec["metadata"],
@@ -38,12 +38,14 @@ class SeekdbCatalog:
 
         await asyncio.to_thread(_op)
 
-    async def get_artifact(self, artifact_id: str) -> Artifact | None:
+    async def get_artifact(
+        self, project_id: str, artifact_id: str
+    ) -> Artifact | None:
         collection = self._client.artifacts
 
         def _op() -> Artifact | None:
             res = collection.get(
-                ids=[artifact_id],
+                ids=[storage_key(project_id, artifact_id)],
                 include=["documents", "metadatas", "embeddings"],
             )
             if not res["ids"]:
@@ -92,7 +94,10 @@ class SeekdbCatalog:
     # ----- relations --------------------------------------------------------
     async def upsert_relation(self, relation: Relation) -> None:
         edge_id = SeekdbClient.edge_id(
-            relation.src, relation.kind.value, relation.dst
+            relation.project_id,
+            relation.src,
+            relation.kind.value,
+            relation.dst,
         )
         sql = (
             f"INSERT INTO {RELATIONS_TABLE} "
@@ -119,7 +124,11 @@ class SeekdbCatalog:
         await asyncio.to_thread(_op)
 
     async def neighbors(
-        self, artifact_id: str, kinds, depth: int = 1
+        self,
+        project_id: str,
+        artifact_id: str,
+        kinds,
+        depth: int = 1,
     ) -> list[Artifact]:
         kind_values = [k.value for k in kinds]
 
@@ -133,15 +142,24 @@ class SeekdbCatalog:
                     break
                 placeholders = ",".join(["%s"] * len(frontier))
                 kind_ph = ",".join(["%s"] * len(kind_values))
-                params = tuple(frontier) + tuple(kind_values)
+                params = (
+                    (project_id,)
+                    + tuple(frontier)
+                    + tuple(kind_values)
+                    + (project_id,)
+                    + tuple(frontier)
+                    + tuple(kind_values)
+                )
                 with raw.cursor() as cur:
                     cur.execute(
                         f"SELECT dst_id FROM {RELATIONS_TABLE} "
-                        f"WHERE src_id IN ({placeholders}) AND kind IN ({kind_ph}) "
+                        f"WHERE project_id=%s AND src_id IN ({placeholders}) "
+                        f"AND kind IN ({kind_ph}) "
                         f"UNION "
                         f"SELECT src_id FROM {RELATIONS_TABLE} "
-                        f"WHERE dst_id IN ({placeholders}) AND kind IN ({kind_ph})",
-                        params + params,
+                        f"WHERE project_id=%s AND dst_id IN ({placeholders}) "
+                        f"AND kind IN ({kind_ph})",
+                        params,
                     )
                     peers = {r["dst_id"] for r in cur.fetchall()}
                 new = peers - visited
@@ -151,7 +169,7 @@ class SeekdbCatalog:
             if not found:
                 return []
             res = self._client.artifacts.get(
-                ids=list(found),
+                ids=[storage_key(project_id, aid) for aid in found],
                 include=["documents", "metadatas", "embeddings"],
             )
             out = []

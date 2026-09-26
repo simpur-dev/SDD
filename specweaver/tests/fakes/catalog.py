@@ -22,14 +22,16 @@ def cosine(a: list[float], b: list[float]) -> float:
 
 class InMemoryCatalog:
     def __init__(self) -> None:
-        self.artifacts: dict[str, Artifact] = {}
+        self.artifacts: dict[tuple[str, str], Artifact] = {}
         self.relations: list[Relation] = []
 
     async def upsert_artifact(self, artifact: Artifact) -> None:
-        self.artifacts[artifact.id] = artifact
+        self.artifacts[(artifact.project_id, artifact.id)] = artifact
 
-    async def get_artifact(self, artifact_id: str) -> Artifact | None:
-        return self.artifacts.get(artifact_id)
+    async def get_artifact(
+        self, project_id: str, artifact_id: str
+    ) -> Artifact | None:
+        return self.artifacts.get((project_id, artifact_id))
 
     async def list_artifacts(
         self, flt: ArtifactFilter
@@ -58,7 +60,8 @@ class InMemoryCatalog:
             r
             for r in self.relations
             if not (
-                r.src == relation.src
+                r.project_id == relation.project_id
+                and r.src == relation.src
                 and r.dst == relation.dst
                 and r.kind == relation.kind
             )
@@ -66,7 +69,11 @@ class InMemoryCatalog:
         self.relations.append(relation)
 
     async def neighbors(
-        self, artifact_id: str, kinds, depth: int = 1
+        self,
+        project_id: str,
+        artifact_id: str,
+        kinds,
+        depth: int = 1,
     ) -> list[Artifact]:
         visited = {artifact_id}
         frontier = [artifact_id]
@@ -74,6 +81,8 @@ class InMemoryCatalog:
         for _ in range(depth):
             new: set[str] = set()
             for relation in self.relations:
+                if relation.project_id != project_id:
+                    continue
                 if relation.kind not in kinds:
                     continue
                 peer: str | None = None
@@ -87,7 +96,9 @@ class InMemoryCatalog:
             found |= new
             frontier = list(new)
         return [
-            self.artifacts[p] for p in found if p in self.artifacts
+            self.artifacts[(project_id, peer_id)]
+            for peer_id in found
+            if (project_id, peer_id) in self.artifacts
         ]
 
 
