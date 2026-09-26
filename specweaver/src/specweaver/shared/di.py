@@ -214,6 +214,7 @@ async def run(settings: Settings | None = None):
         telemetry,
         workspace,
         activity,
+        memory,
     )
     create_handoff_usecase = CreateHandoff(handoff, telemetry)
     usecases = {

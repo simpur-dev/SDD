@@ -209,7 +209,10 @@ async def run(out_root: Path, keep_temp: bool) -> int:
             # K1/K2: ask for context
             ctx2 = await usecases["get_context"](
                 GetContextRequest(
-                    project_id=project, task_text=TASK_TEXT, base_ref=base1
+                    project_id=project,
+                    task_text=TASK_TEXT,
+                    base_ref=base1,
+                    scope_id=scope,
                 )
             )
             dump(
@@ -345,7 +348,10 @@ async def run(out_root: Path, keep_temp: bool) -> int:
             # K7: final context shows superseded exclusion + suspect shots
             ctx7 = await usecases["get_context"](
                 GetContextRequest(
-                    project_id=project, task_text=TASK_TEXT, base_ref=head3
+                    project_id=project,
+                    task_text=TASK_TEXT,
+                    base_ref=head3,
+                    scope_id=scope,
                 )
             )
             dump(

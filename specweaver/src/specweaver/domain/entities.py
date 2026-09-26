@@ -5,7 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from .enums import ArtifactType, LifecycleStatus, RelationKind, TaskPhase
-from .values import Budget, Citation, Finding, SourceRef
+from .values import Budget, Citation, Finding, MemoryNote, SourceRef
 
 
 class Artifact(BaseModel):
@@ -92,6 +92,7 @@ class ContextBundle(BaseModel):
     verification: list[Artifact] = []
     last_test_run: TestRun | None = None
     findings: list[Finding] = []
+    memory_notes: list[MemoryNote] = []
     citations: list[Citation] = []
     budget: Budget | None = None
     generated_at: datetime | None = None

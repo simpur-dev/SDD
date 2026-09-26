@@ -81,6 +81,21 @@ def _entries(artifacts: list[Artifact]) -> str:
     return "\n\n".join(entry_block(a) for a in artifacts)
 
 
+def memory_block(notes: list) -> str:
+    """Rendered working-memory lines (also the byte accounting source)."""
+    if not notes:
+        return ""
+    lines = [f"- working memory ({len(notes)}):"]
+    for note in notes:
+        ref = (
+            f" [{note.citation.source.uri}]"
+            if note.citation and note.citation.source
+            else ""
+        )
+        lines.append(f"  - {note.kind}: {note.content}{ref}")
+    return "\n".join(lines)
+
+
 def _status_lines(bundle: ContextBundle) -> str:
     task = bundle.task
     lines = [
@@ -90,6 +105,9 @@ def _status_lines(bundle: ContextBundle) -> str:
     ]
     cited = ", ".join(c.artifact_id for c in bundle.citations) or "(none)"
     lines.append(f"- sources cited: {cited}")
+    notes = memory_block(bundle.memory_notes)
+    if notes:
+        lines.append(notes)
     return "\n".join(lines)
 
 

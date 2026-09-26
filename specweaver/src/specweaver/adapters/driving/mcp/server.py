@@ -99,14 +99,26 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
         project_id: str,
         task_text: str,
         base_ref: str = "",
+        scope_id: str = "",
     ) -> dict:
-        """Assemble a budgeted Context Bundle (markdown) for a task."""
+        """Assemble a budgeted Context Bundle (markdown) for a task.
+
+        When a PowerContext scope is reachable the bundle's status section also
+        recalls the decisions/progress recorded for that scope; an unreachable
+        memory degrades to `memory_error` instead of failing the read path.
+        """
+        memory_error = ""
+        try:
+            scope_id = await app.ensure_scope(project_id, scope_id)
+        except SWError as exc:
+            scope_id, memory_error = "", f"[{exc.code}] {exc.message}"
         result = await _invoke(
             "get_context",
             GetContextRequest(
                 project_id=project_id,
                 task_text=task_text,
                 base_ref=base_ref or None,
+                scope_id=scope_id,
             ),
         )
         bundle = result.bundle
@@ -120,6 +132,8 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
                 {"id": e.artifact.id, "reasons": e.reasons}
                 for e in result.excluded
             ],
+            "memory_notes": len(result.bundle.memory_notes),
+            "memory_error": result.memory_error or memory_error,
         }
 
     @mcp.tool(annotations=_WRITE)

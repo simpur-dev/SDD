@@ -4,9 +4,9 @@ from datetime import datetime
 
 from ....domain.entities import Artifact, ContextBundle, Task, TestRun
 from ....domain.rules import byte_size
-from ....domain.values import Budget
+from ....domain.values import Budget, MemoryNote
 from .budget import FIXED_CHROME_BYTES, Budgeter
-from .render import citations_for, format_test_run
+from .render import citations_for, format_test_run, memory_block
 from .sections import map_sections
 
 
@@ -23,6 +23,7 @@ class AssemblyEngine:
         findings,
         last_test_run: TestRun | None = None,
         relevance: dict[str, float] | None = None,
+        memory_notes: list[MemoryNote] | None = None,
     ) -> ContextBundle:
         """Assemble the bundle.
 
@@ -31,7 +32,8 @@ class AssemblyEngine:
         (docs/01 §4.4 progressive disclosure).
         """
         sections = map_sections(valid, relevance)
-        chrome = FIXED_CHROME_BYTES
+        notes = memory_notes or []
+        chrome = FIXED_CHROME_BYTES + byte_size(memory_block(notes))
         if last_test_run is not None:
             chrome += byte_size(format_test_run(last_test_run)) + 1
         # The Budgeter owns every byte decision, findings included: letting the
@@ -61,6 +63,7 @@ class AssemblyEngine:
             verification=verification,
             last_test_run=last_test_run,
             findings=decision.findings,
+            memory_notes=notes,
             citations=citations_for(goal + design + verification),
             budget=Budget(
                 max_bytes=self._max_bytes,

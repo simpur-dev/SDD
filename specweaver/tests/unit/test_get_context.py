@@ -3,6 +3,7 @@ from __future__ import annotations
 from fakes.activity import InMemoryActivityLog
 from fakes.catalog import InMemoryCatalog, InMemoryHybridSearch
 from fakes.inference import ScriptedEmbedding
+from fakes.memory import InMemoryMemory
 
 from specweaver.application.engines.assembly import AssemblyEngine
 from specweaver.application.engines.retrieval import (
@@ -27,6 +28,8 @@ from specweaver.domain.enums import (
     ArtifactType,
     RelationKind,
 )
+from specweaver.domain.ports.memory import MemoryEntry
+from specweaver.shared.errors import SWError
 from specweaver.shared.telemetry import Telemetry
 
 
@@ -75,7 +78,7 @@ async def _catalog() -> InMemoryCatalog:
 
 
 def _usecase(
-    catalog: InMemoryCatalog, activity=None, telemetry=None
+    catalog, activity=None, telemetry=None, memory=None
 ) -> GetContext:
     retrieval = RetrievalEngine(
         QueryPlanner(None),
@@ -97,6 +100,7 @@ def _usecase(
         AssemblyEngine(8000),
         telemetry or Telemetry(),
         activity=activity,
+        memory=memory,
     )
 
 
@@ -155,3 +159,97 @@ async def test_get_context_records_engine_metrics() -> None:
     assert span.metrics["assembly_ms"] > 0
     assert span.metrics["bundle_bytes"] > 0
     assert span.metrics["findings"] >= 0
+
+
+async def test_get_context_recalls_working_memory_into_the_status_section() -> None:
+    catalog = await _catalog()
+    memory = InMemoryMemory()
+    entry = await memory.remember(
+        MemoryEntry(
+            scope_id="scp-railway",
+            kind="decision",
+            content="发车时刻调整必须同时重算后续各站",
+        )
+    )
+    usecase = _usecase(catalog, memory=memory)
+
+    result = await usecase(
+        GetContextRequest(
+            project_id="railway",
+            task_text="调整 发车时间",
+            scope_id="scp-railway",
+        )
+    )
+
+    assert [note.content for note in result.bundle.memory_notes] == [
+        entry.content
+    ]
+    assert "working memory (1)" in result.markdown
+    assert result.memory_error == ""
+    assert result.bundle.budget.used_bytes <= 8000
+
+
+async def test_get_context_degrades_when_memory_is_unreachable() -> None:
+    class _Down:
+        async def search(self, scope_id, query, n=8):
+            raise SWError("powercontext unreachable")
+
+    catalog = await _catalog()
+    result = await _usecase(catalog, memory=_Down())(
+        GetContextRequest(
+            project_id="railway",
+            task_text="调整 发车时间",
+            scope_id="scp-railway",
+        )
+    )
+
+    assert result.bundle.memory_notes == []
+    assert result.memory_error == "powercontext unreachable"
+    assert result.markdown.startswith("# Context")
+
+
+async def test_get_context_without_scope_does_not_touch_memory() -> None:
+    class _Exploding:
+        async def search(self, *args, **kwargs):  # pragma: no cover
+            raise AssertionError("must not be called without a scope")
+
+    catalog = await _catalog()
+    result = await _usecase(catalog, memory=_Exploding())(
+        GetContextRequest(project_id="railway", task_text="调整 发车时间")
+    )
+    assert result.bundle.memory_notes == []
+
+
+async def test_memory_notes_render_on_a_single_line() -> None:
+    """A recalled note can be a whole pasted document; the bundle must not
+    break into stray markdown lines."""
+    catalog = await _catalog()
+    memory = InMemoryMemory()
+    await memory.remember(
+        MemoryEntry(
+            scope_id="scp-railway",
+            kind="constraint",
+            content=(
+                "调整 发车时间 的既有约定\n"
+                "第二行含 --- 与 front matter 样式\n" + "很" * 300
+            ),
+        )
+    )
+
+    result = await _usecase(catalog, memory=memory)(
+        GetContextRequest(
+            project_id="railway",
+            task_text="调整 发车时间",
+            scope_id="scp-railway",
+        )
+    )
+
+    (note,) = result.bundle.memory_notes
+    assert "\n" not in note.content
+    assert len(note.content) <= 200
+    # the collapsed note occupies exactly one bullet line in the bundle
+    assert (
+        "  - constraint: 调整 发车时间 的既有约定 第二行含 ---"
+        in result.markdown
+    )
+    assert "\nid: " not in result.markdown

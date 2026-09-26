@@ -42,6 +42,14 @@ class Budget(BaseModel):
     truncated: bool = False
 
 
+class MemoryNote(BaseModel):
+    """A working-memory observation recalled from PowerContext."""
+
+    kind: str
+    content: str
+    citation: Citation | None = None
+
+
 class TokenUsage(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
