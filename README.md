@@ -65,6 +65,7 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 | 检索质量金标（6 任务，人工标注） | 预算 8000B：recall **1.0** vs 关键词基线 0.847（precision 0.204 vs 0.257）；**紧预算 1500B：0.319 vs 0.500，此时我们落后**，已挂账为下一条改进项 | `evidence/retrieval-railway-8000/`、`evidence/retrieval-railway-1500/` |
 | 真实后端接口 | 11 个 MCP 工具逐个跑通（含 revise/retire/guard 探针与 `ToolAnnotations` 声明） | `evidence/m5-20260927-005855/` |
 | 全链路演示（M6 重跑） | 11/11 → 13/13 真实回归；`usage.csv` 含引擎级 `metrics` 列；Bundle ④段回读 PowerContext 工作记忆 | `evidence/railway-20260927-023632/` |
+| 规模两点对照（非受控扫描） | 语料 18→159 构件，`get_context` 后端调用 60-66 → 53（成本随召回量而非语料规模）；`ExplainSource` 改为按层批量读 | `evidence/scaling-20260927/scaling.md` |
 | 效率对照（hard 档，N=3） | 成功率 3/3 vs 3/3；ON 中位耗时 46.1s vs OFF 82.3s，输出 tokens 中位 8185 vs 14500；**均值 -26%/-28%，但 ON 最差一次劣于全部 OFF** | `evidence/off-on/20260926-235601/` |
 | 上下文组装用量 | 真实 planner 调用 177/103 tokens、53 次后端往返、bundle 7864 bytes（8000 预算内） | `evidence/m5-20260927-005855/metrics-probe.txt` |
 
