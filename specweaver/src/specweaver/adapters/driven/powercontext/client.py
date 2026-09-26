@@ -17,6 +17,20 @@ def require(payload: Any, key: str, what: str) -> Any:
     return payload[key]
 
 
+def auth_headers(settings: PowerContextSettings) -> dict[str, str]:
+    """Bearer headers for an enforced server; empty or unset means anonymous.
+
+    One source for the client and the health probe, so the documented
+    ``POWERCONTEXT__TOKEN`` cannot be honoured in one and ignored in the other.
+    """
+    token = settings.token
+    if token is None or not token.get_secret_value():
+        return {}
+    # matches POWERCONTEXT_SERVER_ACCESS_MODE=enforced +
+    # POWERCONTEXT_SERVER_AUTH_TOKEN on the server side
+    return {"Authorization": f"Bearer {token.get_secret_value()}"}
+
+
 class PowerContextClient:
     """Async HTTP client for the PowerContext server."""
 
@@ -30,19 +44,10 @@ class PowerContextClient:
 
     def open(self) -> None:
         if self._http is None:
-            headers = {}
-            token = self._settings.token
-            if token is not None and token.get_secret_value():
-                # matches POWERCONTEXT_SERVER_ACCESS_MODE=enforced +
-                # POWERCONTEXT_SERVER_AUTH_TOKEN on the server side; an empty
-                # value (as shipped in .env.example) stays anonymous
-                headers["Authorization"] = (
-                    f"Bearer {token.get_secret_value()}"
-                )
             self._http = httpx.AsyncClient(
                 base_url=self._settings.base_url,
                 timeout=self._settings.timeout,
-                headers=headers,
+                headers=auth_headers(self._settings),
             )
 
     async def close(self) -> None:
