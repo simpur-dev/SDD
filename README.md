@@ -61,15 +61,15 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 
 | 维度 | 现状数字 | 出处 |
 |---|---|---|
-| 自动化测试 | 220 项（unit 含 boundary 审计组 + contract；容器在位时另跑 integration 真后端套件，`--live` 下有 skip 即判失败） | `scripts/gate.py` |
+| 自动化测试 | 230 项：225 项离线（unit 含 boundary 审计组 + contract）+ 5 项真后端集成（无容器时跳过，故 `--live` 下任何 skip 直接判失败） | `scripts/gate.py` |
 | 检索质量金标（6 任务，人工标注，三方对照） | recall：SpecWeaver **1.0** / 朴素关键词 0.847 / 官方 `/v1/context/prepare` 0.208（记忆侧装配，工程构件本不在其中）；precision 仅 0.204（bundle 平均 6363B＝预算 80%，未触及约束）；**紧预算 1500B：同一份金标三次独立运行 0.319 / 0.264 / 0.1945，基线 0.500 / 0.500 / 0.444 —— 此时我们稳定落后，缺陷未解**（"仅引用"紧凑渲染已试并因无增益回退） | `evidence/retrieval-railway-{8000,1500}-v2/`（修复前对照：`retrieval-railway-{8000,1500}/`） |
 | 上下文预算保证 | 声明的字节预算现在对**交付文本**成立：④段引用清单计入成本 + 渲染后复测重裁；扫描 7 档预算断言渲染字节 ≤ 预算（其中 4 档含默认 8000B 在修复前会超），预算小于裸框架时由⑥段明确宣告 | `specweaver/tests/unit/engines/assembly/test_budget_guarantee.py` |
 | 受控规模扫描（2 语料 × 3 召回上限 × 8 重复） | `n_results=5` 时 18 与 354 构件语料均 40 次后端调用（与规模无关）；`40` 时 65 vs 178（增量来自核对循环与图扩展）；p95 5.47-6.74s 由单次 LLM 规划主导 | `evidence/scaling-sweep-20260927/sweep.md` |
 | 真实后端接口（进程内） | 11 个 MCP 工具逐个跑通（含 revise/retire/guard 探针与 `ToolAnnotations` 声明） | `evidence/m5-20260927-005855/` |
-| 真实后端接口（streamable-http 传输） | 11 工具经真实 HTTP 传输全跑一遍：9/9 用例 span 全部出现、0 error、`sw_span_duration_ms` 直方图在位（span 缺失即判失败，用于区分"请求被应答"与"打到应用层"） | `evidence/http-transport-20260927-033036/probe.txt` |
+| 真实后端接口（streamable-http 传输） | 11 工具经真实 HTTP 传输全跑一遍：9/9 用例 span 全部出现、0 error、`sw_span_duration_ms` 直方图在位（span 缺失即判失败，用于区分"请求被应答"与"打到应用层"） | `evidence/http-transport-20260927-041207/probe.txt` |
 | 全链路演示（M6 重跑） | 11/11 → 13/13 真实回归；`usage.csv` 含引擎级 `metrics` 列；Bundle ④段回读 PowerContext 工作记忆（该部署记忆侧只有 fts 词面召回，命中 0 属正常，见《02》§7.6） | `evidence/railway-20260927-023632/` |
 | 效率对照（hard 档，N=3） | 成功率 3/3 vs 3/3；ON 中位耗时 46.1s vs OFF 82.3s，输出 tokens 中位 8185 vs 14500；**均值 -26%/-28%，但 ON 最差一次劣于全部 OFF** | `evidence/off-on/20260926-235601/` |
-| 上下文组装用量（同一次 HTTP 探针内） | `get_context` 3 次真实 planner 调用：prompt/completion 336/292 tokens、召回 57 条（有效 9、排除 48）、装配 7322 bytes；整条 11 工具链共 381 次后端往返 | `evidence/http-transport-20260927-033036/probe.txt` |
+| 上下文组装用量（同一次 HTTP 探针内） | `get_context` 3 次真实 planner 调用：prompt/completion 336/276 tokens、召回 57 条（有效 11、排除 46）、findings 6、装配合计 9735 bytes（均值≈3245，预算 8000）；整条 11 工具链共 391 次后端往返 | `evidence/http-transport-20260927-041207/probe.txt` |
 
 已知局限（检索质量缺金标指标、大仓库全量核对成本、演示基线只有"无工具"一臂、`/metrics` 无鉴权等）诚实记录在《01》§11 与各 `evidence/*/report.md` 内。
 
