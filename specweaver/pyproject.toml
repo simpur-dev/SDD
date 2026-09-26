@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "specweaver"
-version = "0.1.0"
+version = "0.1.1"
 description = "SpecWeaver (规格织网): SDD engineering context runtime over seekdb and PowerContext"
 readme = "README.md"
 requires-python = ">=3.11"
