@@ -25,6 +25,18 @@ class ScriptedLLM:
         return CompletionResult(text=text, structured=structured)
 
 
+class RaisingLLM:
+    """LLM whose complete() always fails, to exercise fallback handling."""
+
+    def __init__(self, exc: Exception | None = None) -> None:
+        self._exc = exc or RuntimeError("model unavailable")
+
+    async def complete(
+        self, prompt: str, schema: dict | None = None
+    ) -> CompletionResult:
+        raise self._exc
+
+
 class ScriptedEmbedding:
     def __init__(self, dim: int = 8) -> None:
         self.dim = dim

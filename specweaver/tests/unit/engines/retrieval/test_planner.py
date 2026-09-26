@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fakes.inference import ScriptedLLM
+from fakes.inference import RaisingLLM, ScriptedLLM
 
 from specweaver.application.engines.retrieval import (
     QueryPlanner,
@@ -40,3 +40,15 @@ async def test_planner_uses_llm_json() -> None:
     assert plan.keywords == ["发车", "调整"]
     assert plan.modules == ["schedule"]
     assert plan.types == [ArtifactType.requirement]
+
+
+async def test_planner_falls_back_when_llm_raises() -> None:
+    plan = await QueryPlanner(RaisingLLM()).plan("调整发车时间")
+    assert plan.rationale == "rule-based planning"
+    assert plan.keywords  # rule keywords are still produced
+
+
+async def test_planner_falls_back_on_invalid_json() -> None:
+    llm = ScriptedLLM(["not a json object"])
+    plan = await QueryPlanner(llm).plan("调整发车时间")
+    assert plan.rationale == "rule-based planning"

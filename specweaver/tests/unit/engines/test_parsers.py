@@ -89,3 +89,54 @@ def test_python_test_parser() -> None:
     assert doc.symbols[0].kind == "test_case"
     assert doc.front_matter["test_target_module"] == "schedule"
     assert "REQ-1" in doc.references
+
+
+def test_python_code_tolerates_syntax_error() -> None:
+    doc = PythonCodeParser().parse(
+        "railway/broken.py", "def broken(:\n", "chk", ArtifactType.code
+    )
+    assert doc.symbols == []
+    assert doc.imports == []
+    assert doc.raw_text  # retained so the file is still keyword-searchable
+
+
+def test_python_code_tolerates_empty_file() -> None:
+    doc = PythonCodeParser().parse(
+        "railway/empty.py", "", "chk", ArtifactType.code
+    )
+    assert doc.symbols == []
+    assert doc.title == "empty"
+
+
+def test_markdown_without_front_matter_uses_heading() -> None:
+    doc = MarkdownParser().parse(
+        "specs/req.md", "# 需求标题\n\n- 应能工作\n", "chk",
+        ArtifactType.requirement,
+    )
+    assert doc.title == "需求标题"
+    assert doc.type is ArtifactType.requirement
+
+
+def test_markdown_empty_file_falls_back_to_stem() -> None:
+    doc = MarkdownParser().parse(
+        "specs/req.md", "", "chk", ArtifactType.requirement
+    )
+    assert doc.title == "req"
+    assert doc.behavior_points == []
+
+
+def test_markdown_unclosed_front_matter_is_body() -> None:
+    doc = MarkdownParser().parse(
+        "specs/req.md", "---\nid: REQ-1\nno closing fence\n", "chk",
+        ArtifactType.requirement,
+    )
+    assert doc.front_matter == {}
+
+
+def test_python_test_without_cases() -> None:
+    doc = PythonTestParser().parse(
+        "tests/conftest.py", "import pytest\n", "chk", ArtifactType.test
+    )
+    assert doc.type is ArtifactType.test
+    assert doc.symbols == []
+    assert doc.behavior_points == []

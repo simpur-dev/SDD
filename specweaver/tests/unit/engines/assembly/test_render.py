@@ -72,3 +72,18 @@ def test_code_entry_is_summarized() -> None:
     block = entry_block(code)
     assert "full source" in block
     assert "def adjust" in block
+
+
+def test_citation_locator_has_no_stray_dollar() -> None:
+    markdown = render_markdown(_bundle())
+    assert "#$L3" not in markdown
+    assert "#L3" in markdown
+
+
+def test_truncated_budget_emits_warning() -> None:
+    bundle = _bundle()
+    bundle.budget = Budget(
+        max_bytes=8000, used_bytes=8000, truncated=True
+    )
+    markdown = render_markdown(bundle)
+    assert "truncated to budget" in markdown
