@@ -13,7 +13,7 @@
 
 五层六边形：`domain`（零依赖） ← `application`（9 用例 + 5 引擎） ← `adapters`（driving: MCP/CLI；driven: seekdb/PowerContext/git/LLM），`shared/di.py` 是唯一装配根。
 权威次序：**真实工作区 > seekdb 工程库 > PowerContext 记忆**。
-详见 [`docs/01-架构设计说明书.md`](docs/01-架构设计说明书.md)（设计）与 [`docs/03-工程骨架设计.md`](docs/03-工程骨架设计.md)（骨架与契约）。
+详见 [`docs/01-架构设计说明书.md`](docs/01-架构设计说明书.md)（设计；其 §2 是赛题对齐矩阵与**交付物清单状态**）、[`docs/03-工程骨架设计.md`](docs/03-工程骨架设计.md)（骨架与契约）与 [`docs/02-调研纪要.md`](docs/02-调研纪要.md)（§7 为两个后端的容器实测与官方能力边界）。
 
 ## 五分钟跑通
 
