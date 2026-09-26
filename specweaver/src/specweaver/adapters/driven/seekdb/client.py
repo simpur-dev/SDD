@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS sw_change_set (
   test_run_id    VARCHAR(64),
   base_checksum  VARCHAR(128),
   head_checksum  VARCHAR(128),
-  ts             DATETIME
+  ts             DATETIME(6)
 ) ORGANIZATION HEAP
 """
 
@@ -50,9 +50,12 @@ CREATE TABLE IF NOT EXISTS sw_test_run (
   skipped     INT,
   commit_ref  VARCHAR(255),
   report_ref  VARCHAR(1024),
-  ts          DATETIME
+  ts          DATETIME(6)
 ) ORGANIZATION HEAP
 """
+
+# evidence tables whose "newest first" read path depends on ts precision
+_TS_TABLES = ("sw_change_set", "sw_test_run")
 
 
 class SeekdbClient:
@@ -115,6 +118,31 @@ class SeekdbClient:
             cur.execute(_RELATIONS_DDL)
             cur.execute(_CHANGESET_DDL)
             cur.execute(_TESTRUN_DDL)
+            self._widen_legacy_ts(cur)
+
+    @staticmethod
+    def _widen_legacy_ts(cur) -> None:
+        """Give an existing database back the ordering the read path promises.
+
+        Databases created before the ts columns were microsecond-precise store
+        whole seconds, so two evidence records written in the same second tie
+        and `ORDER BY ts DESC` returns them in an arbitrary order - which makes
+        "the last test run" in a Context Bundle a coin flip. IF NOT EXISTS
+        never rewrites a live table, so the widening happens here instead.
+        """
+        names = ", ".join(f"'{table}'" for table in _TS_TABLES)
+        cur.execute(
+            "SELECT TABLE_NAME, DATETIME_PRECISION "
+            "FROM information_schema.COLUMNS "
+            f"WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ({names}) "
+            "AND COLUMN_NAME = 'ts'"
+        )
+        for row in cur.fetchall() or []:
+            # raw connections hand back dict rows (DictCursor)
+            table = str(row["TABLE_NAME"])
+            precision = int(row["DATETIME_PRECISION"])
+            if table in _TS_TABLES and precision < 6:
+                cur.execute(f"ALTER TABLE {table} MODIFY ts DATETIME(6)")
 
     def raw_connection(self):
         self.count_op()

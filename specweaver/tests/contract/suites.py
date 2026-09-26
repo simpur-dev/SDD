@@ -2,7 +2,13 @@
 
 from __future__ import annotations
 
-from specweaver.domain.entities import Artifact, Relation
+from specweaver.domain.entities import (
+    Artifact,
+    ChangeSet,
+    FileChange,
+    Relation,
+    TestRun,
+)
 from specweaver.domain.enums import (
     ArtifactType,
     LifecycleStatus,
@@ -218,3 +224,64 @@ async def handoff_suite(handoff, scope_id: str, source_id: str):
         },
     )
     return view
+
+
+async def activity_suite(activity, project: str) -> None:
+    """Change-set and test-run evidence: round-trip, newest-first, per project.
+
+    ``GetContext`` hands the Agent "the last test run" and ``VerifyState``
+    counts change sets, so both rest on this ordering surviving the store - the
+    second record is written in the same second as the first on purpose.
+    """
+    await activity.record_test_run(
+        TestRun(
+            id=f"{project}-tr-1", project_id=project, task_id="t1",
+            command="pytest -q", total=5, passed=4, failed=1, skipped=0,
+            report_ref="junit-1.xml", commit_ref="aaaa111",
+        )
+    )
+    await activity.record_test_run(
+        TestRun(
+            id=f"{project}-tr-2", project_id=project, task_id="t1",
+            command="pytest -q", total=6, passed=6, failed=0, skipped=0,
+            report_ref="junit-2.xml", commit_ref="bbbb222",
+        )
+    )
+    await activity.record_change_set(
+        ChangeSet(
+            id=f"{project}-cs-1", project_id=project, task_id="t1",
+            files_changed=[
+                FileChange(
+                    path="src/a.py", change_type="modified", symbols=["a"]
+                ),
+                FileChange(path="src/b.py", change_type="added"),
+            ],
+            test_run_id=f"{project}-tr-2",
+        )
+    )
+
+    runs = await activity.list_test_runs(project)
+    assert [run.id for run in runs[:2]] == [
+        f"{project}-tr-2",
+        f"{project}-tr-1",
+    ], "the newest run must come first"
+    newest = runs[0]
+    assert (newest.total, newest.passed, newest.failed) == (6, 6, 0)
+    assert newest.report_ref == "junit-2.xml"
+    assert newest.commit_ref == "bbbb222"
+
+    change_sets = await activity.list_change_sets(project)
+    assert [cs.id for cs in change_sets[:1]] == [f"{project}-cs-1"]
+    first = change_sets[0]
+    assert first.test_run_id == f"{project}-tr-2"
+    assert [(c.path, c.change_type) for c in first.files_changed] == [
+        ("src/a.py", "modified"),
+        ("src/b.py", "added"),
+    ]
+    assert first.files_changed[0].symbols == ["a"]
+
+    assert [
+        run.id for run in await activity.list_test_runs(project, "t1")
+    ] == [f"{project}-tr-2", f"{project}-tr-1"]
+    assert await activity.list_test_runs(f"{project}-other") == []
+    assert await activity.list_change_sets(f"{project}-other") == []

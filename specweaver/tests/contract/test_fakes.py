@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fakes import (
+    InMemoryActivityLog,
     InMemoryCatalog,
     InMemoryHandoff,
     InMemoryHybridSearch,
@@ -8,12 +9,17 @@ from fakes import (
 )
 
 from .suites import (
+    activity_suite,
     catalog_isolation_suite,
     catalog_suite,
     handoff_suite,
     hybrid_suite,
     memory_suite,
 )
+
+
+async def test_activity_contract() -> None:
+    await activity_suite(InMemoryActivityLog(), "proj-activity")
 
 
 async def test_catalog_contract() -> None:

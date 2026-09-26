@@ -80,7 +80,7 @@ class SeekdbActivityLog:
         sql = (
             f"SELECT * FROM {TESTRUN_TABLE} WHERE project_id=%s "
             + ("AND task_id=%s " if task_id else "")
-            + "ORDER BY ts DESC LIMIT 100"
+            + "ORDER BY ts DESC, test_run_id DESC LIMIT 100"
         )
         params = (project_id, task_id) if task_id else (project_id,)
 
@@ -112,7 +112,7 @@ class SeekdbActivityLog:
         sql = (
             f"SELECT * FROM {CHANGESET_TABLE} WHERE project_id=%s "
             + ("AND task_id=%s " if task_id else "")
-            + "ORDER BY ts DESC LIMIT 100"
+            + "ORDER BY ts DESC, change_id DESC LIMIT 100"
         )
         params = (project_id, task_id) if task_id else (project_id,)
 

@@ -54,6 +54,19 @@ async def seekdb_adapters(run_id):
 
 
 @pytest.fixture
+async def seekdb_activity(run_id):
+    if not port_open("127.0.0.1", 2881):
+        pytest.skip("seekdb container is not available")
+    from specweaver.adapters.driven.seekdb import SeekdbActivityLog
+
+    settings = Settings()
+    settings.seekdb.database = f"sw_int_{run_id}"
+    client = SeekdbClient(settings.seekdb, dimension=8)
+    client.initialize()
+    return SeekdbActivityLog(client), f"proj-{run_id}"
+
+
+@pytest.fixture
 async def pc_adapters(run_id):
     if not port_open("127.0.0.1", 8000) or not pc_ready():
         pytest.skip("powercontext container is not available")
