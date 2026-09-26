@@ -45,7 +45,9 @@ class AssemblyEngine:
         inside each section so the budget drops the least relevant ones first
         (docs/01 §4.4 progressive disclosure).
         """
-        sections = map_sections(valid, relevance)
+        sections = map_sections(
+            valid, relevance, f"{task.title} {task.objective}"
+        )
         notes = memory_notes or []
         chrome = FIXED_CHROME_BYTES + byte_size(memory_block(notes))
         if last_test_run is not None:
