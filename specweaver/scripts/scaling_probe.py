@@ -11,6 +11,12 @@ backend calls / duration / recall / bundle bytes are recorded, so medians and
 nearest-rank p95 come from the samples themselves.
 
     python scripts/scaling_probe.py --out ../evidence/scaling-20260927
+
+测量前提（2026-09-27 复跑踩到）：语料必须是"刚 ingest 过且 workspace 对齐"的状态。
+scratch 语料（如 mcp-verify）会随着代码改动被反复摄入而进入 superseded/deprecated，
+有效性阶段把它们全部排除，于是测到的是"空 bundle 的成本"（cap=5 时 14 次往返、
+bundle 801 bytes），与交付饱满语料的 40 次不可比。跨版本比较前先确认该项目的
+构件确实通过了有效性核对（看每格 recall 与 `平均 bundle bytes` 是否合理）。
 """
 from __future__ import annotations
 

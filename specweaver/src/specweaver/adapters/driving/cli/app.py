@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -8,7 +9,6 @@ import typer
 from rich.console import Console
 
 from .... import __version__
-from ....application.engines.assembly import render_json
 from ....application.usecases.complete_task import CompleteTaskRequest
 from ....application.usecases.create_handoff import CreateHandoffRequest
 from ....application.usecases.get_context import GetContextRequest
@@ -174,9 +174,29 @@ def context(
     result = _execute(_op, usage_out)
     if as_json:
         # raw stdout: rich would wrap long lines and break JSON parsing
-        typer.echo(render_json(result.bundle))
+        payload = result.bundle.model_dump(mode="json")
+        # the same "why is this empty" fields the MCP tool returns: an
+        # all-excluded bundle is otherwise a silent black box on the CLI
+        payload["excluded"] = [
+            {"id": e.artifact.id, "reasons": e.reasons}
+            for e in result.excluded
+        ]
+        payload["memory_error"] = result.memory_error
+        typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
         console.print(result.markdown)
+        if result.excluded:
+            first = result.excluded[0]
+            console.print(
+                f"[yellow]note[/yellow] {len(result.excluded)} artifact(s) "
+                f"recalled but excluded, e.g. {first.artifact.id}: "
+                f"{', '.join(first.reasons)} -> re-ingest or widen the task"
+            )
+        if result.memory_error:
+            console.print(
+                f"[yellow]note[/yellow] working memory unavailable: "
+                f"{result.memory_error}"
+            )
 
 
 @app.command()

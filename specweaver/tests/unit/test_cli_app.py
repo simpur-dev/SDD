@@ -11,6 +11,9 @@ from pydantic import BaseModel
 from typer.testing import CliRunner
 
 from specweaver.adapters.driving.cli import app as cli
+from specweaver.domain.entities import Artifact, ContextBundle, Task
+from specweaver.domain.enums import ArtifactType
+from specweaver.domain.values import Budget
 from specweaver.shared import di
 from specweaver.shared.errors import SWError
 
@@ -148,3 +151,67 @@ def test_unwritable_usage_out_becomes_exit_code_three(monkeypatch) -> None:
     )
     assert result.exit_code == 3
     assert "cannot write --usage-out" in result.stdout
+
+
+class _Excluded:
+    def __init__(self, artifact, reasons: list[str]) -> None:
+        self.artifact = artifact
+        self.reasons = reasons
+
+
+class _ContextResult:
+    def __init__(self, bundle, markdown, excluded, memory_error) -> None:
+        self.bundle = bundle
+        self.markdown = markdown
+        self.excluded = excluded
+        self.memory_error = memory_error
+
+
+def _context_result():
+    stale = Artifact(
+        id="REQ-1",
+        project_id="p",
+        type=ArtifactType.requirement,
+        title="发车时间需求",
+        content="旧版本",
+    )
+    bundle = ContextBundle(
+        task=Task(id="task-1", project_id="p", title="任务"),
+        budget=Budget(max_bytes=8000, used_bytes=801, truncated=False),
+    )
+    return _ContextResult(
+        bundle,
+        "# Context: 任务\n\n## ① Current goal and effective constraints\n",
+        [_Excluded(stale, ["checksum_mismatch"])],
+        "powercontext 503 on POST /v1/memory/search",
+    )
+
+
+def _patch_context(monkeypatch) -> None:
+    app = _App()
+
+    async def _get_context(request):
+        return _context_result()
+
+    app.usecases["get_context"] = _get_context
+    _patch(monkeypatch, app)
+
+
+def test_context_json_reports_what_was_excluded(monkeypatch) -> None:
+    _patch_context(monkeypatch)
+    result = runner.invoke(cli.app, ["context", "p", "任务", "--json"])
+    assert result.exit_code == 0
+    payload = json.loads(result.stdout[result.stdout.index("{") :])
+    assert payload["excluded"] == [
+        {"id": "REQ-1", "reasons": ["checksum_mismatch"]}
+    ]
+    assert "503" in payload["memory_error"]
+
+
+def test_context_human_output_names_the_exclusion_reason(monkeypatch) -> None:
+    _patch_context(monkeypatch)
+    result = runner.invoke(cli.app, ["context", "p", "任务"])
+    assert result.exit_code == 0
+    assert "checksum_mismatch" in result.stdout
+    assert "re-ingest" in result.stdout
+    assert "working memory unavailable" in result.stdout
