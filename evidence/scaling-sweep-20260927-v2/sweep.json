@@ -1,0 +1,128 @@
+[
+  {
+    "project": "sweep-small-20260927-055526",
+    "corpus_artifacts": 18,
+    "corpus_note": "教学项目全量",
+    "n_results_cap": 5,
+    "budget_bytes": 8000,
+    "repeats": 8,
+    "backend_calls": {
+      "min": 39,
+      "median": 40.0,
+      "mean": 40.5,
+      "max": 42
+    },
+    "duration_ms": {
+      "median": 4945.5,
+      "p95": 5839.7,
+      "max": 5839.7
+    },
+    "recall_mean": 5,
+    "bundle_bytes_mean": 2754.6
+  },
+  {
+    "project": "sweep-small-20260927-055526",
+    "corpus_artifacts": 18,
+    "corpus_note": "教学项目全量",
+    "n_results_cap": 20,
+    "budget_bytes": 8000,
+    "repeats": 8,
+    "backend_calls": {
+      "min": 59,
+      "median": 65.0,
+      "mean": 62.8,
+      "max": 65
+    },
+    "duration_ms": {
+      "median": 5126.8,
+      "p95": 5795.3,
+      "max": 5795.3
+    },
+    "recall_mean": 18,
+    "bundle_bytes_mean": 6363
+  },
+  {
+    "project": "sweep-small-20260927-055526",
+    "corpus_artifacts": 18,
+    "corpus_note": "教学项目全量",
+    "n_results_cap": 40,
+    "budget_bytes": 8000,
+    "repeats": 8,
+    "backend_calls": {
+      "min": 59,
+      "median": 65.0,
+      "mean": 63.5,
+      "max": 65
+    },
+    "duration_ms": {
+      "median": 5347.8,
+      "p95": 6380.4,
+      "max": 6380.4
+    },
+    "recall_mean": 18,
+    "bundle_bytes_mean": 6363
+  },
+  {
+    "project": "sweep-large-20260927-055526",
+    "corpus_artifacts": 200,
+    "corpus_note": "同一教学项目 ×20 复制，逐副本唯一化 id",
+    "n_results_cap": 5,
+    "budget_bytes": 8000,
+    "repeats": 8,
+    "backend_calls": {
+      "min": 350,
+      "median": 350.0,
+      "mean": 350,
+      "max": 350
+    },
+    "duration_ms": {
+      "median": 8520.2,
+      "p95": 8880.8,
+      "max": 8880.8
+    },
+    "recall_mean": 5,
+    "bundle_bytes_mean": 5067
+  },
+  {
+    "project": "sweep-large-20260927-055526",
+    "corpus_artifacts": 200,
+    "corpus_note": "同一教学项目 ×20 复制，逐副本唯一化 id",
+    "n_results_cap": 20,
+    "budget_bytes": 8000,
+    "repeats": 8,
+    "backend_calls": {
+      "min": 365,
+      "median": 365.0,
+      "mean": 365,
+      "max": 365
+    },
+    "duration_ms": {
+      "median": 8540.6,
+      "p95": 8996.5,
+      "max": 8996.5
+    },
+    "recall_mean": 20,
+    "bundle_bytes_mean": 7610
+  },
+  {
+    "project": "sweep-large-20260927-055526",
+    "corpus_artifacts": 200,
+    "corpus_note": "同一教学项目 ×20 复制，逐副本唯一化 id",
+    "n_results_cap": 40,
+    "budget_bytes": 8000,
+    "repeats": 8,
+    "backend_calls": {
+      "min": 445,
+      "median": 445.0,
+      "mean": 445,
+      "max": 445
+    },
+    "duration_ms": {
+      "median": 9422.7,
+      "p95": 9621.0,
+      "max": 9621.0
+    },
+    "recall_mean": 40,
+    "bundle_bytes_mean": 7610
+  }
+]
