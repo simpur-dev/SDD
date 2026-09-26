@@ -1,5 +1,5 @@
 {
-  "generated_at": "20260927-025139",
+  "generated_at": "20260927-032209",
   "corpus": "demo/railway @ v1.1.0 (20 artifacts: 5 REQ / 3 RULE / 2 DES / 4 code / 4 test)",
   "labeling_method": "金标由本项目人工标注，口径对齐 ContextBench 的 minimal-context 原则：以『完成该任务所需的最小充分依据』为准，逐条给出推导链（derivation），并可由 demo/railway 的 front matter 与关系图复核。标注者不是模型，且标注在评测前冻结。",
   "provider": "qianwen",
@@ -493,13 +493,13 @@
   ],
   "latency_ms": {
     "n": 6,
-    "median": 5020.8,
-    "max": 5753.2
+    "median": 4813.1,
+    "max": 5476.0
   },
   "bundle_bytes_mean": 6178,
   "budget_bytes": 8000,
-  "backend_calls_mean": 55.3,
+  "backend_calls_mean": 57.3,
   "llm_calls_total": 6,
   "prompt_tokens_total": 758,
-  "completion_tokens_total": 598
+  "completion_tokens_total": 619
 }

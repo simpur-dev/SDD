@@ -1,6 +1,6 @@
 # 检索质量金标评测（docs/01 §11 / docs/03 §11）
 
-- 生成：20260927-025139；语料：demo/railway @ v1.1.0 (20 artifacts: 5 REQ / 3 RULE / 2 DES / 4 code / 4 test)
+- 生成：20260927-032209；语料：demo/railway @ v1.1.0 (20 artifacts: 5 REQ / 3 RULE / 2 DES / 4 code / 4 test)
 - 标注方法：金标由本项目人工标注，口径对齐 ContextBench 的 minimal-context 原则：以『完成该任务所需的最小充分依据』为准，逐条给出推导链（derivation），并可由 demo/railway 的 front matter 与关系图复核。标注者不是模型，且标注在评测前冻结。
 - 两臂**同字节公平**：keyword 臂拿到的预算 = SpecWeaver 在该用例实际花在**构件**上的字节（chrome/findings 不计入），并用同一 `entry_block` 成本模型填充、只保留有命中的文档；因此 recall/precision 差异反映的是选择质量而非预算差异
 - 推理 provider：`qianwen`（规则模式下 planner 不产生 LLM 调用，混合检索仍走真实 seekdb）
@@ -26,9 +26,9 @@
 
 ## 代价与用量
 
-- `GetContext` 跨度耗时(ms)：中位 5020.8 / 最大 5753.2（样本 n=6，p95 需更大样本量，直方图已在 `metrics.txt`）
-- 平均 bundle bytes：6178（预算 8000）；平均每用例后端调用：55.3
-- LLM 规划调用合计 6 次，prompt/completion tokens 758/598
+- `GetContext` 跨度耗时(ms)：中位 4813.1 / 最大 5476.0（样本 n=6，p95 需更大样本量，直方图已在 `metrics.txt`）
+- 平均 bundle bytes：6178（预算 8000）；平均每用例后端调用：57.3
+- LLM 规划调用合计 6 次，prompt/completion tokens 758/619
 
 ## 局限性
 

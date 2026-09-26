@@ -1,5 +1,5 @@
 {
-  "generated_at": "20260927-020852",
+  "generated_at": "20260927-032242",
   "corpus": "demo/railway @ v1.1.0 (20 artifacts: 5 REQ / 3 RULE / 2 DES / 4 code / 4 test)",
   "labeling_method": "金标由本项目人工标注，口径对齐 ContextBench 的 minimal-context 原则：以『完成该任务所需的最小充分依据』为准，逐条给出推导链（derivation），并可由 demo/railway 的 front matter 与关系图复核。标注者不是模型，且标注在评测前冻结。",
   "provider": "qianwen",
@@ -13,15 +13,17 @@
   "macro": {
     "keyword": {
       "recall": 0.5,
-      "precision": 0.6389,
-      "f1": 0.5019
+      "precision": 0.6667,
+      "f1": 0.5185
     },
     "specweaver": {
-      "recall": 0.3194,
-      "precision": 0.4444,
-      "f1": 0.355
+      "recall": 0.2639,
+      "precision": 0.3889,
+      "f1": 0.2995
     }
   },
+  "pc_project": "",
+  "pc_content_bytes_mean": null,
   "cases": [
     {
       "id": "t1-adjust-departure",
@@ -73,7 +75,7 @@
       "finding_types": [
         "conflict"
       ],
-      "bundle_bytes": 1468,
+      "bundle_bytes": 1487,
       "arms": {
         "keyword": {
           "expected": 4,
@@ -96,13 +98,13 @@
           "precision": 0.3333,
           "f1": 0.2857,
           "missed": [
-            "CODE-4bfabc68a8f6",
             "REQ-2",
+            "RULE-1",
             "TST-da7154c71d35"
           ],
           "extra": [
-            "CODE-12d4b7620710",
-            "RULE-2"
+            "RULE-2",
+            "RULE-3"
           ]
         }
       }
@@ -156,7 +158,7 @@
       "finding_types": [
         "conflict"
       ],
-      "bundle_bytes": 1464,
+      "bundle_bytes": 1466,
       "arms": {
         "keyword": {
           "expected": 3,
@@ -177,16 +179,18 @@
         "specweaver": {
           "expected": 3,
           "delivered": 3,
-          "hit": 1,
-          "recall": 0.3333,
-          "precision": 0.3333,
-          "f1": 0.3333,
+          "hit": 0,
+          "recall": 0.0,
+          "precision": 0.0,
+          "f1": 0.0,
           "missed": [
+            "CODE-e662196c212e",
             "REQ-4",
             "TST-46ecef6a906e"
           ],
           "extra": [
-            "RULE-2",
+            "CODE-12d4b7620710",
+            "RULE-1",
             "RULE-3"
           ]
         }
@@ -238,20 +242,19 @@
       "finding_types": [
         "conflict"
       ],
-      "bundle_bytes": 1468,
+      "bundle_bytes": 1421,
       "arms": {
         "keyword": {
           "expected": 2,
-          "delivered": 3,
+          "delivered": 2,
           "hit": 1,
           "recall": 0.5,
-          "precision": 0.3333,
-          "f1": 0.4,
+          "precision": 0.5,
+          "f1": 0.5,
           "missed": [
             "TST-e9c84656fadf"
           ],
           "extra": [
-            "CODE-12d4b7620710",
             "TST-d4cf3c71d337"
           ]
         },
@@ -267,7 +270,7 @@
           ],
           "extra": [
             "CODE-12d4b7620710",
-            "RULE-1"
+            "RULE-3"
           ]
         }
       }
@@ -275,13 +278,13 @@
   ],
   "latency_ms": {
     "n": 6,
-    "median": 5249.95,
-    "max": 6353.9
+    "median": 4865.15,
+    "max": 5291.7
   },
-  "bundle_bytes_mean": 1451.7,
+  "bundle_bytes_mean": 1447.3,
   "budget_bytes": 1500,
-  "backend_calls_mean": 55,
+  "backend_calls_mean": 55.3,
   "llm_calls_total": 6,
   "prompt_tokens_total": 758,
-  "completion_tokens_total": 605
+  "completion_tokens_total": 620
 }
