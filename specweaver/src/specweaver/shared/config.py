@@ -35,7 +35,6 @@ class InferenceSettings(BaseModel):
 
 
 class ServerSettings(BaseModel):
-    transport: str = "stdio"  # stdio | http
     host: str = "127.0.0.1"
     port: int = 8765
     mcp_path: str = "/mcp"
@@ -43,8 +42,6 @@ class ServerSettings(BaseModel):
 
 class WorkspaceSettings(BaseModel):
     root: str = "."
-    test_command: str = "pytest"
-    default_branch: str = "master"
 
 
 class ContextSettings(BaseModel):

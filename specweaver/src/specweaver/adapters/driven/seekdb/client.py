@@ -57,6 +57,11 @@ CREATE TABLE IF NOT EXISTS sw_test_run (
 # evidence tables whose "newest first" read path depends on ts precision
 _TS_TABLES = ("sw_change_set", "sw_test_run")
 
+# A single backend operation must not outlive the caller's patience: when WSL
+# reclaims the containers the socket can hang forever, and pyseekdb exposes no
+# read timeout of its own, so the bound lives on our side of the boundary.
+OP_TIMEOUT_SECONDS = 60
+
 
 class SeekdbClient:
     """Owns the pyseekdb remote client; artifacts use a Collection, relations use a SQL table."""
@@ -150,9 +155,20 @@ class SeekdbClient:
 
     async def run_op(self, fn, what: str):
         """Execute a blocking pyseekdb/pymysql call, translating backend
-        failures into the domain error contract (docs/03 §7.1)."""
+        failures into the domain error contract (docs/03 §7.1).
+
+        The timeout bounds the await: pyseekdb owns its own connection and
+        exposes no read timeout, so a wedged backend surfaces as SWError
+        instead of hanging the CLI/MCP caller forever.
+        """
         try:
-            return await asyncio.to_thread(fn)
+            return await asyncio.wait_for(
+                asyncio.to_thread(fn), timeout=OP_TIMEOUT_SECONDS
+            )
+        except TimeoutError as exc:
+            raise SWError(
+                f"seekdb {what} timed out after {OP_TIMEOUT_SECONDS}s"
+            ) from exc
         except Exception as exc:  # noqa: BLE001 - SDK boundary
             raise SWError(f"seekdb {what} failed: {exc}") from exc
 
