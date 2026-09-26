@@ -43,7 +43,6 @@ class WorkspaceSettings(BaseModel):
 class ContextSettings(BaseModel):
     budget_bytes: int = 8000
     n_results: int = 20
-    confidence_threshold: float = 0.6
 
 
 class Settings(BaseSettings):

@@ -36,8 +36,3 @@ class InvalidRequest(SWError):
 class InferenceUnavailable(SWError):
     code = "SW-INFER"
     retriable = True
-
-
-class StateMismatch(SWError):
-    code = "SW-MISMATCH"
-    retriable = False
