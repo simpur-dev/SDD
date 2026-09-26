@@ -1,0 +1,33 @@
+[09/27/26 00:59:26] Error calling tool 'sw_record_decision'                    
+== 11 tools ==
+  sw_ping: Liveness probe.
+  sw_doctor: Report seekdb / PowerContext connectivity and inference mode.
+  sw_ingest_project: Ingest the real workspace into the seekdb catalog.
+  sw_get_context: Assemble a budgeted Context Bundle (markdown) for a task.
+  sw_complete_task: Run tests, reconcile artifacts on success, record change set/outcome.
+  sw_handoff: Commit a handoff snapshot of the current task state.
+  sw_resume_task: Resume a task: continue handoff, verify catalog, rebuild context.
+  sw_record_decision: Precipitate a design decision into PowerContext memory.
+  sw_report_progress: Append a progress note to memory, optionally snapshot a handoff.
+  sw_verify: Report workspace/catalog/activity/memory consistency checks.
+  sw_explain_source: Trace one artifact back to its evidence (clamped depth 1-3).
+sw_ping -> pong
+sw_doctor -> {"seekdb":{"name":"seekdb","ok":true,"version":"5.7.25-OceanBase seekdb-v1.4.0.0"},"powercontext":{"name":"powercontext","ok":true,"detail":{"status":"ready","checks":{"runtime":"ready","database":"re ...
+sw_ingest_project -> {"project_id":"mcp-verify","added":0,"updated":1,"unchanged":158,"skipped":28,"relations":150,"changed_ids":["CODE-042c4409c4bc"],"source_registered":true,"duplicate_ids":[],"deprecated":0}
+sw_get_context -> cited=14 markdown=8062B
+sw_complete_task -> {"task_id":"mcp-verify-task","success":true,"test_total":181,"test_passed":181,"test_failed":0,"files_changed":12,"updated_ids":["CODE-7521bd88c5a8","CODE-9a14bc7e605d","CODE-6ca4b148b36e","CODE-54a4ab40726c","CODE-5f2669885c28","CODE-ed6106506795","CODE-06cc10e34c80","CODE-1c727f4e1b7a","TST-5ac79b
+sw_handoff -> handoff:handoff:12
+sw_resume_task -> handoff_resumed=True next_steps=['新会话接续并三方核对'] mismatches=0
+sw_get_context(after complete) -> last test run in bundle: True
+sw_record_decision -> remembered entry=mem_ent_e0288381260543f69cbf180de0893e09
+sw_record_decision(revise) -> revised
+sw_record_decision(guard) -> ToolError: [SW-ERROR] record_decision takes either replaces_entry_id or retire_entry_id, not both
+sw_record_decision(retire) -> retired
+sw_report_progress -> entry=mem_ent_ca7f3f6eba5348018ce5720dd5d91b40 handoff_rev=handoff:handoff:13
+sw_verify -> checked=159 mismatches=0 change_set_stale=False test_report=absent rules=0 constraints=0 notes=1
+sw_explain_source(CODE-d2066ae77c06) -> root=code upstream=0 downstream=0 missing_refs=0
+telemetry -> spans=15 prometheus_lines=86
+  sw_engine_metric_sum{span="get_context",metric="findings"} 29.0
+  sw_engine_metric_sum{span="get_context",metric="recall"} 60.0
+  sw_engine_metric_sum{span="get_context",metric="valid"} 60.0
+  # trace_id 0dfb08cdc5834d6fb6d5e96b3d654afc
