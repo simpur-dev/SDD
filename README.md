@@ -69,6 +69,7 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 | 受控规模扫描（2 语料 × 3 召回上限 × 8 重复） | **成本随语料规模增长，不是只随召回上限**：cap=5 时 18 构件 40 次 vs 200 构件 350 次后端调用；上限抬到 40 再 +95 次（445）。原因是 validity 的 gap 检测对项目内每条需求做一次图查询，与上限无关；p95 由 5.8s（18 构件）升至 9.6s（200 构件） | `evidence/scaling-sweep-20260927-v2/sweep.md`（上一版 `scaling-sweep-20260927/` 结论作废：其"大语料"因逻辑 id 冲突被整体判 deprecated，测的其实是空 bundle 的成本） |
 | 真实后端接口（进程内） | 11 个 MCP 工具逐个跑通（含 revise/retire/guard 探针与 `ToolAnnotations` 声明） | `evidence/m5-20260927-005855/` |
 | 真实后端接口（streamable-http 传输） | 11 工具经真实 HTTP 传输全跑一遍：9/9 用例 span 全部出现、0 error、`sw_span_duration_ms` 直方图在位（span 缺失即判失败，用于区分"请求被应答"与"打到应用层"） | `evidence/http-transport-20260927-042816/probe.txt` |
+| 真实后端接口（stdio 传输，按交付配置原样启动） | 用仓库内 `deploy/mcp.stdio.json` 拉起服务器：`initialize` 成功、广告 11 个工具且**全部**带 `ToolAnnotations`、`sw_ping` 返回 pong（评委复制即用的那条路径实测，非人工读文件） | `evidence/mcp-stdio-config-20260927/probe.txt` |
 | 全链路演示（当前代码重跑） | 11/11 → 13/13 真实回归；`usage.csv` 含引擎级 `metrics` 列；Bundle ④段回读 PowerContext 工作记忆（该部署记忆侧只有 fts 词面召回，命中 0 属正常，见《02》§7.6）；末次 bundle 7988 bytes / 8000 承诺 | `evidence/railway-20260927-045924/`（`…-041341/` 留下的是预算收口前"自报合规、实际超标"的现场证据） |
 | 效率对照（hard 档，N=3） | 成功率 3/3 vs 3/3；ON 中位耗时 46.1s vs OFF 82.3s，输出 tokens 中位 8185 vs 14500；**均值 -26%/-28%，但 ON 最差一次劣于全部 OFF** | `evidence/off-on/20260926-235601/` |
 | clone-and-run 复现（评委入口，capture 于 `633d5c3`） | 把仓库 `git clone` 到别处后，仅凭克隆内容：ruff 全绿 + `262 passed` + `doctor` 两个后端 OK；克隆内没有 `.env`，推理自动落到规则模式（不崩），`templates/`·`deploy/`·`tests/` 均已入库 | `evidence/clone-check-20260927-052153/` |

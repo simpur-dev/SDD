@@ -1,0 +1,8 @@
+# 用仓库里交付的 deploy/mcp.stdio.json 原样启动 stdio 传输（评委复制即用口径）
+# generated: 2026-09-27T06:46:49+08:00  head: 097ccd2
+server_name: SpecWeaver version: 4.0.9
+tools_advertised: 11
+names: ['sw_complete_task', 'sw_doctor', 'sw_explain_source', 'sw_get_context', 'sw_handoff', 'sw_ingest_project', 'sw_ping', 'sw_record_decision', 'sw_report_progress', 'sw_resume_task', 'sw_verify']
+annotations_on_every_tool: True
+sw_ping_result: pong
+EXIT=0
