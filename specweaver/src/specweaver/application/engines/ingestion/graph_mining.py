@@ -102,6 +102,10 @@ def mine_relations(
     # evidence 1: explicit tags / references
     for doc, artifact in pairs:
         for ref in doc.references:
+            # audit B3: a file quoting its own id (front-matter always does)
+            # is not a traceability edge
+            if ref == artifact.id:
+                continue
             target = by_id.get(ref)
             if target is None:
                 continue

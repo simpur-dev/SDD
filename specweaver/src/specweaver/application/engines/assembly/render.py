@@ -97,6 +97,9 @@ def render_markdown(bundle: ContextBundle) -> str:
     budget = bundle.budget
     if budget is not None:
         usage = f"{budget.used_bytes}/{budget.max_bytes} bytes"
+        if budget.used_bytes > budget.max_bytes:
+            # audit C3: fixed chrome alone exceeds the budget; say so loudly
+            usage += " (fixed chrome alone exceeds this budget - widen it)"
         trunc = (
             "\n- warning: context truncated to budget; some relevant artifacts "
             "were omitted (request a larger budget if needed)"

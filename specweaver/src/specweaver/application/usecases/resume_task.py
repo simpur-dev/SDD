@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from ...domain.ports.catalog import ArtifactFilter, CatalogPort
 from ...domain.ports.handoff import HandoffPort
 from ...domain.ports.workspace import WorkspacePort
+from ...shared.errors import SWError
 from ..engines.validity.lifecycle import LifecycleValidator
 from .base import UseCase
 from .get_context import ContextResult, GetContext, GetContextRequest
@@ -30,6 +31,7 @@ class ResumeReport(BaseModel):
     progress: str = ""
     next_steps: list[str] = []
     handoff_resumed: bool
+    handoff_error: str = ""
     mismatches: list[StateMismatch]
     context: ContextResult
 
@@ -58,6 +60,7 @@ class ResumeTask(UseCase):
     async def __call__(self, request: ResumeTaskRequest) -> ResumeReport:
         with self.span():
             view = None
+            handoff_error = ""
             if (
                 request.use_handoff
                 and request.scope_id
@@ -68,8 +71,11 @@ class ResumeTask(UseCase):
                     view = await self._handoff.continue_(
                         request.scope_id, request.handoff_rev
                     )
-                except Exception:  # noqa: BLE001
+                except SWError as exc:
+                    # audit B4: degrade to "no handoff" but surface why;
+                    # unexpected exception types must crash loudly instead
                     view = None
+                    handoff_error = exc.message[:200]
 
             objective = request.objective
             progress = ""
@@ -118,6 +124,7 @@ class ResumeTask(UseCase):
                 progress=progress,
                 next_steps=next_steps,
                 handoff_resumed=view is not None,
+                handoff_error=handoff_error,
                 mismatches=mismatches,
                 context=context,
             )

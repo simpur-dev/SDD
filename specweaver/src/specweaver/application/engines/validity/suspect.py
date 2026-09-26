@@ -22,7 +22,26 @@ class SuspectDetector:
                 upstream = await self._catalog.get_artifact(
                     artifact.project_id, ref
                 )
-                if upstream is None or upstream.status == LifecycleStatus.active:
+                if upstream is None:
+                    # audit B5: a dangling reference is exactly what a
+                    # downstream reviewer needs to see
+                    findings.append(
+                        Finding(
+                            kind=FindingKind.suspect,
+                            severity=Severity.warning,
+                            message=(
+                                f"'{artifact.title}' references {ref}, "
+                                "which is missing from the catalog"
+                            ),
+                            refs=[cite(artifact)],
+                            suggestion=(
+                                "Ingest the missing upstream artifact or "
+                                "re-point the reference."
+                            ),
+                        )
+                    )
+                    continue
+                if upstream.status == LifecycleStatus.active:
                     continue
                 findings.append(
                     Finding(

@@ -82,9 +82,8 @@ def test_nested_workspace_paths_are_readable(tmp_path: Path) -> None:
     assert "return 2" in content
 
 
-def test_self_reference_edge_is_minted_today() -> None:
-    """Audit B-15 (documented current behaviour): a file containing its own
-    id token mints a self-loop edge (REQ-1 refines REQ-1)."""
+def test_self_reference_edges_are_skipped() -> None:
+    """Audit B3 fixed: a file quoting its own id mints no self-loop edge."""
     text = "---\nid: REQ-01\n---\n# 标题\n- 见 REQ-1 说明\n"
     doc = MarkdownParser().parse(
         "specs/a.md", text, "sha256:a", ArtifactType.requirement
@@ -92,5 +91,4 @@ def test_self_reference_edge_is_minted_today() -> None:
     artifact = to_artifact("p", doc)
     relations = mine_relations("p", [(doc, artifact)])
     self_loops = [r for r in relations if r.src == r.dst]
-    # pin current behaviour; flip to the guard expectation when fixed
-    assert len(self_loops) == 1
+    assert self_loops == []

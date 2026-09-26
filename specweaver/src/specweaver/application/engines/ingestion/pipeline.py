@@ -22,6 +22,7 @@ class IngestionResult(BaseModel):
     updated: int = 0
     unchanged: int = 0
     skipped: int = 0
+    duplicate_ids: list[str] = []
 
 
 class IngestionEngine:
@@ -53,6 +54,8 @@ class IngestionEngine:
         pairs: list[tuple[ParsedDocument, Artifact]] = []
         changed: list[Artifact] = []
         changed_ids: list[str] = []
+        seen_paths: dict[str, str] = {}
+        duplicate_ids: list[str] = []
         added = updated = unchanged = 0
 
         for discovered in report.files:
@@ -63,6 +66,13 @@ class IngestionEngine:
                 discovered.path, text, checksum, discovered.type
             )
             artifact = to_artifact(project_id, doc)
+            # audit C2: surface id collisions instead of silent overwrite
+            uri = artifact.source.uri if artifact.source else discovered.path
+            earlier = seen_paths.get(artifact.id)
+            if earlier is not None and earlier != uri:
+                if artifact.id not in duplicate_ids:
+                    duplicate_ids.append(artifact.id)
+            seen_paths.setdefault(artifact.id, uri)
             previous = existing_checksums.get(artifact.id)
             if previous == checksum:
                 unchanged += 1
@@ -87,4 +97,5 @@ class IngestionEngine:
             updated=updated,
             unchanged=unchanged,
             skipped=len(report.skipped),
+            duplicate_ids=duplicate_ids,
         )

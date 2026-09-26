@@ -173,6 +173,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
             "progress": report.progress,
             "next_steps": report.next_steps,
             "handoff_resumed": report.handoff_resumed,
+            "handoff_error": report.handoff_error,
             "mismatches": [m.model_dump(mode="json") for m in report.mismatches],
             "context_markdown": report.context.markdown,
         }

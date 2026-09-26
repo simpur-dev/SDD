@@ -30,22 +30,30 @@ class AssemblyEngine:
         if last_test_run is not None:
             reserve += byte_size(format_test_run(last_test_run)) + 1
         decision = Budgeter(self._max_bytes).apply(sections, reserve)
-        kept = decision.sections
 
-        included = (
-            kept.goal_and_constraints
-            + kept.design_and_implementation
-            + kept.verification
-        )
+        # Audit A5: presentation objects must not smuggle 1536-float
+        # embeddings into render_json / CLI --json / evidence payloads.
+        def _presentable(
+            artifacts: list[Artifact],
+        ) -> list[Artifact]:
+            return [
+                artifact.model_copy(update={"embedding": None})
+                for artifact in artifacts
+            ]
+
+        goal = _presentable(decision.sections.goal_and_constraints)
+        design = _presentable(decision.sections.design_and_implementation)
+        verification = _presentable(decision.sections.verification)
+
         used_bytes = reserve + decision.entry_bytes
         return ContextBundle(
             task=task,
-            goal_and_constraints=kept.goal_and_constraints,
-            design_and_implementation=kept.design_and_implementation,
-            verification=kept.verification,
+            goal_and_constraints=goal,
+            design_and_implementation=design,
+            verification=verification,
             last_test_run=last_test_run,
             findings=findings,
-            citations=citations_for(included),
+            citations=citations_for(goal + design + verification),
             budget=Budget(
                 max_bytes=self._max_bytes,
                 used_bytes=used_bytes,

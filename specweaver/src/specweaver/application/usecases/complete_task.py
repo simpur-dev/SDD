@@ -73,7 +73,9 @@ class CompleteTask(UseCase):
             if self._activity is not None:
                 await self._activity.record_test_run(test_run)
 
-            success = test_run.failed == 0
+            # audit B2: a command that runs zero tests is NOT a green run;
+            # reconciliation requires evidence that tests actually passed.
+            success = test_run.total > 0 and test_run.failed == 0
             change_set_id = None
             updated_ids: list[str] = []
             superseded_ids: list[str] = []

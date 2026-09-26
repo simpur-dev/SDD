@@ -22,7 +22,6 @@ def _dead_backends_settings() -> Settings:
     return settings
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-11: raw AttributeError leak")
 async def test_ingest_without_seekdb_raises_swerror() -> None:
     async with di.run(_dead_backends_settings()) as app:
         assert app.catalog is None

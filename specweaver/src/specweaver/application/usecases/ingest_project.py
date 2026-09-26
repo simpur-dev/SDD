@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
+from ...domain.enums import LifecycleStatus
 from ...domain.ports.catalog import ArtifactFilter, CatalogPort
 from ...domain.ports.memory import MemoryEntry, MemoryPort
 from ...domain.ports.workspace import WorkspacePort
+from ...shared.errors import SWError
 from ...shared.telemetry import Telemetry
 from ..engines.ingestion import IngestionEngine
 from .base import UseCase
@@ -25,6 +27,8 @@ class IngestProjectReport(BaseModel):
     relations: int
     changed_ids: list[str]
     source_registered: bool = False
+    duplicate_ids: list[str] = []
+    deprecated: int = 0
 
 
 class IngestProject(UseCase):
@@ -50,6 +54,11 @@ class IngestProject(UseCase):
         self, request: IngestProjectRequest
     ) -> IngestProjectReport:
         with self.span():
+            if self._catalog is None:
+                raise SWError(
+                    "ingest_project needs a working seekdb catalog; "
+                    "run `specweaver doctor`"
+                )
             existing_artifacts = await self._catalog.list_artifacts(
                 ArtifactFilter(project_id=request.project_id)
             )
@@ -68,6 +77,30 @@ class IngestProject(UseCase):
                     await self._catalog.upsert_artifact(artifact)
             for relation in result.relations:
                 await self._catalog.upsert_relation(relation)
+
+            # audit C5: artifacts whose source file left the workspace are
+            # tombstoned (deprecated) instead of lingering as silent stale rows
+            current_files = set(await self._workspace.list_files())
+            deprecated = 0
+            for artifact in existing_artifacts:
+                uri = artifact.source.uri if artifact.source else None
+                if (
+                    not uri
+                    or uri in current_files
+                    or artifact.id in changed
+                    or artifact.status
+                    in (
+                        LifecycleStatus.deprecated,
+                        LifecycleStatus.superseded,
+                    )
+                ):
+                    continue
+                await self._catalog.upsert_artifact(
+                    artifact.model_copy(
+                        update={"status": LifecycleStatus.deprecated}
+                    )
+                )
+                deprecated += 1
 
             registered = False
             if (
@@ -100,4 +133,6 @@ class IngestProject(UseCase):
                 relations=len(result.relations),
                 changed_ids=result.changed_ids,
                 source_registered=registered,
+                duplicate_ids=result.duplicate_ids,
+                deprecated=deprecated,
             )

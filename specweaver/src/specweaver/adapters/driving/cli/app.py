@@ -44,15 +44,25 @@ def _execute(
     async def _main() -> Any:
         async with di.run(Settings()) as sw:
             try:
-                result = await op(sw)
-            except SWError as exc:
+                try:
+                    return await op(sw)
+                except SWError as exc:
+                    console.print(
+                        f"[red]ERROR[/red] [{exc.code}] {exc.message}"
+                    )
+                    raise typer.Exit(2) from exc
+            finally:
                 if usage_out:
-                    sw.telemetry.to_csv(usage_out)
-                console.print(f"[red]ERROR[/red] [{exc.code}] {exc.message}")
-                raise typer.Exit(2) from exc
-            if usage_out:
-                sw.telemetry.to_csv(usage_out)
-            return result
+                    try:
+                        sw.telemetry.to_csv(usage_out)
+                    except OSError as exc:
+                        # audit C6: a broken --usage-out path is a traceable
+                        # command failure (exit 3), never a raw traceback
+                        console.print(
+                            f"[red]ERROR[/red] [SW-ERROR] cannot write "
+                            f"--usage-out {usage_out!r}: {exc}"
+                        )
+                        raise typer.Exit(3) from exc
 
     return asyncio.run(_main())
 
@@ -124,6 +134,8 @@ def ingest(
             f"ingest {report.project_id}: +{report.added} ~{report.updated} "
             f"={report.unchanged} skip={report.skipped} "
             f"relations={report.relations} "
+            f"deprecated={report.deprecated} "
+            f"dup_ids={report.duplicate_ids or 'none'} "
             f"source_registered={report.source_registered}"
         )
 
@@ -284,6 +296,11 @@ def resume(
     if as_json:
         console.print_json(data=report.model_dump(mode="json"))
     else:
+        if report.handoff_error:
+            console.print(
+                f"[yellow]WARN[/yellow] handoff resume failed: "
+                f"{report.handoff_error}"
+            )
         if report.mismatches:
             console.print(
                 f"[yellow]WARN[/yellow] {len(report.mismatches)} catalog/workspace "

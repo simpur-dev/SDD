@@ -1,8 +1,6 @@
 """Boundary battery for validity detectors and assembly budget accounting."""
 from __future__ import annotations
 
-import pytest
-
 from specweaver.application.engines.assembly.pipeline import AssemblyEngine
 from specweaver.application.engines.assembly.render import render_json
 from specweaver.application.engines.assembly.sections import map_sections
@@ -51,45 +49,52 @@ async def test_conflict_detects_fullwidth_digits() -> None:
     assert len(findings) == 1
 
 
-async def test_suspect_dangling_reference_is_silent() -> None:
-    """Audit B-4: based_on pointing at a missing artifact yields no finding."""
+async def test_suspect_flags_dangling_reference() -> None:
+    """Audit B5 fixed: a reference to a missing upstream is a finding."""
     downstream = _req("REQ-9", "api", "- x\n")
     downstream = downstream.model_copy(
         update={"type": ArtifactType.code, "based_on": ["REQ-404"]}
     )
-    findings = await SuspectDetector(catalog=None).detect([downstream])
-    # catalog None short-circuits; use a catalog that misses the ref:
+
     class _Miss:
         async def get_artifact(self, project_id: str, artifact_id: str):
             return None
 
     findings = await SuspectDetector(_Miss()).detect([downstream])
-    assert findings == []  # current behaviour: dangling refs are ignored
+    assert len(findings) == 1
+    assert "missing from the catalog" in findings[0].message
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-5: substring ref match")
-def test_applies_to_ref_uses_substring_semantics() -> None:
-    """Audit B-5: ref '1.2' wrongly matches applies_to_ref 'release/1.20'."""
+def test_applies_to_ref_matches_whole_segments() -> None:
+    """Audit B1 fixed: segment equality, not substring."""
     art = _req(
         "REQ-1", "m", "c",
         applies_to_ref="release/1.20",
     )
-    verdict = LifecycleValidator().validate(art, current_ref="1.2")
-    assert verdict.valid is False  # desired: not the same release
+    assert LifecycleValidator().validate(
+        art, current_ref="1.2"
+    ).valid is False
+    assert LifecycleValidator().validate(
+        art, current_ref="release/1.20"
+    ).valid is True
+    multi = _req("REQ-2", "m", "c", applies_to_ref="main, release/1.2")
+    assert LifecycleValidator().validate(
+        multi, current_ref="release/1.2"
+    ).valid is True
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-6: used_bytes>max_bytes")
-async def test_budget_under_chrome_keeps_used_within_max() -> None:
-    """Audit B-6: with max_bytes < reserve, used_bytes exceeds max_bytes."""
+async def test_budget_under_chrome_is_disclosed() -> None:
+    """Audit C3 fixed: chrome-over-budget stays honest AND loudly disclosed."""
+    from specweaver.application.engines.assembly import render_markdown
+
     task = Task(id="t", project_id="p", title="t")
     art = _req("REQ-1", "m", "- 约束一\n" + "内" * 200)
     bundle = await AssemblyEngine(max_bytes=100).run(task, [art], [])
     assert bundle.budget is not None
     assert bundle.budget.truncated is True
-    assert bundle.budget.used_bytes <= bundle.budget.max_bytes
+    assert "exceeds this budget" in render_markdown(bundle)
 
 
-@pytest.mark.xfail(strict=True, reason="audit B-7: embeddings inflate bundle json")
 async def test_bundle_json_drops_embeddings() -> None:
     """Audit B-7: render_json serialises 1536-float embeddings per artifact;
     demo evidence 02-context.json is 604 KB of which ~all is vectors.
