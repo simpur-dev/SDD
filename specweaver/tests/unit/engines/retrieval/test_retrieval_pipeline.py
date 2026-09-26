@@ -91,6 +91,47 @@ class _SpyPlanner:
         return self.plan_value
 
 
+async def test_constraint_floor_survives_narrowing() -> None:
+    """Active requirements/rules must enter candidates no matter how the
+    LLM narrows types/modules (SDD core: never lose old constraints)."""
+    from specweaver.application.engines.retrieval import RetrievalPlan
+
+    catalog = await _catalog()
+    await catalog.upsert_artifact(
+        Artifact(
+            id="RULE-1",
+            project_id="railway",
+            type=ArtifactType.rule,
+            title="最小站间隔",
+        )
+    )
+
+    class _Never:
+        async def hybrid_search(self, query):
+            return []
+
+    spy = _SpyPlanner(
+        RetrievalPlan(
+            objective="t",
+            keywords=["发车"],
+            modules=["ghost"],
+            types=[ArtifactType.code],
+        )
+    )
+    engine = RetrievalEngine(
+        spy,
+        ScriptedEmbedding(dim=8),
+        _Never(),
+        None,
+        n_results=10,
+        catalog=catalog,
+    )
+    result = await engine.run("railway", "调整 发车时间")
+    ids = {s.artifact.id for s in result.scored}
+    assert {"REQ-1", "RULE-1"} <= ids
+    assert "CODE-1" not in ids  # non-constraint hits stay narrowing-driven
+
+
 async def test_engine_gives_planner_the_real_active_modules() -> None:
     from specweaver.application.engines.retrieval import RetrievalPlan
 

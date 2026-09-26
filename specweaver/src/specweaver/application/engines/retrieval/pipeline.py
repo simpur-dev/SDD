@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from ....domain.enums import LifecycleStatus
+from ....domain.enums import ArtifactType, LifecycleStatus
 from ....domain.ports.catalog import (
     ArtifactFilter,
     CatalogPort,
@@ -97,6 +97,24 @@ class RetrievalEngine:
                 if self._hybrid is not None
                 else []
             )
+        if self._catalog is not None:
+            # constraint floor: active requirements/rules are the core of
+            # "effective old constraints" and must survive any LLM
+            # narrowing; merged at score 0.0 so ranking is unaffected
+            constraints = await self._catalog.list_artifacts(
+                ArtifactFilter(
+                    project_id=project_id,
+                    types=[ArtifactType.requirement, ArtifactType.rule],
+                    status=LifecycleStatus.active,
+                )
+            )
+            seen = {scored.artifact.id for scored in primary}
+            primary = list(primary)
+            for artifact in constraints:
+                if artifact.id not in seen:
+                    primary.append(
+                        ScoredArtifact(artifact=artifact, score=0.0)
+                    )
         secondary = (
             await self._expander.expand(primary)
             if self._expander is not None

@@ -1,6 +1,8 @@
 """Provider wiring + OpenAI-compatible adapter translation tests."""
 from __future__ import annotations
 
+import json
+
 import httpx
 import pytest
 from pydantic import SecretStr
@@ -102,13 +104,47 @@ async def test_openai_embeddings_shape_dim_and_errors() -> None:
     settings = _inference("qianwen", "sk-x").inference
 
     def ok(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(request.content)
+        assert sent["dimensions"] == 8  # dim must be requested explicitly
         return httpx.Response(
-            200, json={"data": [{"embedding": [0.1] * 8}]}
+            200,
+            json={
+                "data": [
+                    {"embedding": [0.1] * 8} for _ in sent["input"]
+                ]
+            },
         )
 
     emb = OpenAIEmbedding(settings, transport=httpx.MockTransport(ok))
     vectors = await emb.embed(["x"])
     assert len(vectors[0]) == 8
+
+
+async def test_openai_embeddings_chunks_large_batches() -> None:
+    """Provider caps batch at 10: 25 inputs must become 10+10+5 calls."""
+    settings = _inference("qianwen", "sk-x").inference
+    seen: list[int] = []
+
+    def ok(request: httpx.Request) -> httpx.Response:
+        sent = json.loads(request.content)
+        assert len(sent["input"]) <= 10
+        seen.append(len(sent["input"]))
+        return httpx.Response(
+            200,
+            json={
+                "data": [
+                    {"embedding": [float(i)] * 8}
+                    for i in range(len(sent["input"]))
+                ]
+            },
+        )
+
+    emb = OpenAIEmbedding(settings, transport=httpx.MockTransport(ok))
+    texts = [f"t{i}" for i in range(25)]
+    vectors = await emb.embed(texts)
+    assert seen == [10, 10, 5]
+    assert len(vectors) == 25
+    assert vectors[10][0] == 0.0  # order preserved across batches
 
     def wrong_dim(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"data": [{"embedding": [0.1]}]})

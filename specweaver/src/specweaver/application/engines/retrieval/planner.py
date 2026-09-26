@@ -15,9 +15,9 @@ _TOKEN_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]+|[\u4e00-\u9fff]+")
 PLANNER_INSTRUCTION = (
     "You are a retrieval planner for spec-driven development. From the "
     "developer task, return JSON with keys: objective (string), keywords "
-    "(array of concise search terms), modules (array of likely module names, "
-    "may be empty), types (array chosen from requirement/design/code/test/"
-    "rule, may be empty)."
+    "(array of concise search terms, in the SAME language as the task), "
+    "modules (array of likely module names, may be empty), types (array "
+    "chosen from requirement/design/code/test/rule, may be empty)."
 )
 
 
