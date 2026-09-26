@@ -1,7 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from pydantic import BaseModel, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# A .env next to the project root is the location-independent fallback, so
+# `specweaver doctor` behaves the same from any cwd; a .env in the current
+# directory still wins (later entries override earlier ones).
+_PROJECT_ENV = str(Path(__file__).resolve().parents[3] / ".env")
 
 
 class SeekDbSettings(BaseModel):
@@ -48,7 +55,7 @@ class ContextSettings(BaseModel):
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_nested_delimiter="__",
-        env_file=".env",
+        env_file=(_PROJECT_ENV, ".env"),
         env_file_encoding="utf-8",
         extra="ignore",
     )
