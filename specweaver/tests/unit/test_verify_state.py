@@ -93,6 +93,7 @@ async def test_three_way_report() -> None:
     assert report.rules_in_catalog == 1
     assert report.constraint_entries_in_memory == 0
     assert any("never precipitated" in n for n in report.notes)
+    assert any("no junit report_ref" in n for n in report.notes)
 
 
 async def test_stale_change_set_and_diverged_report() -> None:
@@ -129,3 +130,39 @@ async def test_requires_catalog() -> None:
     )
     with pytest.raises(SWError):
         await usecase(VerifyStateRequest(project_id="p"))
+
+
+class _BrokenActivity:
+    async def list_change_sets(self, project_id: str) -> list:
+        raise SWError("seekdb is down")
+
+    async def list_test_runs(self, project_id: str) -> list:  # pragma: no cover
+        raise AssertionError("must not be reached")
+
+
+class _BrokenMemory:
+    async def list_entries(self, scope_id: str, **kwargs) -> list:
+        raise SWError("powercontext is down")
+
+
+async def test_backend_outages_degrade_into_notes() -> None:
+    """A diagnostic report must survive an unreachable backend (M5 audit)."""
+    catalog, workspace = await _seed()
+    usecase = VerifyState(
+        catalog,
+        workspace,
+        Telemetry(),
+        _BrokenActivity(),
+        _BrokenMemory(),
+    )
+
+    report = await usecase(
+        VerifyStateRequest(project_id="railway", scope_id="scp-1")
+    )
+
+    assert report.checked == 3
+    assert [m.artifact_id for m in report.mismatches] == ["CODE-2"]
+    assert report.last_change_set_id is None
+    assert report.constraint_entries_in_memory is None
+    assert "activity check unavailable: seekdb is down" in report.notes
+    assert "memory check unavailable: powercontext is down" in report.notes

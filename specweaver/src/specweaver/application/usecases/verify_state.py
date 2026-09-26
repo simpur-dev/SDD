@@ -94,9 +94,16 @@ class VerifyState(UseCase):
         if self._activity is None:
             report.notes.append("activity log unavailable; skipped")
             return
-        change_sets = await self._activity.list_change_sets(
-            request.project_id
-        )
+        try:
+            change_sets = await self._activity.list_change_sets(
+                request.project_id
+            )
+            test_runs = await self._activity.list_test_runs(
+                request.project_id
+            )
+        except SWError as exc:
+            report.notes.append(f"activity check unavailable: {exc.message}")
+            return
         if change_sets:
             latest = change_sets[0]
             report.last_change_set_id = latest.id
@@ -110,13 +117,19 @@ class VerifyState(UseCase):
                         f"set ({latest.head_checksum[:8]}... -> "
                         f"{report.current_ref[:8]}...); run complete_task"
                     )
-        test_runs = await self._activity.list_test_runs(request.project_id)
         if not test_runs:
             report.notes.append("no recorded test runs for this project")
             return
         latest_run = test_runs[0]
         report.last_test_run_id = latest_run.id
-        if not latest_run.report_ref or self._test_runner is None:
+        if not latest_run.report_ref:
+            report.notes.append(
+                "last test run recorded no junit report_ref; counts come "
+                "from the activity log alone"
+            )
+            return
+        if self._test_runner is None:
+            report.notes.append("no test runner port; junit report unparsed")
             return
         try:
             parsed = await self._test_runner.parse_report(
@@ -146,9 +159,13 @@ class VerifyState(UseCase):
                 "memory check skipped (no scope_id or memory port)"
             )
             return
-        entries = await self._memory.list_entries(
-            request.scope_id, include_inactive=True
-        )
+        try:
+            entries = await self._memory.list_entries(
+                request.scope_id, include_inactive=True
+            )
+        except SWError as exc:
+            report.notes.append(f"memory check unavailable: {exc.message}")
+            return
         report.constraint_entries_in_memory = sum(
             1 for e in entries if e.kind == "constraint" and e.active
         )
