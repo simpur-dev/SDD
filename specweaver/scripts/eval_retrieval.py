@@ -118,8 +118,40 @@ def score_set(found: set[str], expected: set[str], delivered: int) -> dict:
     }
 
 
-def macro(rows: list[dict], field: str) -> float:
-    return round(statistics.mean(row[field] for row in rows), 4)
+def macro(rows: list[dict], field: str) -> float | None:
+    values = [row[field] for row in rows if row[field] is not None]
+    return round(statistics.mean(values), 4) if values else None
+
+
+async def pc_prepare(
+    app, project: str, task: str, max_bytes: int
+) -> tuple[str, int]:
+    """Official /v1/context/prepare assembly for the same query and budget."""
+    scope = await app.memory.resolve_scope(project)
+    res = await app.pc_client.post(
+        "/v1/context/prepare",
+        {
+            "scope_id": scope,
+            "query": task,
+            "max_bytes": max_bytes,
+            "include_code": True,
+        },
+    )
+    return res.get("content") or "", int(res.get("content_bytes") or 0)
+
+
+def score_content(content: str, expected: set[str], corpus_ids) -> dict:
+    hit = {artifact_id for artifact_id in expected if artifact_id in content}
+    return {
+        "expected": len(expected),
+        "delivered": None,  # the official blob has no per-item boundaries
+        "hit": len(hit),
+        "recall": round(len(hit) / len(expected), 4) if expected else 1.0,
+        "precision": None,
+        "f1": None,
+        "missed": sorted(expected - hit),
+        "extra": [],
+    }
 
 
 def write_report(out_dir: Path, payload: dict) -> None:
@@ -141,10 +173,21 @@ def write_report(out_dir: Path, payload: dict) -> None:
         "| 臂 | recall | precision | F1 |",
         "|---|---|---|---|",
     ]
-    for arm in ("keyword", "specweaver"):
+    def fmt(value) -> str:
+        return "- (口径不可比)" if value is None else str(value)
+
+    for arm in payload["macro"]:
         agg = payload["macro"][arm]
+        note = ""
+        if arm == "pc_prepare":
+            note = (
+                "  ← 官方 blob 平均 "
+                f"{payload.get('pc_content_bytes_mean')} bytes，"
+                "无逐条目边界，故 precision/F1 不可比"
+            )
         lines.append(
-            f"| {arm} | {agg['recall']} | {agg['precision']} | {agg['f1']} |"
+            f"| {arm} | {fmt(agg['recall'])} | {fmt(agg['precision'])} "
+            f"| {fmt(agg['f1'])} |{note}"
         )
     lines += [
         "",
@@ -187,7 +230,13 @@ def write_report(out_dir: Path, payload: dict) -> None:
         "选择性必须靠紧预算与大语料实验来证明（见 report 中 `budget_bytes` 参数）；",
         "- 单任务、无历史会话，不测多轮补召回；",
         "- keyword 臂不建索引、不看图、无约束保底，但**给了与 SpecWeaver 相同的"
-        "字节预算且只保留有命中文档**，不是刻意做弱的对照。",
+        "字节预算且只保留有命中文档**，不是刻意做弱的对照；",
+        "- 若启用 `--pc-project`，第三臂 `pc_prepare` 走的是官方 "
+        "`/v1/context/prepare`（`max_bytes` 与 SpecWeaver 同预算、"
+        "`include_code=true`）。它装配的是 PowerContext 侧的 source/memory 证据，"
+        "工程构件（DES/CODE/TST）本就不在其中，因此只报 recall 与 blob 字节，"
+        "不与另两臂比 precision：这一行度量的是官方上下文装配与工程上下文"
+        "装配的覆盖面差异，而不是实现优劣。",
         "",
     ]
     (out_dir / "report.md").write_text("\n".join(lines), encoding="utf-8")
@@ -245,6 +294,24 @@ async def main_async(args: argparse.Namespace) -> int:
             tokens = query_tokens(case["task"])
             baseline_ids = keyword_fill(docs, tokens, artifact_bytes)
             delivered_ids = {artifact.id for artifact in delivered}
+            arms: dict[str, dict] = {
+                "keyword": score_set(baseline_ids, expected, len(baseline_ids)),
+                "specweaver": score_set(
+                    delivered_ids, expected, len(delivered)
+                ),
+            }
+            if args.pc_project:
+                blob, blob_bytes = await pc_prepare(
+                    app, args.pc_project, case["task"],
+                    settings.context.budget_bytes,
+                )
+                pc_expected = {
+                    artifact_id
+                    for artifact_id in expected
+                    if artifact_id.split("-")[0] in {"REQ", "RULE", "DES"}
+                }
+                arms["pc_prepare"] = score_content(blob, pc_expected, expected)
+                arms["pc_prepare"]["content_bytes"] = blob_bytes
             rows.append(
                 {
                     "id": case["id"],
@@ -256,14 +323,7 @@ async def main_async(args: argparse.Namespace) -> int:
                     "bundle_bytes": result.bundle.budget.used_bytes
                     if result.bundle.budget
                     else 0,
-                    "arms": {
-                        "keyword": score_set(
-                            baseline_ids, expected, len(baseline_ids)
-                        ),
-                        "specweaver": score_set(
-                            delivered_ids, expected, len(delivered)
-                        ),
-                    },
+                    "arms": arms,
                 }
             )
 
@@ -292,8 +352,22 @@ async def main_async(args: argparse.Namespace) -> int:
                     field: macro([row["arms"][arm] for row in rows], field)
                     for field in ("recall", "precision", "f1")
                 }
-                for arm in ("keyword", "specweaver")
+                for arm in rows[0]["arms"]
             },
+            "pc_project": args.pc_project or "",
+            "pc_content_bytes_mean": (
+                round(
+                    statistics.mean(
+                        [
+                            row["arms"]["pc_prepare"]["content_bytes"]
+                            for row in rows
+                        ]
+                    ),
+                    1,
+                )
+                if "pc_prepare" in rows[0]["arms"]
+                else None
+            ),
             "cases": rows,
             "latency_ms": {
                 "n": len(durations),
@@ -364,6 +438,13 @@ def main() -> int:
         default=0,
         help="override CONTEXT__BUDGET_BYTES for this run (e.g. 1500 to make "
         "the budget actually bind and exercise relevance-based trimming)",
+    )
+    parser.add_argument(
+        "--pc-project",
+        default="",
+        help="also score the official /v1/context/prepare assembly reading "
+        "this project's PowerContext memory (e.g. the railway-<stamp> project "
+        "whose rules were precipitated as constraint memory)",
     )
     parser.add_argument(
         "--min-recall",

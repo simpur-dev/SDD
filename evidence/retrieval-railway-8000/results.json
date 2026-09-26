@@ -1,5 +1,5 @@
 {
-  "generated_at": "20260927-020817",
+  "generated_at": "20260927-025139",
   "corpus": "demo/railway @ v1.1.0 (20 artifacts: 5 REQ / 3 RULE / 2 DES / 4 code / 4 test)",
   "labeling_method": "金标由本项目人工标注，口径对齐 ContextBench 的 minimal-context 原则：以『完成该任务所需的最小充分依据』为准，逐条给出推导链（derivation），并可由 demo/railway 的 front matter 与关系图复核。标注者不是模型，且标注在评测前冻结。",
   "provider": "qianwen",
@@ -20,8 +20,15 @@
       "recall": 1.0,
       "precision": 0.2037,
       "f1": 0.3258
+    },
+    "pc_prepare": {
+      "recall": 0.2083,
+      "precision": null,
+      "f1": null
     }
   },
+  "pc_project": "railway-20260927-023632",
+  "pc_content_bytes_mean": 382.8,
   "cases": [
     {
       "id": "t1-adjust-departure",
@@ -79,6 +86,22 @@
             "TST-d4cf3c71d337",
             "TST-da7154c71d35"
           ]
+        },
+        "pc_prepare": {
+          "expected": 4,
+          "delivered": null,
+          "hit": 0,
+          "recall": 0.0,
+          "precision": null,
+          "f1": null,
+          "missed": [
+            "DES-1",
+            "REQ-1",
+            "RULE-1",
+            "RULE-2"
+          ],
+          "extra": [],
+          "content_bytes": 0
         }
       }
     },
@@ -142,6 +165,20 @@
             "TST-d4cf3c71d337",
             "TST-e9c84656fadf"
           ]
+        },
+        "pc_prepare": {
+          "expected": 2,
+          "delivered": null,
+          "hit": 0,
+          "recall": 0.0,
+          "precision": null,
+          "f1": null,
+          "missed": [
+            "REQ-2",
+            "RULE-1"
+          ],
+          "extra": [],
+          "content_bytes": 0
         }
       }
     },
@@ -199,6 +236,21 @@
             "TST-da7154c71d35",
             "TST-e9c84656fadf"
           ]
+        },
+        "pc_prepare": {
+          "expected": 4,
+          "delivered": null,
+          "hit": 1,
+          "recall": 0.25,
+          "precision": null,
+          "f1": null,
+          "missed": [
+            "DES-2",
+            "REQ-3",
+            "RULE-2"
+          ],
+          "extra": [],
+          "content_bytes": 767
         }
       }
     },
@@ -264,6 +316,19 @@
             "TST-da7154c71d35",
             "TST-e9c84656fadf"
           ]
+        },
+        "pc_prepare": {
+          "expected": 1,
+          "delivered": null,
+          "hit": 0,
+          "recall": 0.0,
+          "precision": null,
+          "f1": null,
+          "missed": [
+            "REQ-4"
+          ],
+          "extra": [],
+          "content_bytes": 0
         }
       }
     },
@@ -331,6 +396,19 @@
             "TST-da7154c71d35",
             "TST-e9c84656fadf"
           ]
+        },
+        "pc_prepare": {
+          "expected": 1,
+          "delivered": null,
+          "hit": 0,
+          "recall": 0.0,
+          "precision": null,
+          "f1": null,
+          "missed": [
+            "REQ-5"
+          ],
+          "extra": [],
+          "content_bytes": 765
         }
       }
     },
@@ -398,19 +476,30 @@
             "TST-d4cf3c71d337",
             "TST-da7154c71d35"
           ]
+        },
+        "pc_prepare": {
+          "expected": 1,
+          "delivered": null,
+          "hit": 1,
+          "recall": 1.0,
+          "precision": null,
+          "f1": null,
+          "missed": [],
+          "extra": [],
+          "content_bytes": 765
         }
       }
     }
   ],
   "latency_ms": {
     "n": 6,
-    "median": 5011.549999999999,
-    "max": 5305.1
+    "median": 5020.8,
+    "max": 5753.2
   },
   "bundle_bytes_mean": 6178,
   "budget_bytes": 8000,
-  "backend_calls_mean": 56,
+  "backend_calls_mean": 55.3,
   "llm_calls_total": 6,
   "prompt_tokens_total": 758,
-  "completion_tokens_total": 637
+  "completion_tokens_total": 598
 }
