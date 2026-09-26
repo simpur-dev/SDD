@@ -21,6 +21,17 @@ class SpanRecord:
     metrics: dict[str, float] = field(default_factory=dict)
 
 
+# Bucket edges in ms around the observed span costs: pure-assembly spans are
+# sub-millisecond, a live get_context with an LLM planner takes seconds.
+_DURATION_BUCKETS = (
+    1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000
+)
+
+
+def _le_label(edge: float) -> str:
+    return str(int(edge)) if float(edge).is_integer() else str(edge)
+
+
 class Telemetry:
     """Collect per-usecase timing/usage; exports to evidence/usage.csv."""
 
@@ -96,6 +107,7 @@ class Telemetry:
     def to_prometheus(self) -> str:
         """Prometheus text exposition (0.0.4), aggregated per span name."""
         agg: dict[str, dict[str, float]] = {}
+        durations: dict[str, list[float]] = {}
         engine: dict[tuple[str, str], float] = {}
         for rec in self.records:
             a = agg.setdefault(
@@ -112,6 +124,7 @@ class Telemetry:
             a["completion"] += rec.completion_tokens
             a["backend"] += rec.backend_calls
             a["errors"] += 1 if rec.status == "error" else 0
+            durations.setdefault(rec.name, []).append(rec.duration_ms)
             for key, value in rec.metrics.items():
                 engine[(rec.name, key)] = engine.get(
                     (rec.name, key), 0.0
@@ -131,8 +144,6 @@ class Telemetry:
 
         family("sw_spans_total", "Completed spans by usecase.", "counter",
                {k: v["count"] for k, v in agg.items()})
-        family("sw_span_duration_ms_sum", "Summed span duration in ms.",
-               "counter", {k: v["duration"] for k, v in agg.items()})
         family("sw_errors_total", "Failed spans by usecase.", "counter",
                {k: v["errors"] for k, v in agg.items()})
         family("sw_llm_calls_total", "LLM completions by usecase.",
@@ -144,6 +155,33 @@ class Telemetry:
                {k: v["completion"] for k, v in agg.items()})
         family("sw_backend_calls_total", "Backend operations by usecase.",
                "counter", {k: v["backend"] for k, v in agg.items()})
+        if durations:
+            # A real histogram so `histogram_quantile(0.95, ...)` works - the
+            # official memory-layer benchmark reports p95, so we expose it too
+            # instead of only sums.
+            lines.append("# HELP sw_span_duration_ms Span duration in ms.")
+            lines.append("# TYPE sw_span_duration_ms histogram")
+            for span in sorted(durations):
+                samples = durations[span]
+                total = sum(samples)
+                for le in _DURATION_BUCKETS:
+                    count = sum(1 for s in samples if s <= le)
+                    lines.append(
+                        f'sw_span_duration_ms_bucket{{span="{span}",'
+                        f'le="{_le_label(le)}"}} {count}'
+                    )
+                lines.append(
+                    f'sw_span_duration_ms_bucket{{span="{span}",le="+Inf"}} '
+                    f"{len(samples)}"
+                )
+                lines.append(
+                    f'sw_span_duration_ms_sum{{span="{span}"}} '
+                    f"{round(total, 3)}"
+                )
+                lines.append(
+                    f'sw_span_duration_ms_count{{span="{span}"}} '
+                    f"{len(samples)}"
+                )
         if engine:
             lines.append("# HELP sw_engine_metric_sum Engine metrics summed"
                          " by usecase (recall, findings, bundle_bytes...)")

@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from specweaver.shared.telemetry import Telemetry
+from specweaver.shared.telemetry import SpanRecord, Telemetry
 
 
 def test_current_is_none_outside_spans() -> None:
@@ -103,6 +103,29 @@ def test_to_prometheus_aggregates_by_span_name() -> None:
         == 8
     )
     assert values[f"sw_span_duration_ms_sum{span}"] > 0
+
+
+def test_to_prometheus_exposes_a_duration_histogram() -> None:
+    """p95 must be computable server-side, not only the mean (docs/01 §11)."""
+    tel = Telemetry()
+    for ms in (5.0, 50.0, 500.0):
+        rec = SpanRecord(name="get_context")
+        rec.duration_ms = ms
+        tel.records.append(rec)
+
+    lines = tel.to_prometheus().splitlines()
+    assert "# TYPE sw_span_duration_ms histogram" in lines
+    buckets = [
+        (line.split('le="')[1].split('"')[0], int(line.rsplit(" ", 1)[1]))
+        for line in lines
+        if line.startswith("sw_span_duration_ms_bucket")
+    ]
+    counts = [count for _, count in buckets]
+    assert counts == sorted(counts), "bucket counts must be cumulative"
+    assert buckets[0] == ("1", 0)  # nothing under 1 ms
+    assert buckets[-1] == ("+Inf", 3)
+    assert 'sw_span_duration_ms_sum{span="get_context"} 555.0' in lines
+    assert 'sw_span_duration_ms_count{span="get_context"} 3' in lines
 
 
 def test_to_prometheus_is_valid_exposition_text() -> None:
