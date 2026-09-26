@@ -1,13 +1,13 @@
 {
   "bundle": {
     "task": {
-      "id": "task-551c7737ac",
-      "project_id": "railway-20260926-204141",
+      "id": "task-88ef80a566",
+      "project_id": "railway-20260926-211737",
       "title": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
       "objective": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
       "phase": "analyzing",
       "branch": null,
-      "base_ref": "ed18f7c44e999a59e3cfa63b069b9786348589e1",
+      "base_ref": "6ce9d7d3be5ac4e3e45277821fddf2aa8668a930",
       "handoff_rev": null,
       "created_at": null,
       "closed_at": null
@@ -15,7 +15,7 @@
     "goal_and_constraints": [
       {
         "id": "RULE-3",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "rule",
         "module": "publish",
         "title": "冲突禁发",
@@ -45,8 +45,39 @@
         "updated_at": null
       },
       {
+        "id": "RULE-2",
+        "project_id": "railway-20260926-211737",
+        "type": "rule",
+        "module": "rules",
+        "title": "全量回归",
+        "content": "---\nid: RULE-02\ntype: rule\nversion: 1.0.0\nstatus: active\ntitle: 全量回归\n---\n\n# 全量回归\n\n- 任何时刻表变更必须通过全量回归测试\n",
+        "version": "1.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "rules/regression-rule.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:19a84f3c9ac90fbb055236e7d2fee431a58a7d7654423b51f2a7f3c88f189107"
+        },
+        "checksum": "sha256:19a84f3c9ac90fbb055236e7d2fee431a58a7d7654423b51f2a7f3c88f189107",
+        "tags": [
+          "rule"
+        ],
+        "based_on": [
+          "RULE-2"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
         "id": "RULE-1",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "rule",
         "module": "schedule",
         "title": "最小站间隔（现行规章）",
@@ -76,8 +107,39 @@
         "updated_at": null
       },
       {
+        "id": "REQ-4",
+        "project_id": "railway-20260926-211737",
+        "type": "requirement",
+        "module": "api",
+        "title": "调度操作入口",
+        "content": "---\nid: REQ-04\ntype: requirement\nmodule: api\nversion: 1.0.0\nstatus: active\ntitle: 调度操作入口\n---\n\n# 调度操作入口\n\n- 页面提供选择目标站点与提交新车发时间的入口\n",
+        "version": "1.0.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "specs/requirement-api.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:1a0e41a8a5323c329ad53d4a80d517aba05bde3c04a728c3b1affd886991ebba"
+        },
+        "checksum": "sha256:1a0e41a8a5323c329ad53d4a80d517aba05bde3c04a728c3b1affd886991ebba",
+        "tags": [
+          "requirement"
+        ],
+        "based_on": [
+          "REQ-4"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
         "id": "REQ-5",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "dryrun",
         "title": "发布前预览接口",
@@ -108,7 +170,7 @@
       },
       {
         "id": "REQ-2",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "occupancy",
         "title": "车辆占用检查",
@@ -139,7 +201,7 @@
       },
       {
         "id": "REQ-3",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "publish",
         "title": "发布判断",
@@ -170,7 +232,7 @@
       },
       {
         "id": "REQ-1",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "schedule",
         "title": "按站调整发车时间",
@@ -203,7 +265,7 @@
     "design_and_implementation": [
       {
         "id": "DES-2",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "design",
         "module": "publish",
         "title": "发布链路设计",
@@ -236,7 +298,7 @@
       },
       {
         "id": "DES-1",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "design",
         "module": "schedule",
         "title": "时刻计算设计",
@@ -268,7 +330,7 @@
       },
       {
         "id": "CODE-e662196c212e",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "code",
         "module": "api",
         "title": "api",
@@ -299,7 +361,7 @@
       },
       {
         "id": "CODE-4bfabc68a8f6",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "code",
         "module": "occupancy",
         "title": "occupancy",
@@ -330,7 +392,7 @@
       },
       {
         "id": "CODE-12d4b7620710",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "code",
         "module": "publish",
         "title": "publish",
@@ -362,7 +424,7 @@
       },
       {
         "id": "CODE-2335993c1bbc",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "code",
         "module": "schedule",
         "title": "schedule",
@@ -394,8 +456,39 @@
     ],
     "verification": [
       {
+        "id": "TST-46ecef6a906e",
+        "project_id": "railway-20260926-211737",
+        "type": "test",
+        "module": "api",
+        "title": "test_api",
+        "content": "\"\"\"入口冒烟测试（REQ-4）。\"\"\"\n\nfrom api import show_timetable, submit_publish\nfrom schedule import Train\n\n\ndef make_train() -> Train:\n    return Train(train_id=\"K1\", start=\"08:00\", legs={\"A->B\": 10, \"B->C\": 15})\n\n\ndef test_show_timetable() -> None:\n    assert show_timetable(make_train())[\"C\"] == \"08:25\"\n\n\ndef test_submit_publish_passes_through() -> None:\n    ok, _ = submit_publish(make_train(), [])\n    assert ok\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "tests/test_api.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:027ebb771f77490dac0ff8239546fcace3d7a9d7debef8cac899a4b423273fbd"
+        },
+        "checksum": "sha256:027ebb771f77490dac0ff8239546fcace3d7a9d7debef8cac899a4b423273fbd",
+        "tags": [
+          "test"
+        ],
+        "based_on": [
+          "REQ-4"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
         "id": "TST-da7154c71d35",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "test",
         "module": "occupancy",
         "title": "test_occupancy",
@@ -426,7 +519,7 @@
       },
       {
         "id": "TST-d4cf3c71d337",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "test",
         "module": "publish",
         "title": "test_publish",
@@ -458,7 +551,7 @@
       },
       {
         "id": "TST-e9c84656fadf",
-        "project_id": "railway-20260926-204141",
+        "project_id": "railway-20260926-211737",
         "type": "test",
         "module": "schedule",
         "title": "test_schedule",
@@ -635,6 +728,17 @@
         "updated_at": null
       },
       {
+        "artifact_id": "RULE-2",
+        "version": "1.0.0",
+        "source": {
+          "uri": "rules/regression-rule.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:19a84f3c9ac90fbb055236e7d2fee431a58a7d7654423b51f2a7f3c88f189107"
+        },
+        "updated_at": null
+      },
+      {
         "artifact_id": "RULE-1",
         "version": "1.0.0",
         "source": {
@@ -642,6 +746,17 @@
           "locator": null,
           "kind": null,
           "checksum": "sha256:c996e9494a44b6511ff841294bc85892f79958c82803f422659f0bd7bd7155ea"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "REQ-4",
+        "version": "1.0.0",
+        "source": {
+          "uri": "specs/requirement-api.md",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:1a0e41a8a5323c329ad53d4a80d517aba05bde3c04a728c3b1affd886991ebba"
         },
         "updated_at": null
       },
@@ -756,6 +871,17 @@
         "updated_at": null
       },
       {
+        "artifact_id": "TST-46ecef6a906e",
+        "version": "0.1.0",
+        "source": {
+          "uri": "tests/test_api.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:027ebb771f77490dac0ff8239546fcace3d7a9d7debef8cac899a4b423273fbd"
+        },
+        "updated_at": null
+      },
+      {
         "artifact_id": "TST-da7154c71d35",
         "version": "0.1.0",
         "source": {
@@ -791,10 +917,10 @@
     ],
     "budget": {
       "max_bytes": 8000,
-      "used_bytes": 5491,
+      "used_bytes": 6178,
       "truncated": false
     },
-    "generated_at": "2026-09-26T20:41:46.169463"
+    "generated_at": "2026-09-26T21:17:44.458528"
   },
   "excluded": []
 }

@@ -1,9 +1,0 @@
-{
-  "objective": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
-  "progress": "schedule/api 调整能力已实现并通过全量回归\n变更集与测试证据已回写 seekdb",
-  "next_steps": [
-    "联动 occupancy/publish 复核并升版规格"
-  ],
-  "handoff_resumed": true,
-  "mismatches": []
-}

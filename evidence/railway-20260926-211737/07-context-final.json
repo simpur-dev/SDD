@@ -1,13 +1,13 @@
 {
   "bundle": {
     "task": {
-      "id": "task-9d3b01a3f2",
-      "project_id": "railway-20260926-160328",
+      "id": "task-762d505ec6",
+      "project_id": "railway-20260926-211737",
       "title": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
       "objective": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
       "phase": "analyzing",
       "branch": null,
-      "base_ref": "75d0c69d97718cf3cb01148e0bb7485fbb101517",
+      "base_ref": "d56014c5aba36db18b8f7b28f591bf66b18a6f74",
       "handoff_rev": null,
       "created_at": null,
       "closed_at": null
@@ -15,7 +15,7 @@
     "goal_and_constraints": [
       {
         "id": "RULE-3",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "rule",
         "module": "publish",
         "title": "冲突禁发",
@@ -46,7 +46,7 @@
       },
       {
         "id": "RULE-2",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "rule",
         "module": "rules",
         "title": "全量回归",
@@ -77,7 +77,7 @@
       },
       {
         "id": "RULE-1",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "rule",
         "module": "schedule",
         "title": "最小站间隔（现行规章）",
@@ -108,7 +108,7 @@
       },
       {
         "id": "REQ-4",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "api",
         "title": "调度操作入口",
@@ -139,7 +139,7 @@
       },
       {
         "id": "REQ-5",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "dryrun",
         "title": "发布前预览接口",
@@ -170,7 +170,7 @@
       },
       {
         "id": "REQ-2",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "occupancy",
         "title": "车辆占用检查",
@@ -201,7 +201,7 @@
       },
       {
         "id": "REQ-3",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "publish",
         "title": "发布判断",
@@ -231,30 +231,31 @@
         "updated_at": null
       },
       {
-        "id": "REQ-1",
-        "project_id": "railway-20260926-160328",
+        "id": "REQ-6",
+        "project_id": "railway-20260926-211737",
         "type": "requirement",
         "module": "schedule",
-        "title": "按站调整发车时间",
-        "content": "---\nid: REQ-01\ntype: requirement\nmodule: schedule\nversion: 1.0.0\nstatus: active\ntitle: 按站调整发车时间\n---\n\n# 按站调整发车时间\n\n- 调度员应能按站点修改发车时间并自动重算后续各站时刻\n- 相邻站间隔不得低于 5 分钟\n",
-        "version": "1.0.0",
+        "title": "按站调整发车时间（升版：含审计）",
+        "content": "---\nid: REQ-06\ntype: requirement\nmodule: schedule\nversion: 2.0.0\nstatus: active\nsupersedes: REQ-01\ntitle: 按站调整发车时间（升版：含审计）\n---\n\n# 按站调整发车时间（升版）\n\n本需求为 REQ-1 的升版：\n\n- 调度员应能按站点修改发车时间并自动重算后续各站时刻\n- 每次调整必须记录审计日志\n",
+        "version": "2.0.0",
         "status": "active",
         "effective_from": null,
         "effective_to": null,
         "applies_to_ref": null,
-        "supersedes": null,
+        "supersedes": "REQ-1",
         "superseded_by": null,
         "source": {
-          "uri": "specs/requirement-schedule.md",
+          "uri": "specs/requirement-schedule-v2.md",
           "locator": null,
           "kind": null,
-          "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+          "checksum": "sha256:ae563037b3eb6057496db1292443411ecec66ea61bdb5108ab779d5773390115"
         },
-        "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c",
+        "checksum": "sha256:ae563037b3eb6057496db1292443411ecec66ea61bdb5108ab779d5773390115",
         "tags": [
           "requirement"
         ],
         "based_on": [
+          "REQ-6",
           "REQ-1"
         ],
         "embedding": null,
@@ -265,7 +266,7 @@
     "design_and_implementation": [
       {
         "id": "DES-2",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "design",
         "module": "publish",
         "title": "发布链路设计",
@@ -298,7 +299,7 @@
       },
       {
         "id": "DES-1",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "design",
         "module": "schedule",
         "title": "时刻计算设计",
@@ -330,11 +331,11 @@
       },
       {
         "id": "CODE-e662196c212e",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "code",
         "module": "api",
         "title": "api",
-        "content": "\"\"\"页面/接口：选择目标站点、提交新车发时间（功能入口）。\n\n需求依据见 REQ-4。\n\"\"\"\n\nfrom publish import can_publish\nfrom schedule import Train, arrival_times\n\n\ndef show_timetable(train: Train) -> dict[str, str]:\n    \"\"\"展示各站时刻。\"\"\"\n    return arrival_times(train)\n\n\ndef submit_publish(train: Train, fleet: list) -> tuple[bool, str]:\n    \"\"\"提交发布：先经占用与发布判断。\"\"\"\n    return can_publish(train, fleet)\n",
+        "content": "\"\"\"页面/接口：选择目标站点、提交新车发时间（功能入口）。\n\n需求依据见 REQ-4。\n\"\"\"\n\nfrom publish import can_publish\nfrom schedule import Train, arrival_times\n\n\ndef show_timetable(train: Train) -> dict[str, str]:\n    \"\"\"展示各站时刻。\"\"\"\n    return arrival_times(train)\n\n\ndef submit_publish(train: Train, fleet: list) -> tuple[bool, str]:\n    \"\"\"提交发布：先经占用与发布判断。\"\"\"\n    return can_publish(train, fleet)\n\n\ndef submit_adjust_departure(\n    train: Train, new_start: str\n) -> dict[str, str]:\n    \"\"\"提交新始发时刻并返回调整后的时刻表（REQ-4 入口）。\"\"\"\n    from schedule import adjust_departure\n\n    return arrival_times(adjust_departure(train, new_start))\n",
         "version": "0.1.0",
         "status": "active",
         "effective_from": null,
@@ -346,9 +347,9 @@
           "uri": "src/api.py",
           "locator": null,
           "kind": null,
-          "checksum": "sha256:72e91dfc3e555fd045f076815069c6cecf0be40828a531a62476e7a6cd0ecc8d"
+          "checksum": "sha256:f669436d893f78ff9eb8df0532077be926ddd004e801c379785ec247d714071c"
         },
-        "checksum": "sha256:72e91dfc3e555fd045f076815069c6cecf0be40828a531a62476e7a6cd0ecc8d",
+        "checksum": "sha256:f669436d893f78ff9eb8df0532077be926ddd004e801c379785ec247d714071c",
         "tags": [
           "code"
         ],
@@ -361,7 +362,7 @@
       },
       {
         "id": "CODE-4bfabc68a8f6",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "code",
         "module": "occupancy",
         "title": "occupancy",
@@ -392,7 +393,7 @@
       },
       {
         "id": "CODE-12d4b7620710",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "code",
         "module": "publish",
         "title": "publish",
@@ -424,11 +425,11 @@
       },
       {
         "id": "CODE-2335993c1bbc",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "code",
         "module": "schedule",
         "title": "schedule",
-        "content": "\"\"\"时刻计算：更新当前站发车时间、重算后续各站时间。\n\n需求依据见 REQ-1。\n\"\"\"\n\nfrom dataclasses import dataclass, field\n\n\ndef to_minutes(hhmm: str) -> int:\n    hours, minutes = hhmm.split(\":\")\n    return int(hours) * 60 + int(minutes)\n\n\ndef to_hhmm(total: int) -> str:\n    return f\"{total // 60 % 24:02d}:{total % 60:02d}\"\n\n\n@dataclass\nclass Train:\n    \"\"\"一趟车：始发时刻 + 各站间运行时分（\"A->B\" -> 分钟）。\"\"\"\n\n    train_id: str\n    start: str\n    legs: dict[str, int] = field(default_factory=dict)\n\n    def stops(self) -> list[str]:\n        \"\"\"按 leg 顺序推导站序：首站 + 各 leg 的终点。\"\"\"\n        stops: list[str] = []\n        for leg in self.legs:\n            origin, _, destination = leg.partition(\"->\")\n            if not stops:\n                stops.append(origin)\n            stops.append(destination)\n        return stops\n\n\ndef arrival_times(train: Train) -> dict[str, str]:\n    \"\"\"各站时刻 = 始发时刻 + 累计运行时分。\"\"\"\n    stops = train.stops()\n    clock = to_minutes(train.start)\n    times = {stops[0]: to_hhmm(clock)}\n    for index, minutes in enumerate(train.legs.values()):\n        clock += minutes\n        times[stops[index + 1]] = to_hhmm(clock)\n    return times\n",
+        "content": "\"\"\"时刻计算：更新当前站发车时间、重算后续各站时间。\n\n需求依据见 REQ-1。\n\"\"\"\n\nfrom dataclasses import dataclass, field\n\n\ndef to_minutes(hhmm: str) -> int:\n    hours, minutes = hhmm.split(\":\")\n    return int(hours) * 60 + int(minutes)\n\n\ndef to_hhmm(total: int) -> str:\n    return f\"{total // 60 % 24:02d}:{total % 60:02d}\"\n\n\n@dataclass\nclass Train:\n    \"\"\"一趟车：始发时刻 + 各站间运行时分（\"A->B\" -> 分钟）。\"\"\"\n\n    train_id: str\n    start: str\n    legs: dict[str, int] = field(default_factory=dict)\n\n    def stops(self) -> list[str]:\n        \"\"\"按 leg 顺序推导站序：首站 + 各 leg 的终点。\"\"\"\n        stops: list[str] = []\n        for leg in self.legs:\n            origin, _, destination = leg.partition(\"->\")\n            if not stops:\n                stops.append(origin)\n            stops.append(destination)\n        return stops\n\n\ndef arrival_times(train: Train) -> dict[str, str]:\n    \"\"\"各站时刻 = 始发时刻 + 累计运行时分。\"\"\"\n    stops = train.stops()\n    clock = to_minutes(train.start)\n    times = {stops[0]: to_hhmm(clock)}\n    for index, minutes in enumerate(train.legs.values()):\n        clock += minutes\n        times[stops[index + 1]] = to_hhmm(clock)\n    return times\n\n\ndef adjust_departure(train: Train, new_start: str) -> Train:\n    \"\"\"按站调整发车时间：以新始发时刻平移整条时刻表（REQ-1）。\"\"\"\n    return Train(\n        train_id=train.train_id, start=new_start, legs=dict(train.legs)\n    )\n\n\nADJUST_AUDIT: list[tuple[str, str, str]] = []\n\n\ndef adjust_departure_logged(train: Train, new_start: str) -> Train:\n    \"\"\"调整发车时间并记录审计日志（REQ-6 增量）。\"\"\"\n    adjusted = adjust_departure(train, new_start)\n    ADJUST_AUDIT.append((train.train_id, train.start, new_start))\n    return adjusted\n",
         "version": "0.1.0",
         "status": "active",
         "effective_from": null,
@@ -440,14 +441,15 @@
           "uri": "src/schedule.py",
           "locator": null,
           "kind": null,
-          "checksum": "sha256:d75a8b27965093f698e6fefe023376529652920f5c49a99df3b85ff3851a3a67"
+          "checksum": "sha256:6ff1fac53ebcbf934b15535623b9d3d5bbe8c4095c155ee7882dc7b1953b1d99"
         },
-        "checksum": "sha256:d75a8b27965093f698e6fefe023376529652920f5c49a99df3b85ff3851a3a67",
+        "checksum": "sha256:6ff1fac53ebcbf934b15535623b9d3d5bbe8c4095c155ee7882dc7b1953b1d99",
         "tags": [
           "code"
         ],
         "based_on": [
-          "REQ-1"
+          "REQ-1",
+          "REQ-6"
         ],
         "embedding": null,
         "created_at": null,
@@ -456,12 +458,12 @@
     ],
     "verification": [
       {
-        "id": "TST-46ecef6a906e",
-        "project_id": "railway-20260926-160328",
+        "id": "TST-885ea3f0b041",
+        "project_id": "railway-20260926-211737",
         "type": "test",
-        "module": "api",
-        "title": "test_api",
-        "content": "\"\"\"入口冒烟测试（REQ-4）。\"\"\"\n\nfrom api import show_timetable, submit_publish\nfrom schedule import Train\n\n\ndef make_train() -> Train:\n    return Train(train_id=\"K1\", start=\"08:00\", legs={\"A->B\": 10, \"B->C\": 15})\n\n\ndef test_show_timetable() -> None:\n    assert show_timetable(make_train())[\"C\"] == \"08:25\"\n\n\ndef test_submit_publish_passes_through() -> None:\n    ok, _ = submit_publish(make_train(), [])\n    assert ok\n",
+        "module": "adjust",
+        "title": "test_adjust",
+        "content": "\"\"\"发车时间调整回归测试（REQ-1 新行为）。\"\"\"\n\nfrom schedule import Train, adjust_departure, arrival_times\n\n\ndef make_train() -> Train:\n    return Train(train_id=\"K1\", start=\"08:00\", legs={\"A->B\": 10, \"B->C\": 15})\n\n\ndef test_adjust_departure_shifts_whole_timetable() -> None:\n    adjusted = adjust_departure(make_train(), \"08:30\")\n    assert arrival_times(adjusted) == {\n        \"A\": \"08:30\", \"B\": \"08:40\", \"C\": \"08:55\",\n    }\n",
         "version": "0.1.0",
         "status": "active",
         "effective_from": null,
@@ -470,17 +472,49 @@
         "supersedes": null,
         "superseded_by": null,
         "source": {
-          "uri": "tests/test_api.py",
+          "uri": "tests/test_adjust.py",
           "locator": null,
           "kind": null,
-          "checksum": "sha256:027ebb771f77490dac0ff8239546fcace3d7a9d7debef8cac899a4b423273fbd"
+          "checksum": "sha256:b49b81ad66e0c445ba34f25f6206e9a45c4c61999de0734bcab0bb1a7f60ef17"
         },
-        "checksum": "sha256:027ebb771f77490dac0ff8239546fcace3d7a9d7debef8cac899a4b423273fbd",
+        "checksum": "sha256:b49b81ad66e0c445ba34f25f6206e9a45c4c61999de0734bcab0bb1a7f60ef17",
         "tags": [
           "test"
         ],
         "based_on": [
-          "REQ-4"
+          "REQ-1"
+        ],
+        "embedding": null,
+        "created_at": null,
+        "updated_at": null
+      },
+      {
+        "id": "TST-bf4598def6a1",
+        "project_id": "railway-20260926-211737",
+        "type": "test",
+        "module": "audit",
+        "title": "test_audit",
+        "content": "\"\"\"调整联动回归测试（REQ-6 审计 + REQ-2 占用复核）。\"\"\"\n\nfrom occupancy import Occupation\nfrom publish import can_publish\nfrom schedule import ADJUST_AUDIT, Train, adjust_departure_logged\n\n\ndef make_train() -> Train:\n    return Train(train_id=\"K1\", start=\"08:00\", legs={\"A->B\": 10, \"B->C\": 15})\n\n\ndef test_audit_log_records_adjustment() -> None:\n    before = len(ADJUST_AUDIT)\n    adjust_departure_logged(make_train(), \"09:00\")\n    assert len(ADJUST_AUDIT) == before + 1\n\n\ndef test_adjusted_train_still_checked_for_occupancy() -> None:\n    adjusted = adjust_departure_logged(make_train(), \"08:05\")\n    busy = [Occupation(\"K1\", 486, 494)]\n    ok, _ = can_publish(adjusted, busy)\n    assert not ok\n",
+        "version": "0.1.0",
+        "status": "active",
+        "effective_from": null,
+        "effective_to": null,
+        "applies_to_ref": null,
+        "supersedes": null,
+        "superseded_by": null,
+        "source": {
+          "uri": "tests/test_audit.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:66d63e4917e6f1baf9fd40a812a639a9e9cfe83969e2ebe2f9a8f056837d2dc5"
+        },
+        "checksum": "sha256:66d63e4917e6f1baf9fd40a812a639a9e9cfe83969e2ebe2f9a8f056837d2dc5",
+        "tags": [
+          "test"
+        ],
+        "based_on": [
+          "REQ-6",
+          "REQ-2"
         ],
         "embedding": null,
         "created_at": null,
@@ -488,7 +522,7 @@
       },
       {
         "id": "TST-da7154c71d35",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "test",
         "module": "occupancy",
         "title": "test_occupancy",
@@ -519,7 +553,7 @@
       },
       {
         "id": "TST-d4cf3c71d337",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "test",
         "module": "publish",
         "title": "test_publish",
@@ -551,7 +585,7 @@
       },
       {
         "id": "TST-e9c84656fadf",
-        "project_id": "railway-20260926-160328",
+        "project_id": "railway-20260926-211737",
         "type": "test",
         "module": "schedule",
         "title": "test_schedule",
@@ -581,52 +615,32 @@
         "updated_at": null
       }
     ],
-    "last_test_run": null,
+    "last_test_run": {
+      "id": "tr-1790428669466-4529ba",
+      "project_id": "railway-20260926-211737",
+      "task_id": "railway-20260926-211737-audit",
+      "command": "\"E:\\2026ob_projects\\SDD\\.venv\\Scripts\\python.exe\" -m pytest -q",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "report_ref": null,
+      "commit_ref": "d56014c5aba36db18b8f7b28f591bf66b18a6f74"
+    },
     "findings": [
-      {
-        "kind": "conflict",
-        "severity": "warning",
-        "message": "Conflicting constraints in module 'schedule': 相邻站间隔不得低于 5 分钟",
-        "refs": [
-          {
-            "artifact_id": "REQ-1",
-            "version": "1.0.0",
-            "source": {
-              "uri": "specs/requirement-schedule.md",
-              "locator": null,
-              "kind": null,
-              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
-            },
-            "updated_at": null
-          },
-          {
-            "artifact_id": "RULE-1",
-            "version": "1.0.0",
-            "source": {
-              "uri": "rules/interval-rule.md",
-              "locator": null,
-              "kind": null,
-              "checksum": "sha256:c996e9494a44b6511ff841294bc85892f79958c82803f422659f0bd7bd7155ea"
-            },
-            "updated_at": null
-          }
-        ],
-        "suggestion": "Confirm the authoritative constraint before editing this area.",
-        "needs_confirmation": true
-      },
       {
         "kind": "gap",
         "severity": "warning",
-        "message": "Requirement '车辆占用检查' has no design layer",
+        "message": "Requirement '调度操作入口' has no design layer",
         "refs": [
           {
-            "artifact_id": "REQ-2",
+            "artifact_id": "REQ-4",
             "version": "1.0.0",
             "source": {
-              "uri": "specs/requirement-occupancy.md",
+              "uri": "specs/requirement-api.md",
               "locator": null,
               "kind": null,
-              "checksum": "sha256:979f1286035abff3293e7cd8ee9f1842daff108bde3d02bfe576392942193d0e"
+              "checksum": "sha256:1a0e41a8a5323c329ad53d4a80d517aba05bde3c04a728c3b1affd886991ebba"
             },
             "updated_at": null
           }
@@ -697,21 +711,176 @@
       {
         "kind": "gap",
         "severity": "warning",
-        "message": "Requirement '调度操作入口' has no design layer",
+        "message": "Requirement '车辆占用检查' has no design layer",
         "refs": [
           {
-            "artifact_id": "REQ-4",
+            "artifact_id": "REQ-2",
             "version": "1.0.0",
             "source": {
-              "uri": "specs/requirement-api.md",
+              "uri": "specs/requirement-occupancy.md",
               "locator": null,
               "kind": null,
-              "checksum": "sha256:1a0e41a8a5323c329ad53d4a80d517aba05bde3c04a728c3b1affd886991ebba"
+              "checksum": "sha256:979f1286035abff3293e7cd8ee9f1842daff108bde3d02bfe576392942193d0e"
             },
             "updated_at": null
           }
         ],
         "suggestion": "Add a design realizing this requirement.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'按站调整发车时间（升版：含审计）' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "REQ-6",
+            "version": "2.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule-v2.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:ae563037b3eb6057496db1292443411ecec66ea61bdb5108ab779d5773390115"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'时刻计算设计' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "DES-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "design/schedule-design.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:36c387f6d674d69c3e06509d450f515f47fd86f9adf8a52b49fa12868b481422"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'schedule' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "CODE-2335993c1bbc",
+            "version": "0.1.0",
+            "source": {
+              "uri": "src/schedule.py",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:6ff1fac53ebcbf934b15535623b9d3d5bbe8c4095c155ee7882dc7b1953b1d99"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'test_adjust' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "TST-885ea3f0b041",
+            "version": "0.1.0",
+            "source": {
+              "uri": "tests/test_adjust.py",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:b49b81ad66e0c445ba34f25f6206e9a45c4c61999de0734bcab0bb1a7f60ef17"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
+        "needs_confirmation": false
+      },
+      {
+        "kind": "suspect",
+        "severity": "warning",
+        "message": "'test_schedule' is based on REQ-1, whose status is superseded",
+        "refs": [
+          {
+            "artifact_id": "TST-e9c84656fadf",
+            "version": "0.1.0",
+            "source": {
+              "uri": "tests/test_schedule.py",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:a1479502e81a6cb7ba7bd93f49a87196216c20735d083bfc5a42266f07ebaf4f"
+            },
+            "updated_at": null
+          },
+          {
+            "artifact_id": "REQ-1",
+            "version": "1.0.0",
+            "source": {
+              "uri": "specs/requirement-schedule.md",
+              "locator": null,
+              "kind": null,
+              "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+            },
+            "updated_at": null
+          }
+        ],
+        "suggestion": "Review and update this downstream artifact against the current upstream version.",
         "needs_confirmation": false
       }
     ],
@@ -794,13 +963,13 @@
         "updated_at": null
       },
       {
-        "artifact_id": "REQ-1",
-        "version": "1.0.0",
+        "artifact_id": "REQ-6",
+        "version": "2.0.0",
         "source": {
-          "uri": "specs/requirement-schedule.md",
+          "uri": "specs/requirement-schedule-v2.md",
           "locator": null,
           "kind": null,
-          "checksum": "sha256:f4fa713713e1f6b274a4110b40696bd3d6f1b8ac6a57605f161a8705b554175c"
+          "checksum": "sha256:ae563037b3eb6057496db1292443411ecec66ea61bdb5108ab779d5773390115"
         },
         "updated_at": null
       },
@@ -833,7 +1002,7 @@
           "uri": "src/api.py",
           "locator": null,
           "kind": null,
-          "checksum": "sha256:72e91dfc3e555fd045f076815069c6cecf0be40828a531a62476e7a6cd0ecc8d"
+          "checksum": "sha256:f669436d893f78ff9eb8df0532077be926ddd004e801c379785ec247d714071c"
         },
         "updated_at": null
       },
@@ -866,18 +1035,29 @@
           "uri": "src/schedule.py",
           "locator": null,
           "kind": null,
-          "checksum": "sha256:d75a8b27965093f698e6fefe023376529652920f5c49a99df3b85ff3851a3a67"
+          "checksum": "sha256:6ff1fac53ebcbf934b15535623b9d3d5bbe8c4095c155ee7882dc7b1953b1d99"
         },
         "updated_at": null
       },
       {
-        "artifact_id": "TST-46ecef6a906e",
+        "artifact_id": "TST-885ea3f0b041",
         "version": "0.1.0",
         "source": {
-          "uri": "tests/test_api.py",
+          "uri": "tests/test_adjust.py",
           "locator": null,
           "kind": null,
-          "checksum": "sha256:027ebb771f77490dac0ff8239546fcace3d7a9d7debef8cac899a4b423273fbd"
+          "checksum": "sha256:b49b81ad66e0c445ba34f25f6206e9a45c4c61999de0734bcab0bb1a7f60ef17"
+        },
+        "updated_at": null
+      },
+      {
+        "artifact_id": "TST-bf4598def6a1",
+        "version": "0.1.0",
+        "source": {
+          "uri": "tests/test_audit.py",
+          "locator": null,
+          "kind": null,
+          "checksum": "sha256:66d63e4917e6f1baf9fd40a812a639a9e9cfe83969e2ebe2f9a8f056837d2dc5"
         },
         "updated_at": null
       },
@@ -917,10 +1097,18 @@
     ],
     "budget": {
       "max_bytes": 8000,
-      "used_bytes": 6178,
+      "used_bytes": 7741,
       "truncated": false
     },
-    "generated_at": "2026-09-26T16:03:30.618813"
+    "generated_at": "2026-09-26T21:17:53.712753"
   },
-  "excluded": []
+  "excluded": [
+    {
+      "id": "REQ-1",
+      "reasons": [
+        "status is superseded",
+        "superseded by REQ-6"
+      ]
+    }
+  ]
 }

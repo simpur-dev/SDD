@@ -195,18 +195,18 @@ def test_minute_helpers_roundtrip() -> None:
 (full source: see the citation uri)
 
 ## ④ Task status and sources
-- task id: task-9d3b01a3f2
+- task id: task-88ef80a566
 - phase: analyzing
-- base ref: 75d0c69d97718cf3cb01148e0bb7485fbb101517
+- base ref: 6ce9d7d3be5ac4e3e45277821fddf2aa8668a930
 - sources cited: RULE-3, RULE-2, RULE-1, REQ-4, REQ-5, REQ-2, REQ-3, REQ-1, DES-2, DES-1, CODE-e662196c212e, CODE-4bfabc68a8f6, CODE-12d4b7620710, CODE-2335993c1bbc, TST-46ecef6a906e, TST-da7154c71d35, TST-d4cf3c71d337, TST-e9c84656fadf
 
 ## ⑤ Findings (conflicts · gaps · confirmations)
 - (warning/conflict) [needs confirmation] Conflicting constraints in module 'schedule': 相邻站间隔不得低于 5 分钟
     suggestion: Confirm the authoritative constraint before editing this area.
     sources: REQ-1, RULE-1
-- (warning/gap) Requirement '车辆占用检查' has no design layer
+- (warning/gap) Requirement '调度操作入口' has no design layer
     suggestion: Add a design realizing this requirement.
-    sources: REQ-2
+    sources: REQ-4
 - (warning/gap) Requirement '发布前预览接口' has no design layer
     suggestion: Add a design realizing this requirement.
     sources: REQ-5
@@ -216,10 +216,10 @@ def test_minute_helpers_roundtrip() -> None:
 - (warning/gap) Requirement '发布前预览接口' has no test layer
     suggestion: Add tests covering the implementation.
     sources: REQ-5
-- (warning/gap) Requirement '调度操作入口' has no design layer
+- (warning/gap) Requirement '车辆占用检查' has no design layer
     suggestion: Add a design realizing this requirement.
-    sources: REQ-4
+    sources: REQ-2
 
 ## ⑥ Budget and usage
 - context size: 6178/8000 bytes
-- generated at: 2026-09-26 16:03:30.618813
+- generated at: 2026-09-26 21:17:44.458528
