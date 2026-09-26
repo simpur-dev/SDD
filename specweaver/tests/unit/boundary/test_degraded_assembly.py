@@ -14,7 +14,7 @@ from specweaver.shared.errors import SWError
 
 
 def _dead_backends_settings() -> Settings:
-    settings = Settings()
+    settings = Settings(_env_file=None)
     settings.seekdb.host = "127.0.0.1"
     settings.seekdb.port = 1  # instant ECONNREFUSED, no external traffic
     settings.powercontext.base_url = "http://127.0.0.1:1"
