@@ -1,0 +1,12 @@
+{
+  "project_id": "railway-20260926-123253",
+  "scope_id": "scp_4px5dw9xrhp7eadd7n8wefsyp8",
+  "handoff_rev": "handoff:handoff:1",
+  "objective": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
+  "next_steps": [
+    "联动 occupancy/publish 复核并升版规格"
+  ],
+  "unverified": [
+    "审计日志需求 REQ-6 尚未落地"
+  ]
+}
