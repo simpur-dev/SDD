@@ -157,6 +157,10 @@ def context(
     base_ref: str = typer.Option(
         "", help="Git ref the task starts from (freshness baseline)."
     ),
+    scope_id: str = typer.Option(
+        "", help="PowerContext scope id; without it the bundle carries no "
+        "working-memory section."
+    ),
     as_json: bool = _JSON,
     usage_out: str = _USAGE,
 ) -> None:
@@ -168,6 +172,7 @@ def context(
                 project_id=project_id,
                 task_text=task_text,
                 base_ref=base_ref or None,
+                scope_id=scope_id,
             )
         )
 

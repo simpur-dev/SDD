@@ -96,6 +96,7 @@ class ResumeTask(UseCase):
                     project_id=request.project_id,
                     task_text=objective,
                     base_ref=current_ref,
+                    scope_id=request.scope_id,
                 )
             )
 
