@@ -1,0 +1,416 @@
+{
+  "generated_at": "20260927-020817",
+  "corpus": "demo/railway @ v1.1.0 (20 artifacts: 5 REQ / 3 RULE / 2 DES / 4 code / 4 test)",
+  "labeling_method": "金标由本项目人工标注，口径对齐 ContextBench 的 minimal-context 原则：以『完成该任务所需的最小充分依据』为准，逐条给出推导链（derivation），并可由 demo/railway 的 front matter 与关系图复核。标注者不是模型，且标注在评测前冻结。",
+  "provider": "qianwen",
+  "project": "retrieval-eval",
+  "ingest": {
+    "added": 0,
+    "updated": 0,
+    "unchanged": 18,
+    "relations": 18
+  },
+  "macro": {
+    "keyword": {
+      "recall": 0.8472,
+      "precision": 0.2573,
+      "f1": 0.3668
+    },
+    "specweaver": {
+      "recall": 1.0,
+      "precision": 0.2037,
+      "f1": 0.3258
+    }
+  },
+  "cases": [
+    {
+      "id": "t1-adjust-departure",
+      "task": "调整某趟车在中间站的发车时间，并自动重算后续各站到发时刻",
+      "derivation": "REQ-1 定义该行为；DES-1 给出重算方案；RULE-1 是最小站间隔约束；RULE-2 要求全量回归；实现与测试在 src/schedule.py 与 tests/test_schedule.py",
+      "finding_types": [
+        "conflict",
+        "gap",
+        "gap",
+        "gap",
+        "gap",
+        "gap"
+      ],
+      "bundle_bytes": 6178,
+      "arms": {
+        "keyword": {
+          "expected": 6,
+          "delivered": 12,
+          "hit": 5,
+          "recall": 0.8333,
+          "precision": 0.4167,
+          "f1": 0.5556,
+          "missed": [
+            "RULE-1"
+          ],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-4bfabc68a8f6",
+            "CODE-e662196c212e",
+            "DES-2",
+            "REQ-2",
+            "REQ-4",
+            "REQ-5"
+          ]
+        },
+        "specweaver": {
+          "expected": 6,
+          "delivered": 18,
+          "hit": 6,
+          "recall": 1.0,
+          "precision": 0.3333,
+          "f1": 0.5,
+          "missed": [],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-4bfabc68a8f6",
+            "CODE-e662196c212e",
+            "DES-2",
+            "REQ-2",
+            "REQ-3",
+            "REQ-4",
+            "REQ-5",
+            "RULE-3",
+            "TST-46ecef6a906e",
+            "TST-d4cf3c71d337",
+            "TST-da7154c71d35"
+          ]
+        }
+      }
+    },
+    {
+      "id": "t2-occupancy-window",
+      "task": "检查新车占用同一线路同一时间窗是否与其他任务冲突",
+      "derivation": "REQ-2 是占用检查需求；RULE-1 定义可比对的时间窗下限；实现与测试在 occupancy 模块",
+      "finding_types": [
+        "conflict",
+        "gap",
+        "gap",
+        "gap",
+        "gap",
+        "gap"
+      ],
+      "bundle_bytes": 6178,
+      "arms": {
+        "keyword": {
+          "expected": 4,
+          "delivered": 12,
+          "hit": 3,
+          "recall": 0.75,
+          "precision": 0.25,
+          "f1": 0.375,
+          "missed": [
+            "RULE-1"
+          ],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-2335993c1bbc",
+            "CODE-e662196c212e",
+            "DES-1",
+            "DES-2",
+            "REQ-1",
+            "REQ-3",
+            "REQ-4",
+            "RULE-3"
+          ]
+        },
+        "specweaver": {
+          "expected": 4,
+          "delivered": 18,
+          "hit": 4,
+          "recall": 1.0,
+          "precision": 0.2222,
+          "f1": 0.3636,
+          "missed": [],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-2335993c1bbc",
+            "CODE-e662196c212e",
+            "DES-1",
+            "DES-2",
+            "REQ-1",
+            "REQ-3",
+            "REQ-4",
+            "REQ-5",
+            "RULE-2",
+            "RULE-3",
+            "TST-46ecef6a906e",
+            "TST-d4cf3c71d337",
+            "TST-e9c84656fadf"
+          ]
+        }
+      }
+    },
+    {
+      "id": "t3-block-publish-on-conflict",
+      "task": "检测到占用冲突时阻止发布并给出原因",
+      "derivation": "REQ-3 与 RULE-3 共同构成禁止发布约束；DES-2 描述发布链路；实现与测试在 publish 模块",
+      "finding_types": [
+        "conflict",
+        "gap",
+        "gap",
+        "gap",
+        "gap",
+        "gap"
+      ],
+      "bundle_bytes": 6178,
+      "arms": {
+        "keyword": {
+          "expected": 6,
+          "delivered": 10,
+          "hit": 5,
+          "recall": 0.8333,
+          "precision": 0.5,
+          "f1": 0.625,
+          "missed": [
+            "RULE-2"
+          ],
+          "extra": [
+            "CODE-4bfabc68a8f6",
+            "CODE-e662196c212e",
+            "REQ-2",
+            "REQ-5",
+            "TST-da7154c71d35"
+          ]
+        },
+        "specweaver": {
+          "expected": 6,
+          "delivered": 18,
+          "hit": 6,
+          "recall": 1.0,
+          "precision": 0.3333,
+          "f1": 0.5,
+          "missed": [],
+          "extra": [
+            "CODE-2335993c1bbc",
+            "CODE-4bfabc68a8f6",
+            "CODE-e662196c212e",
+            "DES-1",
+            "REQ-1",
+            "REQ-2",
+            "REQ-4",
+            "REQ-5",
+            "RULE-1",
+            "TST-46ecef6a906e",
+            "TST-da7154c71d35",
+            "TST-e9c84656fadf"
+          ]
+        }
+      }
+    },
+    {
+      "id": "t4-submit-page-api",
+      "task": "页面提交新的发车时间，接口层接收请求并调用时刻计算",
+      "derivation": "REQ-4 定义接口行为；接口实现与测试在 api 模块（其下游 REQ-1 属可选上下文，不计入金标）",
+      "finding_types": [
+        "conflict",
+        "gap",
+        "gap",
+        "gap",
+        "gap",
+        "gap"
+      ],
+      "bundle_bytes": 6178,
+      "arms": {
+        "keyword": {
+          "expected": 3,
+          "delivered": 12,
+          "hit": 2,
+          "recall": 0.6667,
+          "precision": 0.1667,
+          "f1": 0.2667,
+          "missed": [
+            "TST-46ecef6a906e"
+          ],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-2335993c1bbc",
+            "CODE-4bfabc68a8f6",
+            "DES-1",
+            "DES-2",
+            "REQ-1",
+            "REQ-2",
+            "REQ-5",
+            "RULE-2",
+            "TST-e9c84656fadf"
+          ]
+        },
+        "specweaver": {
+          "expected": 3,
+          "delivered": 18,
+          "hit": 3,
+          "recall": 1.0,
+          "precision": 0.1667,
+          "f1": 0.2857,
+          "missed": [],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-2335993c1bbc",
+            "CODE-4bfabc68a8f6",
+            "DES-1",
+            "DES-2",
+            "REQ-1",
+            "REQ-2",
+            "REQ-3",
+            "REQ-5",
+            "RULE-1",
+            "RULE-2",
+            "RULE-3",
+            "TST-d4cf3c71d337",
+            "TST-da7154c71d35",
+            "TST-e9c84656fadf"
+          ]
+        }
+      }
+    },
+    {
+      "id": "t5-preview-before-publish",
+      "task": "发布前预览将要变更的时刻表差异",
+      "derivation": "REQ-5 提出该能力，但 demo 未实现（刻意保留的缺口用例）：金标只有需求本身，工具应同时暴露 gap 而不是召回无关代码",
+      "finding_types": [
+        "conflict",
+        "gap",
+        "gap",
+        "gap",
+        "gap",
+        "gap"
+      ],
+      "bundle_bytes": 6178,
+      "arms": {
+        "keyword": {
+          "expected": 1,
+          "delivered": 13,
+          "hit": 1,
+          "recall": 1.0,
+          "precision": 0.0769,
+          "f1": 0.1429,
+          "missed": [],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-2335993c1bbc",
+            "CODE-e662196c212e",
+            "DES-1",
+            "DES-2",
+            "REQ-1",
+            "REQ-2",
+            "REQ-3",
+            "RULE-2",
+            "RULE-3",
+            "TST-d4cf3c71d337",
+            "TST-e9c84656fadf"
+          ]
+        },
+        "specweaver": {
+          "expected": 1,
+          "delivered": 18,
+          "hit": 1,
+          "recall": 1.0,
+          "precision": 0.0556,
+          "f1": 0.1053,
+          "missed": [],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-2335993c1bbc",
+            "CODE-4bfabc68a8f6",
+            "CODE-e662196c212e",
+            "DES-1",
+            "DES-2",
+            "REQ-1",
+            "REQ-2",
+            "REQ-3",
+            "REQ-4",
+            "RULE-1",
+            "RULE-2",
+            "RULE-3",
+            "TST-46ecef6a906e",
+            "TST-d4cf3c71d337",
+            "TST-da7154c71d35",
+            "TST-e9c84656fadf"
+          ]
+        }
+      }
+    },
+    {
+      "id": "t6-regression-redline",
+      "task": "任何时刻表变更都必须先跑全量回归测试，禁止跳过",
+      "derivation": "RULE-2 是唯一直接依据；回归测试由 4 个测试文件共同承载，金标只要求命中其中与时刻表最相关的 schedule 测试",
+      "finding_types": [
+        "conflict",
+        "gap",
+        "gap",
+        "gap",
+        "gap",
+        "gap"
+      ],
+      "bundle_bytes": 6178,
+      "arms": {
+        "keyword": {
+          "expected": 2,
+          "delivered": 15,
+          "hit": 2,
+          "recall": 1.0,
+          "precision": 0.1333,
+          "f1": 0.2353,
+          "missed": [],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-2335993c1bbc",
+            "CODE-e662196c212e",
+            "DES-1",
+            "DES-2",
+            "REQ-1",
+            "REQ-2",
+            "REQ-3",
+            "REQ-5",
+            "RULE-3",
+            "TST-46ecef6a906e",
+            "TST-d4cf3c71d337",
+            "TST-da7154c71d35"
+          ]
+        },
+        "specweaver": {
+          "expected": 2,
+          "delivered": 18,
+          "hit": 2,
+          "recall": 1.0,
+          "precision": 0.1111,
+          "f1": 0.2,
+          "missed": [],
+          "extra": [
+            "CODE-12d4b7620710",
+            "CODE-2335993c1bbc",
+            "CODE-4bfabc68a8f6",
+            "CODE-e662196c212e",
+            "DES-1",
+            "DES-2",
+            "REQ-1",
+            "REQ-2",
+            "REQ-3",
+            "REQ-4",
+            "REQ-5",
+            "RULE-1",
+            "RULE-3",
+            "TST-46ecef6a906e",
+            "TST-d4cf3c71d337",
+            "TST-da7154c71d35"
+          ]
+        }
+      }
+    }
+  ],
+  "latency_ms": {
+    "n": 6,
+    "median": 5011.549999999999,
+    "max": 5305.1
+  },
+  "bundle_bytes_mean": 6178,
+  "budget_bytes": 8000,
+  "backend_calls_mean": 56,
+  "llm_calls_total": 6,
+  "prompt_tokens_total": 758,
+  "completion_tokens_total": 637
+}

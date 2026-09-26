@@ -1,0 +1,67 @@
+# HELP sw_spans_total Completed spans by usecase.
+# TYPE sw_spans_total counter
+sw_spans_total{span="get_context"} 6
+sw_spans_total{span="ingest_project"} 1
+# HELP sw_errors_total Failed spans by usecase.
+# TYPE sw_errors_total counter
+sw_errors_total{span="get_context"} 0
+sw_errors_total{span="ingest_project"} 0
+# HELP sw_llm_calls_total LLM completions by usecase.
+# TYPE sw_llm_calls_total counter
+sw_llm_calls_total{span="get_context"} 6
+sw_llm_calls_total{span="ingest_project"} 0
+# HELP sw_llm_prompt_tokens_total Prompt tokens by usecase.
+# TYPE sw_llm_prompt_tokens_total counter
+sw_llm_prompt_tokens_total{span="get_context"} 758
+sw_llm_prompt_tokens_total{span="ingest_project"} 0
+# HELP sw_llm_completion_tokens_total Completion tokens by usecase.
+# TYPE sw_llm_completion_tokens_total counter
+sw_llm_completion_tokens_total{span="get_context"} 605
+sw_llm_completion_tokens_total{span="ingest_project"} 0
+# HELP sw_backend_calls_total Backend operations by usecase.
+# TYPE sw_backend_calls_total counter
+sw_backend_calls_total{span="get_context"} 330
+sw_backend_calls_total{span="ingest_project"} 19
+# HELP sw_span_duration_ms Span duration in ms.
+# TYPE sw_span_duration_ms histogram
+sw_span_duration_ms_bucket{span="get_context",le="1"} 0
+sw_span_duration_ms_bucket{span="get_context",le="2"} 0
+sw_span_duration_ms_bucket{span="get_context",le="5"} 0
+sw_span_duration_ms_bucket{span="get_context",le="10"} 0
+sw_span_duration_ms_bucket{span="get_context",le="25"} 0
+sw_span_duration_ms_bucket{span="get_context",le="50"} 0
+sw_span_duration_ms_bucket{span="get_context",le="100"} 0
+sw_span_duration_ms_bucket{span="get_context",le="250"} 0
+sw_span_duration_ms_bucket{span="get_context",le="500"} 0
+sw_span_duration_ms_bucket{span="get_context",le="1000"} 0
+sw_span_duration_ms_bucket{span="get_context",le="2500"} 0
+sw_span_duration_ms_bucket{span="get_context",le="5000"} 2
+sw_span_duration_ms_bucket{span="get_context",le="10000"} 6
+sw_span_duration_ms_bucket{span="get_context",le="+Inf"} 6
+sw_span_duration_ms_sum{span="get_context"} 31603.268
+sw_span_duration_ms_count{span="get_context"} 6
+sw_span_duration_ms_bucket{span="ingest_project",le="1"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="2"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="5"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="10"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="25"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="50"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="100"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="250"} 0
+sw_span_duration_ms_bucket{span="ingest_project",le="500"} 1
+sw_span_duration_ms_bucket{span="ingest_project",le="1000"} 1
+sw_span_duration_ms_bucket{span="ingest_project",le="2500"} 1
+sw_span_duration_ms_bucket{span="ingest_project",le="5000"} 1
+sw_span_duration_ms_bucket{span="ingest_project",le="10000"} 1
+sw_span_duration_ms_bucket{span="ingest_project",le="+Inf"} 1
+sw_span_duration_ms_sum{span="ingest_project"} 302.318
+sw_span_duration_ms_count{span="ingest_project"} 1
+# HELP sw_engine_metric_sum Engine metrics summed by usecase (recall, findings, bundle_bytes...)
+# TYPE sw_engine_metric_sum gauge
+sw_engine_metric_sum{span="get_context",metric="assembly_ms"} 3.3
+sw_engine_metric_sum{span="get_context",metric="bundle_bytes"} 8710.0
+sw_engine_metric_sum{span="get_context",metric="excluded"} 0.0
+sw_engine_metric_sum{span="get_context",metric="findings"} 6.0
+sw_engine_metric_sum{span="get_context",metric="recall"} 108.0
+sw_engine_metric_sum{span="get_context",metric="valid"} 108.0
+# trace_id 5a8ee1babbfd46db9d8f0d47c951fb5e

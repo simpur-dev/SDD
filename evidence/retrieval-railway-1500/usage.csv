@@ -1,0 +1,8 @@
+name,duration_ms,llm_calls,prompt_tokens,completion_tokens,backend_calls,status,error,metrics
+ingest_project,302.3179000010714,0,0,0,19,ok,,{}
+get_context,6353.899500012631,1,134,108,53,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.7, ""findings"": 1, ""bundle_bytes"": 1468}"
+get_context,4649.046899998211,1,126,99,55,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.3, ""findings"": 1, ""bundle_bytes"": 1468}"
+get_context,5196.411899989471,1,123,104,55,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.8, ""findings"": 1, ""bundle_bytes"": 1421}"
+get_context,4514.702100001159,1,126,96,55,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.4, ""findings"": 1, ""bundle_bytes"": 1464}"
+get_context,5303.4879000042565,1,122,104,61,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.6, ""findings"": 1, ""bundle_bytes"": 1421}"
+get_context,5585.719899987453,1,127,94,51,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 0.5, ""findings"": 1, ""bundle_bytes"": 1468}"
