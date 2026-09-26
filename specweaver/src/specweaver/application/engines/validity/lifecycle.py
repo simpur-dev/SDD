@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 
 from ....domain.entities import Artifact
-from ....domain.enums import LifecycleStatus
 from ....domain.ports.workspace import WorkspacePort
+from ....domain.rules import effectiveness_reasons
 
 
 @dataclass
@@ -24,26 +24,7 @@ class LifecycleValidator:
     def validate(
         self, artifact: Artifact, *, current_ref: str | None = None
     ) -> Verdict:
-        reasons: list[str] = []
-
-        if artifact.status != LifecycleStatus.active:
-            reasons.append(f"status is {artifact.status}")
-        if artifact.superseded_by:
-            reasons.append(f"superseded by {artifact.superseded_by}")
-
-        now = self._now()
-        if artifact.effective_from and now < artifact.effective_from:
-            reasons.append("not yet effective")
-        if artifact.effective_to and now > artifact.effective_to:
-            reasons.append("past effective_to")
-
-        if (
-            current_ref
-            and artifact.applies_to_ref
-            and current_ref not in artifact.applies_to_ref
-        ):
-            reasons.append(f"does not apply to ref {current_ref}")
-
+        reasons = effectiveness_reasons(artifact, self._now(), current_ref)
         return Verdict(artifact.id, not reasons, reasons)
 
     async def verify_engineering(

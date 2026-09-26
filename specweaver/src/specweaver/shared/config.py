@@ -57,7 +57,3 @@ class Settings(BaseSettings):
     server: ServerSettings = ServerSettings()
     workspace: WorkspaceSettings = WorkspaceSettings()
     context: ContextSettings = ContextSettings()
-
-
-def for_local() -> Settings:
-    return Settings()

@@ -18,16 +18,6 @@ class BackendConnectionError(SWError):
     retriable = True
 
 
-class ArtifactNotFound(SWError):
-    code = "SW-NOTFOUND"
-    retriable = False
-
-
-class ConflictDetected(SWError):
-    code = "SW-CONFLICT"
-    retriable = False
-
-
 class InvalidRequest(SWError):
     code = "SW-INVALID"
     retriable = False

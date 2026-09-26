@@ -90,24 +90,6 @@ class PowerContextHandoff:
         content = res["content"]
         return content_to_view(scope_id, content)
 
-    async def acknowledge(self, view: HandoffView) -> None:
-        prepared = view.raw["prepared"]
-        source_id = view.raw["source_id"]
-        body = {
-            "scope_id": view.scope_id,
-            "source_id": source_id,
-            "receiver": "specweaver",
-            "status": "accepted",
-            "selection": "prepared",
-            "prepared": prepared,
-            "receiver_checks": {
-                "live_state": "not_checked",
-                "capability": "not_checked",
-                "authorization": "not_checked",
-            },
-        }
-        await self._client.post("/v1/work/handoffs/acknowledge", body)
-
     async def record_outcome(
         self, scope_id: str, source_id: str, outcome: dict
     ) -> None:

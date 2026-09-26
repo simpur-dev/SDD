@@ -85,22 +85,11 @@ class TestRun(BaseModel):
     commit_ref: str | None = None
 
 
-class Event(BaseModel):
-    id: str | None = None
-    task_id: str | None = None
-    phase: str | None = None
-    action: str
-    payload: dict = {}
-    citations: list[Citation] = []
-    ts: datetime | None = None
-
-
 class ContextBundle(BaseModel):
     task: Task
     goal_and_constraints: list[Artifact] = []
     design_and_implementation: list[Artifact] = []
     verification: list[Artifact] = []
-    status_and_sources: list[Artifact] = []
     findings: list[Finding] = []
     citations: list[Citation] = []
     budget: Budget | None = None

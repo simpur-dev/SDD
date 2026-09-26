@@ -38,7 +38,6 @@ class Finding(BaseModel):
 
 class Budget(BaseModel):
     max_bytes: int = 8000
-    max_items: int | None = None
     used_bytes: int = 0
     truncated: bool = False
 

@@ -36,9 +36,6 @@ class InMemoryHandoff:
             rev, HandoffView(scope_id=scope_id, rev=rev)
         )
 
-    async def acknowledge(self, view: HandoffView) -> None:
-        return None
-
     async def record_outcome(
         self, scope_id: str, source_id: str, outcome: dict
     ) -> None:
