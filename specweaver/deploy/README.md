@@ -45,14 +45,12 @@ Docker Hub 上 `oceanbase/seekdb:1.4.0`**&#x20;这个 tag 不存在**，请使�
 
 
 
-```
-cd E:\2026ob\_projects\SDD\specweaver\deploy
+```powershell
+cd E:\2026ob_projects\SDD\specweaver\deploy
 
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob\_projects/SDD/specweaver/deploy/wsl/setup\_docker.sh    # 装 Docker（拉镜像走宿主代理，IP自适应）
-
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob\_projects/SDD/specweaver/deploy/wsl/prep\_powercontext.sh # 拉 powercontext master 到 /opt/powercontext
-
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob\_projects/SDD/specweaver/deploy/wsl/build.sh           # 用官方 Dockerfile 构建
+wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/setup_docker.sh      # 装 Docker（拉镜像走宿主代理，IP 自适应）
+wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/prep_powercontext.sh # 拉 powercontext master 到 /opt/powercontext
+wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/build.sh            # 用官方 Dockerfile 构建
 ```
 
 > master 的官方 Dockerfile 为纯 Python（uv 构建），
@@ -74,25 +72,19 @@ wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob\_projects/SDD/specweaver/deplo
 
 
 
-```
-\# 彻底（重新）部署并验证：down → up（全本地镜像、离线）→ 等待 → 核对路由与 MCP
+```powershell
+# 彻底（重新）部署并验证：down → up（全本地镜像、离线）→ 等待 → 核对路由与 MCP
+wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/clean_redeploy.sh
 
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob\_projects/SDD/specweaver/deploy/wsl/clean\_redeploy.sh
-
-\# 仅启动（幂等）
-
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob\_projects/SDD/specweaver/deploy/wsl/start2.sh
+# 仅启动（幂等）
+wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/start2.sh
 ```
 
 手动等价命令（WSL 内）：
 
-
-
-```
-cd /mnt/e/2026ob\_projects/SDD/specweaver/deploy
-
-docker compose -f docker-compose.yml -f docker-compose.run.yml up -d    # 运行（本地镜像，离线）
-
+```bash
+cd /mnt/e/2026ob_projects/SDD/specweaver/deploy
+docker compose -f docker-compose.yml -f docker-compose.run.yml up -d          # 运行（本地镜像，离线）
 docker compose -f docker-compose.yml -f docker-compose.build.yml build powercontext  # 重新构建
 ```
 
@@ -152,6 +144,11 @@ docker compose -f docker-compose.yml -f docker-compose.build.yml build powercont
   等容器健康统一用 `deploy/wsl/wait_ready.sh`（在单条命令内轮询，不被空闲回收打断）；冷启动瞬间立即 curl 会得到 000。
 
 * **Windows 侧访问**：WSL2 默认端口转发，Windows 浏览器直接用 `localhost` 即可。
+
+* **鉴权姿态（重要，交付前请看）**：本目录的 compose 以**单机演示姿态**运行——PowerContext 的 `access_mode` 实测为 `disabled`（`specweaver doctor` 会把这一项打印出来），seekdb 用 `root` 空密码，SpecWeaver 的 `/mcp` 与 `GET /metrics` 自身不带鉴权。若要放到共享机器或局域网：
+  * PowerContext 侧启用官方鉴权：`POWERCONTEXT_SERVER_ACCESS_MODE=enforced` + `POWERCONTEXT_SERVER_AUTH_TOKEN=<强随机>`（官方 docker/README 与 configure-server-environment 文档口径），SpecWeaver 侧在 `specweaver/.env` 填 `POWERCONTEXT__TOKEN=<同一 token>`（`PowerContextClient` 会带 `Authorization: Bearer`）；
+  * seekdb 侧设置 `ROOT_PASSWORD` 并同步 `SEEKDB__PASSWORD`；
+  * SpecWeaver 的 HTTP 服务默认只绑 `127.0.0.1`（`SERVER__HOST`），对外暴露请置于反代之后并对 `/metrics` 做访问控制（指标含项目名与构件规模，属敏感信息）。
 
 * **代理**：脚本动态读取宿主 IP（`ip route` default via），代理端口固定 10090；daemon 与构建均已配置。
 
