@@ -63,7 +63,7 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 
 | 维度 | 现状数字 | 出处 |
 |---|---|---|
-| 自动化测试 | 264 项：258 项离线（unit 含 boundary 审计组 + CLI/后端适配器契约 + contract）+ 6 项真后端集成；语句覆盖 93%（`python -m pytest --cov=specweaver`）；`--live` 下任何 skip 直接判失败 | `scripts/gate.py` |
+| 自动化测试 | 266 项：260 项离线（unit 含 boundary 审计组 + CLI/后端适配器契约 + seekdb 边界超时 + contract）+ 6 项真后端集成；语句覆盖 94%（`python -m pytest --cov=specweaver`）；`--live` 下任何 skip 直接判失败 | `scripts/gate.py` |
 | 检索质量金标（6 任务，人工标注，三方对照） | recall：SpecWeaver **1.0** / 朴素关键词 0.847 / 官方 `/v1/context/prepare` 0.208（记忆侧装配，工程构件本不在其中）；precision 仅 0.204（bundle 平均 6363B＝预算 80%，未触及约束）；**紧预算 1500B：同一份金标三次独立运行 0.319 / 0.264 / 0.1945，基线 0.500 / 0.500 / 0.444 —— 此时我们稳定落后，缺陷未解**（0.319 那次的原始 `results.json` 只在 git 历史 `a8c22e4`，另两次见 `-v2` 与 `retrieval-railway-1500/`；"仅引用"紧凑渲染已试并因无增益回退） | `evidence/retrieval-railway-{8000,1500}-v2/`（修复前对照：`retrieval-railway-{8000,1500}/`） |
 | 上下文预算保证 | 声明的字节预算现在对**交付文本**成立：④段引用清单计入成本 + 渲染后复测重裁；扫描 7 档预算断言渲染字节 ≤ 预算（其中 4 档含默认 8000B 在修复前会超），预算小于裸框架时由⑥段明确宣告 | `specweaver/tests/unit/engines/assembly/test_budget_guarantee.py` |
 | 受控规模扫描（2 语料 × 3 召回上限 × 8 重复） | **成本随语料规模增长，不是只随召回上限**：cap=5 时 18 构件 40 次 vs 200 构件 350 次后端调用；上限抬到 40 再 +95 次（445）。原因是 validity 的 gap 检测对项目内每条需求做一次图查询，与上限无关；p95 由 5.8s（18 构件）升至 9.6s（200 构件） | `evidence/scaling-sweep-20260927-v2/sweep.md`（上一版 `scaling-sweep-20260927/` 结论作废：其"大语料"因逻辑 id 冲突被整体判 deprecated，测的其实是空 bundle 的成本） |
