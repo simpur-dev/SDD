@@ -62,7 +62,7 @@ async def main() -> None:
                     "objective": "doctor 命令 装配 检查",
                     "state": ["MCP 全链路验证已执行"],
                     "next_steps": ["新会话接续并三方核对"],
-                    "omissions": ["批 4/5 演示尚未执行"],
+                    "omissions": ["本探针不落库的验收项"],
                 },
             )
             rev = json.loads(hand.content[0].text)["handoff_rev"]
