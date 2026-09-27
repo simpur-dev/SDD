@@ -1,0 +1,6 @@
+t1-adjust-departure ①['REQ-1', 'RULE-3', 'RULE-2'] ②[] ③[] 1392B compact=True
+t2-occupancy-window ①['REQ-2', 'REQ-1', 'RULE-3'] ②[] ③[] 1462B compact=True
+t3-block-publish-on-conflict ①['REQ-3', 'REQ-2', 'RULE-3'] ②[] ③[] 1373B compact=True
+t4-submit-page-api ①['REQ-4', 'REQ-1', 'RULE-3'] ②[] ③[] 1438B compact=True
+t5-preview-before-publish ①['REQ-5', 'REQ-3', 'REQ-1'] ②[] ③[] 1497B compact=True
+t6-regression-redline ①['RULE-2', 'RULE-3', 'REQ-1'] ②[] ③[] 1392B compact=True
