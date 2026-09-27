@@ -1,0 +1,49 @@
+[
+  {
+    "arm": "on",
+    "run": 0,
+    "project_id": "offon-on-0-20260927-095319",
+    "rc": 0,
+    "sw_calls": [
+      "sw_ping",
+      "sw_doctor",
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_record_decision",
+      "sw_handoff",
+      "sw_resume_task",
+      "sw_report_progress",
+      "sw_verify",
+      "sw_explain_source",
+      "sw_complete_task"
+    ],
+    "usage": {
+      "input_tokens": 25155,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 321536,
+      "output_tokens": 8142,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    },
+    "duration_ms": 96646.71516418457,
+    "num_turns": 43,
+    "result_text": "Done. `python -m pytest -q` → **14 passed**.\n\n## What I changed\n\n**`src/schedule.py`** — added `adjust_departure(train, new_start) -> Train` (`src/schedule.py:48`). Per DES-01 (\"平移始发时刻即可重算后续各站\"), it returns a **new** `Train` with the shifted `start` and unchanged `legs`/`train_id`; later stops recalculate automatically through the existing `arrival_times`. Input is validated by reusing `to_minutes(new_start)`. The original object is not mutated.\n\n**`src/api.py`** — added `submit_adjust_departure(train, new_start) -> dict[str, str]` (`src/api.py:15`), returning `arrival_times(adjust_departure(.",
+    "changed": true,
+    "pytest_rc": 0,
+    "summary": "17 passed in 0.05s",
+    "success": true
+  }
+]
