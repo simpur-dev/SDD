@@ -18,6 +18,17 @@ _TYPE_ORDER = {
     ArtifactType.test: 4,
 }
 
+# Requirement and rule are one tier: both are the "effective old constraints"
+# the bundle exists to surface, so neither may push the other down the page on
+# the strength of its type alone.
+_TIER = {
+    ArtifactType.requirement: 0,
+    ArtifactType.rule: 0,
+    ArtifactType.design: 1,
+    ArtifactType.code: 1,
+    ArtifactType.test: 2,
+}
+
 _TOKEN_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]+|[一-鿿]{2,}")
 
 
@@ -36,26 +47,27 @@ def task_overlap(task_text: str, artifact: Artifact) -> int:
 
 def _sort_key(
     artifact: Artifact, relevance: dict[str, float], task_text: str
-) -> tuple[int, float, int, str, str]:
-    """Link importance first (type), then retrieval relevance inside the type.
+) -> tuple[int, float, int, int, str, str]:
+    """Section tier first, then retrieval relevance, then type.
 
-    Relevance never re-orders across types: constraints and requirements keep
-    their place in the goal section regardless of score (docs/01 §4.4), so a
-    low-scoring rule cannot be pushed behind code.
+    A constraint still never falls behind code - the tier keeps that promise
+    (docs/01 §4.4). What must not happen is a *type* inside one tier winning a
+    scarce slot from a better-matched one: measured on the gold set, ordering
+    rules ahead of requirements spent 1500 bytes on an unrelated publish rule
+    in 5 of 6 cases while the requirement the task was actually about, and the
+    design artifact ranked third by score, were dropped (docs/01 §11).
 
     The constraint floor injects active requirements/rules with no score at
-    all; ordering those by ``(module, id)`` alone hands a scarce budget slot to
-    whichever id sorts first, which is what cost us gold hits at 1500 bytes
-    (docs/01 §11). They fall back to task-token overlap instead; scored
-    candidates keep the exact order they had.
+    all; those fall behind every scored candidate in the tier and then order by
+    task-token overlap rather than by ``(module, id)``, which handed slots to
+    whichever id sorted first.
     """
     score = relevance.get(artifact.id, 0.0)
-    fallback = (
-        -task_overlap(task_text, artifact) if score <= 0.0 else 0
-    )
+    fallback = -task_overlap(task_text, artifact) if score <= 0.0 else 0
     return (
-        _TYPE_ORDER.get(artifact.type, 9),
+        _TIER.get(artifact.type, 9),
         -score,
+        _TYPE_ORDER.get(artifact.type, 9),
         fallback,
         artifact.module or "",
         artifact.id,
@@ -76,7 +88,9 @@ def map_sections(
 ) -> Sections:
     scores = relevance or {}
 
-    def key(artifact: Artifact) -> tuple[int, float, int, str, str]:
+    def key(
+        artifact: Artifact,
+    ) -> tuple[int, float, int, int, str, str]:
         return _sort_key(artifact, scores, task_text)
 
     goal: list[Artifact] = []

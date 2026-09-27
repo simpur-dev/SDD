@@ -81,6 +81,7 @@ class Budgeter:
         used = 0
         truncated = len(kept_findings) < len(findings)
         groups: list[list] = []
+        exhausted = False
 
         for items in (
             sections.goal_and_constraints,
@@ -88,11 +89,22 @@ class Budgeter:
             sections.verification,
         ):
             kept: list = []
+            if exhausted:
+                groups.append(kept)
+                continue
             for artifact in items:
                 cost = entry_cost(artifact)
                 if used + cost > available:
+                    # Strict priority, both directions. Trying a smaller entry
+                    # from the same section, or letting a later section pick up
+                    # the remainder, spends the budget on less important
+                    # evidence than the entry we just had to drop - which is how
+                    # a 1500-byte bundle ended up carrying an unrelated publish
+                    # rule and a publish code block while dropping the
+                    # requirement and design the task was about (docs/01 §11).
                     truncated = True
-                    continue
+                    exhausted = True
+                    break
                 used += cost
                 kept.append(artifact)
             groups.append(kept)

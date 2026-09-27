@@ -9,7 +9,11 @@ from fakes.catalog import InMemoryCatalog, InMemoryHybridSearch
 from fakes.inference import ScriptedEmbedding
 
 from specweaver.application.engines.assembly import AssemblyEngine
-from specweaver.application.engines.assembly.sections import map_sections
+from specweaver.application.engines.assembly.budget import Budgeter
+from specweaver.application.engines.assembly.sections import (
+    Sections,
+    map_sections,
+)
 from specweaver.application.engines.retrieval import (
     GraphExpander,
     QueryPlanner,
@@ -54,7 +58,7 @@ def _task() -> Task:
     )
 
 
-def test_relevance_orders_within_a_type_but_never_across_types() -> None:
+def test_relevance_orders_within_a_tier_and_never_across_tiers() -> None:
     low = _artifact("REQ-1", ArtifactType.requirement)
     high = _artifact("REQ-2", ArtifactType.requirement)
     rule = _artifact("RULE-1", ArtifactType.rule)
@@ -63,13 +67,36 @@ def test_relevance_orders_within_a_type_but_never_across_types() -> None:
         [low, high, rule], relevance={high.id: 0.9, low.id: 0.1}
     )
 
-    # RULE-1 scored nothing yet stays ahead of both requirements: the link
-    # role of a constraint outranks any similarity score.
+    # Requirements and rules are one tier, so the best-matched requirement
+    # outranks an unscored rule; the whole tier still stays ahead of code.
+    # This used to assert the opposite (RULE-1 first), and that ordering is
+    # what cost gold hits at 1500 bytes: it filled a scarce slot with
+    # whichever rule existed instead of the requirement the task was about.
     assert [a.id for a in sections.goal_and_constraints] == [
-        "RULE-1",
         "REQ-2",
         "REQ-1",
+        "RULE-1",
     ]
+
+
+def test_a_dropped_goal_entry_is_not_backfilled_by_a_lesser_section() -> None:
+    """Leftover bytes must not buy noise from a lower tier (docs/01 §11)."""
+    goal = _artifact("REQ-1", ArtifactType.requirement, content="r" * 900)
+    noise = _artifact("CODE-1", ArtifactType.code, content="c" * 40)
+
+    decision = Budgeter(1500).apply(
+        Sections(
+            goal_and_constraints=[goal],
+            design_and_implementation=[noise],
+            verification=[],
+        ),
+        1400,
+        [],
+    )
+
+    assert decision.sections.goal_and_constraints == []
+    assert decision.sections.design_and_implementation == []
+    assert decision.truncated
 
 
 async def test_budget_drops_the_least_relevant_entry_first() -> None:
