@@ -136,7 +136,9 @@ def test_materialize_rejects_blank_or_bad_run_id(tmp_path: Path) -> None:
 def test_shipped_assets_load_and_cover_all_tiers() -> None:
     packs = load_dir(TASKPACKS)
     assert {p.tier for p in packs} == {"basic", "advanced", "challenge"}
-    assert all(p.id.startswith("railway-") for p in packs)
+    railway = [p for p in packs if p.id.startswith("railway-")]
+    openspec = [p for p in packs if p.id.startswith("openspec-demo-")]
+    assert len(railway) == 3 and len(openspec) == 3
     for pack in packs:
         assert pack.repo.commit
         assert pack.repo.profile in known_profiles()
@@ -145,9 +147,44 @@ def test_shipped_assets_load_and_cover_all_tiers() -> None:
         assert pack.budget.time_limit_s and pack.budget.max_tokens
         # harness-grade assets: precise contract + an existing hidden suite
         assert pack.task.contract
-        assert "adjust_departure" in pack.task.contract
         suite = TASKPACKS / pack.acceptance.hidden_suite
         assert suite.is_file(), f"missing hidden suite for {pack.id}"
+        for given in pack.task.given_files:
+            assert (TASKPACKS / given.src).is_file(), (
+                f"missing given file for {pack.id}: {given.src}"
+            )
+            assert not given.dest.startswith("/")
+
+
+def test_railway_assets_grade_the_adjust_departure_contract() -> None:
+    for pack in load_dir(TASKPACKS):
+        if pack.id.startswith("railway-"):
+            assert "adjust_departure" in pack.task.contract
+
+
+def test_openspec_demo_assets_carry_the_delta_and_setup() -> None:
+    for pack in load_dir(TASKPACKS):
+        if not pack.id.startswith("openspec-demo-"):
+            continue
+        assert pack.repo.profile == "openspec"
+        assert pack.acceptance.setup_commands
+        assert any("npm ci" in c for c in pack.acceptance.setup_commands)
+        assert "author" in pack.task.contract
+        if pack.tier == "basic":
+            assert pack.task.given_files == []
+        else:
+            # the delivered delta lands as a real pending OpenSpec change
+            assert len(pack.task.given_files) == 1
+            assert pack.task.given_files[0].dest == (
+                "openspec/changes/author-sort/specs/search-filters/spec.md"
+            )
+        if pack.tier in ("advanced", "challenge"):
+            # the modified sort requirement is intentionally replaced, so it
+            # is NOT in the regression guard; search and pagination are
+            assert "REQ-079c63277997" not in (
+                pack.acceptance.forbidden_regressions
+            )
+            assert "REQ-c016ccdcbc98" in pack.acceptance.forbidden_regressions
 
 
 def test_contract_and_hidden_suite_default_empty(tmp_path: Path) -> None:

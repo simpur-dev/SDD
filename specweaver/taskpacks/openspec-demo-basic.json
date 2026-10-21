@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "id": "openspec-demo-basic",
+  "tier": "basic",
+  "title": "openspec-demo：按规格新增作者筛选（保搜索/排序/分页）",
+  "repo": {
+    "origin": "https://github.com/mddiosc/openspec-demo",
+    "commit": "a05b36da51f9edfaa6043b2962ed1fdbb06cfeb7",
+    "subdir": "",
+    "profile": "openspec"
+  },
+  "agent": {
+    "name": "claude-code",
+    "version": "2.1.261",
+    "model": "env-configured (specweaver/.env)",
+    "tool_allowlist": [
+      "sw_ping",
+      "sw_doctor",
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task",
+      "sw_handoff",
+      "sw_resume_task",
+      "sw_record_decision",
+      "sw_report_progress",
+      "sw_verify",
+      "sw_explain_source"
+    ]
+  },
+  "task": {
+    "goal": "按 search-filters 能力的既定行为风格，为图书搜索页新增作者筛选：用户可从当前结果出现的作者中选择一位，结果仅保留该作者的书目。原有搜索、排序（sort 选择与重置分页规则）和 Load more 分页行为必须保持不变。",
+    "givens": [
+      "openspec/specs/search-filters/spec.md 定义了现有 sort 需求（必须继续生效）",
+      "openspec/specs/book-search 与 pagination 规格定义了不得回退的搜索与分页行为",
+      "src/api/client.ts 的 searchBooks 端点已声明 author 查询参数（尚未被使用）"
+    ],
+    "contract": "1. 搜索页出现作者筛选控件：<select> 的可访问标签为 \"Author:\"（id \"author-select\"），选项为 \"All authors\"（空值）加当前结果作者去重名单。\n2. 选择一位作者后，重新以 Open Library 的 author 参数发起检索（带 author=该作者名），并把 Load more 分页重置回第一页；结果网格只显示匹配作者的书目。\n3. 选择 \"All authors\" 清除筛选并恢复未过滤结果集。\n4. 现有搜索输入、Sort 控件与 Load more 行为保持不变。\n5. 完成后 npx playwright test 全套（含上游 10 个 spec）保持通过。"
+  },
+  "snapshot": {
+    "seekdb": "fresh",
+    "powercontext_scope": "fresh"
+  },
+  "budget": {
+    "max_tokens": 200000,
+    "max_backend_calls": 500,
+    "time_limit_s": 900
+  },
+  "acceptance": {
+    "test_commands": ["npx playwright test"],
+    "forbidden_regressions": [
+      "REQ-c016ccdcbc98",
+      "REQ-079c63277997",
+      "REQ-a2b19c71ca5e"
+    ],
+    "hidden_suite": "suites/openspec-demo-basic.spec.ts",
+    "setup_commands": ["npm ci", "npx playwright install chromium"]
+  }
+}

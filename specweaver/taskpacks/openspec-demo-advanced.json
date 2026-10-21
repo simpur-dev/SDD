@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "id": "openspec-demo-advanced",
+  "tier": "advanced",
+  "title": "openspec-demo：处理规格变更（新增作者筛选 + 修改排序需求，保留分页等旧约束）",
+  "repo": {
+    "origin": "https://github.com/mddiosc/openspec-demo",
+    "commit": "a05b36da51f9edfaa6043b2962ed1fdbb06cfeb7",
+    "subdir": "",
+    "profile": "openspec"
+  },
+  "agent": {
+    "name": "claude-code",
+    "version": "2.1.261",
+    "model": "env-configured (specweaver/.env)",
+    "tool_allowlist": [
+      "sw_ping",
+      "sw_doctor",
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task",
+      "sw_handoff",
+      "sw_resume_task",
+      "sw_record_decision",
+      "sw_report_progress",
+      "sw_verify",
+      "sw_explain_source"
+    ]
+  },
+  "task": {
+    "goal": "一项规格变更已随包下发到工作区 openspec/changes/author-sort/（ADDED：按作者筛选；MODIFIED：sort 需求改为与筛选组合）。先 ingest 使变更进入上下文，识别该变更中应替换的需求（旧 sort 行为）与不受影响的需求（搜索、Load more 分页），然后完整实现变更：筛选与排序正确组合，分页行为保持，最后全套 Playwright 测试（含上游 10 个 spec）通过。",
+    "givens": [
+      "待处理变更 openspec/changes/author-sort/specs/search-filters/spec.md：ADDED 作者筛选需求 + MODIFIED sort 需求（与筛选组合）",
+      "MODIFIED 条目 supersedes 现行 REQ-079c63277997（User can sort search results 旧行为）",
+      "分页（REQ-a2b19c71ca5e）与搜索（REQ-c016ccdcbc98）不在变更范围内，必须保持"
+    ],
+    "given_files": [
+      {
+        "src": "givens/openspec-demo-advanced-author-sort.md",
+        "dest": "openspec/changes/author-sort/specs/search-filters/spec.md"
+      }
+    ],
+    "contract": "1. 作者筛选控件：<select> 标签 \"Author:\"（id \"author-select\"），选项 \"All authors\" + 当前结果作者去重；选择后带 author 参数重取并重置分页。\n2. 按 delta 的 MODIFIED 定义：筛选激活时排序作用于筛选结果集；修改筛选保留所选排序并重置分页；修改排序则以筛选集从第一页重新获取。\n3. 未被变更触及的行为（搜索输入、Load more 计数、book 卡片）保持不变。\n4. 完成后 npx playwright test 全套通过。"
+  },
+  "snapshot": {
+    "seekdb": "fresh",
+    "powercontext_scope": "fresh"
+  },
+  "budget": {
+    "max_tokens": 200000,
+    "max_backend_calls": 500,
+    "time_limit_s": 900
+  },
+  "acceptance": {
+    "test_commands": ["npx playwright test"],
+    "forbidden_regressions": [
+      "REQ-c016ccdcbc98",
+      "REQ-a2b19c71ca5e"
+    ],
+    "hidden_suite": "suites/openspec-demo-compose.spec.ts",
+    "setup_commands": ["npm ci", "npx playwright install chromium"]
+  }
+}
