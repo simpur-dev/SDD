@@ -5,7 +5,7 @@
 在开发 Agent 动手之前，给出**当前有效、最小充分、来源可核对**的工程依据；任务完成后把代码变化与验证结果**反向织回**工程记录，并支持跨会话/跨 Agent 接续。
 
 - 工程资料库与混合检索：**OceanBase seekdb**（关键词 + 语义 + 版本/状态/模块收窄，RRF 融合）
-- 标的可插拔：**仓库档案层**（specweaver / openspec / plain 三档，自动嗅探或 `ingest --profile` 指定；openspec 档案把规格按需求条目拍平、变更 delta 映射为 draft+supersedes 版本链，非 Python 代码走 Tier-2 文本符号索引）
+- 标的可插拔：**仓库档案层**（specweaver / openspec / plain 三档，自动嗅探或 `ingest --profile` 指定；openspec 档案把规格按需求条目拍平、变更 delta 映射为 draft+supersedes 版本链，非 Python 代码走 Tier-2 文本符号索引）；评测输入以 **TaskPack** 声明（`taskpacks/*.json` 固定 repo commit / Agent 版本与权限 / 预算，`scripts/taskpack_check.py --plan` 预览隔离派生）
 - 工作记忆与任务交接：**PowerContext**（Memory remember/revise/retire、Handoff 提交与接续）
 - 对 Agent 的接口：**MCP**（stdio / streamable-http，11 个工具）与 **CLI**（7 个命令：doctor · ingest · context · finish · handoff · resume · version）
 - 推理后端不绑定品牌：`none | minimax | deepseek | qianwen`（OpenAI 兼容 chat + 各家 embeddings 差异由适配器吸收）
@@ -54,6 +54,7 @@ specweaver/src/specweaver/    工具源码（domain/application/adapters/shared�
 specweaver/tests/             unit（含 boundary 审计组）· contract · integration（真后端）· fakes
 specweaver/scripts/           gate.py · run_demo.py · run_off_on.py · verify_mcp.py · probe_metrics_http.py · eval_retrieval.py · scaling_probe.py
 specweaver/deploy/            docker-compose + WSL 脚本 + mcp.*.json 样例
+specweaver/taskpacks/         TaskPack 评测任务包（railway 三层；schema 见 specweaver/src/specweaver/evaluation/）
 demo/railway/                 铁路调度教学项目（演示标的）+ gold/ 检索金标标注
 evidence/                     railway-* 全链路 · retrieval-* 金标质量 · scaling-* 规模扫描 · off-on-* 效率对照 · m5-* / http-transport-* 接口与指标实测
 research/                     调研克隆（spec-kit / powercontext，不随交付）
