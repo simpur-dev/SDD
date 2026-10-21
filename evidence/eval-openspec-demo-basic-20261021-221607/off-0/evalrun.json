@@ -1,0 +1,93 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "source": "run_eval",
+    "arm": "off",
+    "run_index": 0,
+    "agent": {
+      "name": "claude-code",
+      "version": "2.1.261",
+      "model": "env-configured (specweaver/.env)"
+    },
+    "sw_version": "09187f9",
+    "started_at": "",
+    "taskpack_id": "openspec-demo-basic",
+    "tier": "basic"
+  },
+  "context_bundles": [],
+  "code_diff": {
+    "diff_refs": [
+      "agent.diff"
+    ],
+    "files_changed": []
+  },
+  "test_evidence": [
+    {
+      "command": "npx playwright test --retries=2",
+      "exit_code": 0,
+      "passed": null,
+      "failed": null,
+      "total": null,
+      "summary": "  43 passed (13.0s)",
+      "report_ref": "judge-0.txt"
+    }
+  ],
+  "memory_ops": [],
+  "usage": {
+    "llm_calls": 0,
+    "prompt_tokens": 46143,
+    "completion_tokens": 23126,
+    "backend_calls": 0,
+    "duration_ms": 169963.33718299866,
+    "spans": 0,
+    "agent_usage_raw": {
+      "input_tokens": 46143,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 934784,
+      "output_tokens": 23126,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    }
+  },
+  "budget": {
+    "declared": {
+      "max_tokens": 200000.0,
+      "max_backend_calls": 500.0,
+      "time_limit_s": 900.0
+    },
+    "actual": {
+      "max_tokens": 69269.0,
+      "max_backend_calls": 0.0,
+      "time_limit_s": 169.96333718299866
+    },
+    "over": []
+  },
+  "outcome": {
+    "success": true,
+    "source": "judge",
+    "notes": [
+      "sw_calls=[]"
+    ]
+  },
+  "sources": [
+    "transcript.jsonl",
+    "agent.diff",
+    "prompt.txt",
+    "setup-0.txt",
+    "setup-1.txt",
+    "judge-0.txt"
+  ]
+}

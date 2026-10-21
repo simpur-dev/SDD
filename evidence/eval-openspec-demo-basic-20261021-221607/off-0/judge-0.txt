@@ -1,0 +1,6 @@
+subject tag on book detail links to subject page (1.3s)
+  ok 39 [chromium] › tests\subject-browse.spec.ts:15:1 › navigate to subject page via tag click (1.1s)
+  ok 43 [chromium] › tests\subject-browse.spec.ts:44:1 › subject page back button navigates to previous page (994ms)
+  ok 37 [chromium] › tests\search-filters.spec.ts:35:1 › changing sort triggers new API request (1.4s)
+
+  43 passed (13.0s)

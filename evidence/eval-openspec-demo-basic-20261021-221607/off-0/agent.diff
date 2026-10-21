@@ -1,0 +1,384 @@
+diff --git a/openspec/specs/search-filters/spec.md b/openspec/specs/search-filters/spec.md
+index ce84761..3051721 100644
+--- a/openspec/specs/search-filters/spec.md
++++ b/openspec/specs/search-filters/spec.md
+@@ -32,3 +32,33 @@ The system SHALL provide a sort control on the search page that allows the user
+ - **WHEN** the user changes sort and navigates to a book detail page and back
+ - **THEN** the sort control SHALL still show the previously selected sort option
+ - **THEN** the results SHALL be served from cache (no new network request)
++
++---
++
++### Requirement: User can filter search results by author
++
++The system SHALL provide an author filter on the search page with an accessible label "Author:". The control SHALL list "All authors" (empty value) followed by the distinct author names present in the current results. Selecting an author SHALL refetch results with Open Library's `author` parameter, reset pagination to the first page, and show only books by that author. Selecting "All authors" SHALL clear the filter and restore the unfiltered results. Search input, sort, and Load more behavior SHALL remain unchanged.
++
++#### Scenario: Author filter lists authors from current results
++
++- **WHEN** search results are displayed
++- **THEN** the author control SHALL show "All authors" as the selected default option
++- **THEN** it SHALL list each distinct author name from the loaded results exactly once
++
++#### Scenario: User filters by author
++
++- **WHEN** the user selects an author from the author control
++- **THEN** the system SHALL refetch results with the `author` query parameter set to the selected name
++- **THEN** pagination SHALL reset to page 1
++- **THEN** the results grid SHALL only show books by the selected author
++
++#### Scenario: User clears the author filter
++
++- **WHEN** the user selects "All authors"
++- **THEN** the system SHALL clear the author filter
++- **THEN** the results grid SHALL show the unfiltered result set
++
++#### Scenario: Author filter is hidden without results
++
++- **WHEN** there are no results (empty state, error, or no query)
++- **THEN** the author filter SHALL NOT be visible
+diff --git a/src/components/AuthorFilter.module.css b/src/components/AuthorFilter.module.css
+new file mode 100644
+index 0000000..f7592cf
+--- /dev/null
++++ b/src/components/AuthorFilter.module.css
+@@ -0,0 +1,28 @@
++.wrapper {
++  display: flex;
++  align-items: center;
++  gap: 0.4rem;
++}
++
++.label {
++  font-size: 0.8rem;
++  color: var(--text-muted);
++  white-space: nowrap;
++}
++
++.select {
++  font-size: 0.8rem;
++  color: var(--text-primary);
++  background-color: var(--bg-primary);
++  border: 1px solid var(--border-color);
++  border-radius: 5px;
++  padding: 0.25rem 0.5rem;
++  cursor: pointer;
++  outline: none;
++  max-width: 14rem;
++  transition: border-color 0.2s, background-color 0.2s, color 0.2s;
++}
++
++.select:focus {
++  border-color: var(--accent-color);
++}
+diff --git a/src/components/AuthorFilter.tsx b/src/components/AuthorFilter.tsx
+new file mode 100644
+index 0000000..25b842a
+--- /dev/null
++++ b/src/components/AuthorFilter.tsx
+@@ -0,0 +1,31 @@
++import { useSearchStore } from '../store/searchStore'
++import styles from './AuthorFilter.module.css'
++
++interface AuthorFilterProps {
++  authors: string[]
++}
++
++export function AuthorFilter({ authors }: AuthorFilterProps) {
++  const { author, setAuthor } = useSearchStore()
++
++  return (
++    <div className={styles.wrapper}>
++      <label className={styles.label} htmlFor="author-select">
++        Author:
++      </label>
++      <select
++        id="author-select"
++        className={styles.select}
++        value={author}
++        onChange={(e) => setAuthor(e.target.value)}
++      >
++        <option value="">All authors</option>
++        {authors.map((name) => (
++          <option key={name} value={name}>
++            {name}
++          </option>
++        ))}
++      </select>
++    </div>
++  )
++}
+diff --git a/src/hooks/useBookSearch.ts b/src/hooks/useBookSearch.ts
+index 8442f72..81742ae 100644
+--- a/src/hooks/useBookSearch.ts
++++ b/src/hooks/useBookSearch.ts
+@@ -5,14 +5,15 @@ import type { SortOption } from '../store/searchStore'
+ const FIELDS = 'key,title,author_name,author_key,cover_i,first_publish_year,edition_count'
+ const PAGE_SIZE = 20
+ 
+-export function useBookSearch(query: string, sort: SortOption) {
++export function useBookSearch(query: string, sort: SortOption, author = '') {
+   return useInfiniteQuery({
+-    queryKey: ['books', query, sort],
++    queryKey: ['books', query, sort, author],
+     initialPageParam: 0,
+     queryFn: ({ pageParam }) =>
+       openLibraryClient.searchBooks({
+         queries: {
+           q: query,
++          author: author || undefined,
+           fields: FIELDS,
+           limit: PAGE_SIZE,
+           offset: pageParam,
+diff --git a/src/pages/SearchPage.module.css b/src/pages/SearchPage.module.css
+index daeae7c..82b8d9f 100644
+--- a/src/pages/SearchPage.module.css
++++ b/src/pages/SearchPage.module.css
+@@ -45,6 +45,13 @@
+   margin: 0;
+ }
+ 
++.filters {
++  display: flex;
++  align-items: center;
++  gap: 1rem;
++  flex-wrap: wrap;
++}
++
+ .status {
+   text-align: center;
+   color: var(--text-muted);
+diff --git a/src/pages/SearchPage.tsx b/src/pages/SearchPage.tsx
+index be80a0e..45fc5e7 100644
+--- a/src/pages/SearchPage.tsx
++++ b/src/pages/SearchPage.tsx
+@@ -1,15 +1,18 @@
++import { useMemo } from 'react'
+ import { useSearchStore } from '../store/searchStore'
+ import { useBookSearch } from '../hooks/useBookSearch'
+ import { SearchInput } from '../components/SearchInput'
+ import { BookGrid } from '../components/BookGrid'
+ import { LoadMoreButton } from '../components/LoadMoreButton'
+ import { SortControl } from '../components/SortControl'
++import { AuthorFilter } from '../components/AuthorFilter'
+ import { BookCardSkeleton } from '../components/BookCardSkeleton'
+ import styles from './SearchPage.module.css'
+ 
+ export default function SearchPage() {
+   const query = useSearchStore((s) => s.query)
+   const sort = useSearchStore((s) => s.sort)
++  const author = useSearchStore((s) => s.author)
+   const {
+     data,
+     isLoading,
+@@ -18,9 +21,31 @@ export default function SearchPage() {
+     isFetchingNextPage,
+     hasNextPage,
+     fetchNextPage,
+-  } = useBookSearch(query, sort)
++  } = useBookSearch(query, sort, author)
+ 
+-  const docs = data?.pages.flatMap((p) => p.docs) ?? []
++  const docs = useMemo(
++    () => data?.pages.flatMap((p) => p.docs) ?? [],
++    [data]
++  )
++  const visibleDocs = useMemo(
++    () =>
++      author
++        ? docs.filter((doc) => doc.author_name?.includes(author))
++        : docs,
++    [docs, author]
++  )
++  const authors = useMemo(() => {
++    const names = new Set<string>()
++    for (const doc of docs) {
++      for (const name of doc.author_name ?? []) {
++        if (name) names.add(name)
++      }
++    }
++    // Keep the active author selectable even if the latest page no longer
++    // contains a book by them.
++    if (author) names.add(author)
++    return Array.from(names).sort((a, b) => a.localeCompare(b))
++  }, [docs, author])
+   const totalFound = data?.pages[0]?.numFound ?? 0
+ 
+   return (
+@@ -46,21 +71,28 @@ export default function SearchPage() {
+           </p>
+         )}
+ 
+-        {!isLoading && !isError && data && docs.length === 0 && (
++        {!isLoading && !isError && data && visibleDocs.length === 0 && (
+           <p className={styles.status}>
+             No books found for &ldquo;{query}&rdquo;
+           </p>
+         )}
+ 
+-        {docs.length > 0 && (
+-          <>
+-            <div className={styles.resultsHeader}>
+-              <p className={styles.count}>
+-                Showing {docs.length.toLocaleString()} of {totalFound.toLocaleString()} results
+-              </p>
+-              <SortControl />
++        {(docs.length > 0 || author) && (
++          <div className={styles.resultsHeader}>
++            <p className={styles.count}>
++              Showing {visibleDocs.length.toLocaleString()} of{' '}
++              {totalFound.toLocaleString()} results
++            </p>
++            <div className={styles.filters}>
++              <AuthorFilter authors={authors} />
++              {docs.length > 0 && <SortControl />}
+             </div>
+-            <BookGrid docs={docs} />
++          </div>
++        )}
++
++        {visibleDocs.length > 0 && (
++          <>
++            <BookGrid docs={visibleDocs} />
+ 
+             {isError && data && (
+               <p className={styles.error}>
+diff --git a/src/store/searchStore.ts b/src/store/searchStore.ts
+index 58ad85a..de91dad 100644
+--- a/src/store/searchStore.ts
++++ b/src/store/searchStore.ts
+@@ -5,15 +5,19 @@ type SortOption = 'relevance' | 'new' | 'old'
+ interface SearchState {
+   query: string
+   sort: SortOption
++  author: string
+   setQuery: (query: string) => void
+   setSort: (sort: SortOption) => void
++  setAuthor: (author: string) => void
+ }
+ 
+ export const useSearchStore = create<SearchState>((set) => ({
+   query: '',
+   sort: 'relevance',
++  author: '',
+   setQuery: (query) => set({ query }),
+   setSort: (sort) => set({ sort }),
++  setAuthor: (author) => set({ author }),
+ }))
+ 
+ export type { SortOption }
+diff --git a/tests/author-filter.spec.ts b/tests/author-filter.spec.ts
+new file mode 100644
+index 0000000..abec669
+--- /dev/null
++++ b/tests/author-filter.spec.ts
+@@ -0,0 +1,110 @@
++import { test, expect } from '@playwright/test'
++import { setupApiMocks } from './helpers/mockApi'
++
++const multiAuthorResponse = {
++  numFound: 60,
++  start: 0,
++  numFoundExact: true,
++  docs: [
++    {
++      key: '/works/OL1W',
++      title: 'Book One',
++      author_name: ['Author A'],
++      author_key: ['OL1A'],
++      cover_i: null,
++      first_publish_year: 2000,
++    },
++    {
++      key: '/works/OL2W',
++      title: 'Book Two',
++      author_name: ['Author B', 'Author C'],
++      author_key: ['OL2A', 'OL3A'],
++      cover_i: null,
++      first_publish_year: 2001,
++    },
++    {
++      key: '/works/OL3W',
++      title: 'Book Three',
++      author_name: ['Author A'],
++      author_key: ['OL1A'],
++      cover_i: null,
++      first_publish_year: 2002,
++    },
++  ],
++}
++
++async function search(page: Parameters<typeof setupApiMocks>[0]) {
++  await page.goto('/')
++  await page.getByRole('searchbox').fill('tolkien')
++  await page.getByRole('button', { name: 'Search' }).click()
++  await expect(page.getByRole('list', { name: 'Search results' })).toBeVisible()
++}
++
++test('author filter lists deduplicated authors from current results', async ({
++  page,
++}) => {
++  await setupApiMocks(page, { searchResponse: multiAuthorResponse })
++  await search(page)
++
++  const select = page.getByLabel('Author:')
++  await expect(select).toBeVisible()
++  await expect(select).toHaveAttribute('id', 'author-select')
++  await expect(select).toHaveValue('')
++  await expect(select.getByRole('option')).toHaveCount(4)
++  await expect(select.getByRole('option', { name: 'All authors' })).toBeAttached()
++  await expect(select.getByRole('option', { name: 'Author A' })).toBeAttached()
++  await expect(select.getByRole('option', { name: 'Author B' })).toBeAttached()
++  await expect(select.getByRole('option', { name: 'Author C' })).toBeAttached()
++})
++
++test('selecting an author sends the author parameter and filters the grid', async ({
++  page,
++}) => {
++  const authorRequests: string[] = []
++  page.on('request', (req) => {
++    if (req.url().includes('openlibrary.org/search') && req.url().includes('author=')) {
++      authorRequests.push(req.url())
++    }
++  })
++
++  await setupApiMocks(page, { searchResponse: multiAuthorResponse })
++  await search(page)
++
++  await page.getByLabel('Author:').selectOption('Author A')
++
++  await expect(page.getByText('Book One')).toBeVisible()
++  await expect(page.getByText('Book Three')).toBeVisible()
++  await expect(page.getByText('Book Two')).not.toBeVisible()
++
++  expect(
++    authorRequests.some((url) => new URL(url).searchParams.get('author') === 'Author A')
++  ).toBe(true)
++})
++
++test('selecting All authors clears the filter and restores results', async ({
++  page,
++}) => {
++  await setupApiMocks(page, { searchResponse: multiAuthorResponse })
++  await search(page)
++
++  await page.getByLabel('Author:').selectOption('Author A')
++  await expect(page.getByText('Book Two')).not.toBeVisible()
++
++  await page.getByLabel('Author:').selectOption('')
++  await expect(page.getByText('Book One')).toBeVisible()
++  await expect(page.getByText('Book Two')).toBeVisible()
++  await expect(page.getByText('Book Three')).toBeVisible()
++})
++
++test('selecting an author resets Load more pagination', async ({ page }) => {
++  await setupApiMocks(page)
++  await search(page)
++
++  await page.getByRole('button', { name: 'Load more' }).click()
++  await expect(page.getByRole('listitem')).toHaveCount(5)
++  await expect(page.getByText('Showing 5 of 100 results')).toBeVisible()
++
++  await page.getByLabel('Author:').selectOption('J.R.R. Tolkien')
++  await expect(page.getByText('Showing 3 of 100 results')).toBeVisible()
++  await expect(page.getByRole('listitem')).toHaveCount(3)
++})

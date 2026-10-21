@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "source": "run_eval",
+    "arm": "on",
+    "run_index": 0,
+    "agent": {
+      "name": "claude-code",
+      "version": "2.1.261",
+      "model": "env-configured (specweaver/.env)"
+    },
+    "sw_version": "09187f9",
+    "started_at": "",
+    "taskpack_id": "openspec-demo-basic",
+    "tier": "basic"
+  },
+  "context_bundles": [],
+  "code_diff": {
+    "diff_refs": [
+      "agent.diff"
+    ],
+    "files_changed": []
+  },
+  "test_evidence": [
+    {
+      "command": "npx playwright test --retries=2",
+      "exit_code": 0,
+      "passed": null,
+      "failed": null,
+      "total": null,
+      "summary": "  44 passed (12.5s)",
+      "report_ref": "judge-0.txt"
+    }
+  ],
+  "memory_ops": [
+    {
+      "action": "sw_ingest_project",
+      "ref": "",
+      "detail": ""
+    },
+    {
+      "action": "sw_complete_task",
+      "ref": "",
+      "detail": ""
+    },
+    {
+      "action": "sw_ingest_project",
+      "ref": "",
+      "detail": ""
+    }
+  ],
+  "usage": {
+    "llm_calls": 1,
+    "prompt_tokens": 54697,
+    "completion_tokens": 22907,
+    "backend_calls": 326,
+    "duration_ms": 228774.16229248047,
+    "spans": 0,
+    "agent_usage_raw": {
+      "input_tokens": 54225,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 1254656,
+      "output_tokens": 22681,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "server_tool_use": {
+        "web_search_requests": 0,
+        "web_fetch_requests": 0
+      },
+      "service_tier": "standard",
+      "cache_creation": {
+        "ephemeral_1h_input_tokens": 0,
+        "ephemeral_5m_input_tokens": 0
+      },
+      "inference_geo": "",
+      "iterations": [],
+      "speed": "standard"
+    }
+  },
+  "budget": {
+    "declared": {
+      "max_tokens": 200000.0,
+      "max_backend_calls": 500.0,
+      "time_limit_s": 900.0
+    },
+    "actual": {
+      "max_tokens": 77604.0,
+      "max_backend_calls": 326.0,
+      "time_limit_s": 228.77416229248047
+    },
+    "over": []
+  },
+  "outcome": {
+    "success": true,
+    "source": "judge",
+    "notes": [
+      "sw_calls=['sw_ingest_project', 'sw_get_context', 'sw_verify', 'sw_complete_task', 'sw_ingest_project']"
+    ]
+  },
+  "sources": [
+    "transcript.jsonl",
+    "agent.diff",
+    "prompt.txt",
+    "setup-0.txt",
+    "setup-1.txt",
+    "judge-0.txt",
+    "server-usage.csv"
+  ]
+}
