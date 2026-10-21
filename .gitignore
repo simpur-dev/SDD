@@ -23,6 +23,10 @@ research/
 # ---- Local dependency install cache (pip --target; ~166MB, never deliver) ----
 specweaver/.deps/
 
+# ---- Track-2 reference repo: local verification clone (fetch at pinned commit ----
+# ---- a05b36d via taskpack repo.origin; MIT, see docs/01 10.5)                ----
+demo/openspec-demo/
+
 # ---- Secrets / local environment ----
 .env
 .env.*

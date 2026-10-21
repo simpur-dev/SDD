@@ -12,7 +12,9 @@ from specweaver.application.engines.ingestion import IngestionEngine
 from specweaver.application.engines.ingestion.parsers.openspec import (
     OpenSpecDeltaParser,
     OpenSpecSpecParser,
+    RawDocumentParser,
     classify_openspec,
+    is_openspec_non_md,
     is_spec_sheet,
     requirement_id,
 )
@@ -194,6 +196,21 @@ def test_delta_parser_dedupes_same_name_across_sections() -> None:
     assert docs[0].front_matter["status"] == "draft"
     assert "delta:added" in docs[0].front_matter["tags"]
     assert "supersedes" not in docs[0].front_matter
+
+
+def test_yaml_rule_file_stays_rule_not_code() -> None:
+    """Real-repo deviation (openspec-demo): config.yaml reached the default
+    fallback and came back mislabeled as code; rule files under openspec/
+    must keep their declared type as raw text."""
+    assert is_openspec_non_md("openspec/config.yaml", ArtifactType.rule)
+    assert not is_openspec_non_md("openspec/config.yaml", ArtifactType.code)
+    docs = RawDocumentParser().parse(
+        "openspec/config.yaml", "portal: books\n", "sha", ArtifactType.rule
+    )
+    assert len(docs) == 1
+    assert docs[0].type is ArtifactType.rule
+    assert docs[0].title == "config"
+    assert docs[0].raw_text == "portal: books\n"
 
 
 def test_malformed_spec_sheet_without_capability_falls_back() -> None:

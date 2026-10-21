@@ -20,8 +20,10 @@ from .parsers.openspec import (
     OpenSpecDeltaParser,
     OpenSpecFileDiscovery,
     OpenSpecSpecParser,
+    RawDocumentParser,
     is_delta_sheet,
     is_non_python_code,
+    is_openspec_non_md,
     is_spec_sheet,
 )
 from .parsers.text_symbols import TextSymbolsParser
@@ -75,6 +77,7 @@ def _build_openspec() -> RepositoryProfile:
             entries=[
                 (lambda path, _type: is_spec_sheet(path), OpenSpecSpecParser()),
                 (lambda path, _type: is_delta_sheet(path), OpenSpecDeltaParser()),
+                (is_openspec_non_md, RawDocumentParser()),
                 (is_non_python_code, TextSymbolsParser()),
             ]
         ),

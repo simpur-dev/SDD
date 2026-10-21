@@ -24,6 +24,7 @@ checksum covers the whole file.
 from __future__ import annotations
 
 import hashlib
+import os
 import re
 
 from .....domain.enums import ArtifactType
@@ -136,6 +137,41 @@ def is_non_python_code(path: str, declared_type: ArtifactType) -> bool:
     if declared_type not in (ArtifactType.code, ArtifactType.test):
         return False
     return not path.lower().endswith(_NON_PY_EXTS)
+
+
+def is_openspec_non_md(path: str, declared_type: ArtifactType) -> bool:
+    """Non-markdown openspec files (config.yaml): the default registry's
+    fallback would feed them to the Python ast parser and mislabel them
+    code; they must keep their declared type and index as raw text."""
+    return (
+        declared_type is ArtifactType.rule
+        and _norm(path)[0].lower() == "openspec"
+        and not path.lower().endswith(".md")
+    )
+
+
+class RawDocumentParser:
+    """Indexes a file as-is under its declared type; no symbol extraction."""
+
+    def parse(
+        self,
+        path: str,
+        text: str,
+        checksum: str | None,
+        declared_type: ArtifactType,
+    ) -> list[ParsedDocument]:
+        title = os.path.splitext(os.path.basename(path))[0]
+        return [
+            ParsedDocument(
+                path=path,
+                type=declared_type,
+                title=title,
+                summary=text.strip()[:400],
+                references=extract_refs(text),
+                checksum=checksum,
+                raw_text=text,
+            )
+        ]
 
 
 _MODAL_RE = re.compile(r"\b(shall|must|should|will)\b", re.I)
