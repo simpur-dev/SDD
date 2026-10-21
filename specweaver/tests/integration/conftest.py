@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import re
 import socket
 import urllib.request
 import uuid
 
+import pymysql
 import pytest
 
 from specweaver.adapters.driven.powercontext import (
@@ -13,7 +15,7 @@ from specweaver.adapters.driven.powercontext import (
 from specweaver.adapters.driven.seekdb import SeekdbClient
 from specweaver.adapters.driven.seekdb.catalog import SeekdbCatalog
 from specweaver.adapters.driven.seekdb.hybrid import SeekdbHybridSearch
-from specweaver.shared.config import Settings
+from specweaver.shared.config import SeekDbSettings, Settings
 
 
 def port_open(host: str, port: int) -> bool:
@@ -37,6 +39,31 @@ def pc_ready() -> bool:
         return False
 
 
+_TEST_DB_PATTERN = re.compile(r"sw_int_[0-9a-f]{8}\Z")
+
+
+def drop_test_database(seek: SeekDbSettings) -> None:
+    # DROP DATABASE is irreversible: the pattern guard keeps a misconfigured
+    # database name from ever routing this at a real database.
+    if not _TEST_DB_PATTERN.fullmatch(seek.database):
+        return
+    conn = pymysql.connect(
+        host=seek.host,
+        port=seek.port,
+        user=seek.user,
+        password=seek.password.get_secret_value(),
+        connect_timeout=5,
+        read_timeout=15,
+        write_timeout=15,
+        autocommit=True,
+    )
+    try:
+        with conn.cursor() as cur:
+            cur.execute(f"DROP DATABASE IF EXISTS `{seek.database}`")
+    finally:
+        conn.close()
+
+
 @pytest.fixture
 def run_id() -> str:
     return uuid.uuid4().hex[:8]
@@ -50,7 +77,10 @@ async def seekdb_adapters(run_id):
     settings.seekdb.database = f"sw_int_{run_id}"
     client = SeekdbClient(settings.seekdb, dimension=8)
     client.initialize()
-    yield SeekdbCatalog(client), SeekdbHybridSearch(client)
+    try:
+        yield SeekdbCatalog(client), SeekdbHybridSearch(client)
+    finally:
+        drop_test_database(settings.seekdb)
 
 
 @pytest.fixture
@@ -63,7 +93,10 @@ async def seekdb_activity(run_id):
     settings.seekdb.database = f"sw_int_{run_id}"
     client = SeekdbClient(settings.seekdb, dimension=8)
     client.initialize()
-    return SeekdbActivityLog(client), f"proj-{run_id}"
+    try:
+        yield SeekdbActivityLog(client), f"proj-{run_id}"
+    finally:
+        drop_test_database(settings.seekdb)
 
 
 @pytest.fixture
