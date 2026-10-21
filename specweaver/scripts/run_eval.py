@@ -78,7 +78,7 @@ def _ensure_backends(start: bool) -> None:
         )
     script = SPECWEAVER_ROOT / "deploy" / "wsl" / "wait_ready.sh"
     print(f"[harness] starting backends via {script} ...")
-    script_wsl = "/mnt/" + SPECWEAVER_ROOT.drive.lower() + "/" + (
+    script_wsl = "/mnt/" + SPECWEAVER_ROOT.drive.lower().rstrip(":") + "/" + (
         SPECWEAVER_ROOT.relative_to(SPECWEAVER_ROOT.anchor).as_posix()
     )
     subprocess.run(

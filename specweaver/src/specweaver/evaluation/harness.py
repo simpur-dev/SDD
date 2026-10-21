@@ -247,6 +247,10 @@ def checkout_pack(
     returns the workdir the agent edits. The clone is a real repo, so the
     judge's diff is a true git diff against the pinned commit."""
     upstream = source or origin
+    # a backslashed Windows drive path reads as SCP syntax (host=E) to git;
+    # forward slashes are unambiguous for local clones
+    if len(upstream) > 2 and upstream[1] == ":":
+        upstream = upstream.replace("\\", "/")
     if Path(target).exists():
         raise InvalidRequest(f"{target}: checkout target already exists")
     proc = subprocess.run(

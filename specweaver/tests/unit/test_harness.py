@@ -158,6 +158,16 @@ def test_checkout_pack_pins_commit_and_judge_diffs_against_it(
     assert workdir == target
     assert _git(target, "rev-parse", "HEAD") == rev
 
+    # a backslashed drive path reads as SCP syntax (host=E) to git; the
+    # harness normalizes it to forward slashes
+    target2 = tmp_path / "checkout2"
+    workdir2 = checkout_pack(
+        "unused-origin", rev, target2,
+        source=str(source).replace("/", "\\"),
+    )
+    assert _git(target2, "rev-parse", "HEAD") == rev
+    assert workdir2 == target2
+
     # agent "work": modify the file, then judge against the pinned commit
     (workdir / "app.py").write_text("value = 2\n", encoding="utf-8")
     (workdir / "tests").mkdir()
