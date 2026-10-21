@@ -219,7 +219,12 @@ async def run(settings: Settings | None = None):
     create_handoff_usecase = CreateHandoff(handoff, telemetry)
     usecases = {
         "ingest_project": IngestProject(
-            ingestion_engine, catalog, workspace, telemetry, memory
+            ingestion_engine,
+            catalog,
+            workspace,
+            telemetry,
+            memory,
+            default_profile=resolved.workspace.profile,
         ),
         "get_context": get_context_usecase,
         "complete_task": CompleteTask(

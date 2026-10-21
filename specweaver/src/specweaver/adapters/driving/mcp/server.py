@@ -76,11 +76,15 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
         project_id: str,
         scope_id: str = "",
         register_source: bool = True,
+        profile: str = "",
     ) -> dict:
         """Ingest the real workspace into the seekdb catalog.
 
         Registers an ingestion note in PowerContext memory when
         ``register_source`` is set (scope resolved from project if empty).
+        ``profile`` overrides the repository profile for this run
+        (specweaver | openspec | plain); empty follows the configured/auto
+        detection. The report echoes the profile actually applied.
         """
         if register_source:
             scope_id = await _scope(project_id, scope_id)
@@ -90,6 +94,7 @@ def build_mcp(app: SpecWeaverApp) -> FastMCP:
                 project_id=project_id,
                 scope_id=scope_id,
                 register_source=register_source,
+                profile=profile,
             ),
         )
         return _payload(report)

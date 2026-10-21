@@ -11,6 +11,7 @@ from .graph_mining import mine_relations
 from .normalize import to_artifact
 from .parsers import ParserRegistry
 from .parsers.base import ParsedDocument
+from .profiles import RepositoryProfile
 
 
 class IngestionResult(BaseModel):
@@ -47,9 +48,17 @@ class IngestionEngine:
         project_id: str,
         workspace: WorkspacePort,
         existing_checksums: dict[str, str],
+        profile: RepositoryProfile | None = None,
     ) -> IngestionResult:
+        # A profile overrides parser dispatch and file selection for this run;
+        # without one the constructor-injected defaults apply (unchanged legacy
+        # behavior). Persistence is unaffected: the engine never writes.
+        registry = profile.registry if profile is not None else self._registry
+        discovery = (
+            profile.discovery if profile is not None else self._discovery
+        )
         paths = await workspace.list_files()
-        report = self._discovery.discover(paths)
+        report = discovery.discover(paths)
 
         pairs: list[tuple[ParsedDocument, Artifact]] = []
         changed: list[Artifact] = []
@@ -61,7 +70,7 @@ class IngestionEngine:
         for discovered in report.files:
             checksum = await workspace.checksum(discovered.path)
             text = await workspace.read_file(discovered.path)
-            parser = self._registry.for_file(discovered.path, discovered.type)
+            parser = registry.for_file(discovered.path, discovered.type)
             # A parser may flatten one file into several entries (e.g. an
             # OpenSpec spec.md holding one requirement per block); ids,
             # duplicates and incrementality are tracked per entry.

@@ -117,6 +117,14 @@ def ingest(
     register_source: bool = typer.Option(
         True, help="Also register an ingestion note in memory."
     ),
+    profile: str = typer.Option(
+        "",
+        help=(
+            "Repository profile for this run "
+            "(auto|specweaver|openspec|plain); empty follows "
+            "WORKSPACE__PROFILE / auto detection."
+        ),
+    ),
     as_json: bool = _JSON,
     usage_out: str = _USAGE,
 ) -> None:
@@ -133,6 +141,7 @@ def ingest(
                 project_id=project_id,
                 scope_id=sid,
                 register_source=register_source,
+                profile=profile,
             )
         )
 
@@ -146,7 +155,8 @@ def ingest(
             f"relations={report.relations} "
             f"deprecated={report.deprecated} "
             f"dup_ids={report.duplicate_ids or 'none'} "
-            f"source_registered={report.source_registered}"
+            f"source_registered={report.source_registered} "
+            f"profile={report.profile}"
         )
 
 

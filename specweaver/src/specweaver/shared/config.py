@@ -42,6 +42,7 @@ class ServerSettings(BaseModel):
 
 class WorkspaceSettings(BaseModel):
     root: str = "."
+    profile: str = "auto"  # auto | specweaver | openspec | plain (M7 profiles)
 
 
 class ContextSettings(BaseModel):

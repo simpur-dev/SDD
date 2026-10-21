@@ -9,6 +9,7 @@ from ...domain.ports.workspace import WorkspacePort
 from ...shared.errors import SWError
 from ...shared.telemetry import Telemetry
 from ..engines.ingestion import IngestionEngine
+from ..engines.ingestion.profiles import resolve_profile
 from .base import UseCase
 
 
@@ -16,6 +17,7 @@ class IngestProjectRequest(BaseModel):
     project_id: str
     scope_id: str = ""
     register_source: bool = True
+    profile: str = ""  # explicit profile wins; empty -> configured/auto
 
 
 class IngestProjectReport(BaseModel):
@@ -29,6 +31,7 @@ class IngestProjectReport(BaseModel):
     source_registered: bool = False
     duplicate_ids: list[str] = []
     deprecated: int = 0
+    profile: str = ""  # the profile actually applied to this run
 
 
 class IngestProject(UseCase):
@@ -43,12 +46,14 @@ class IngestProject(UseCase):
         workspace: WorkspacePort,
         telemetry: Telemetry,
         memory: MemoryPort | None = None,
+        default_profile: str = "auto",
     ) -> None:
         super().__init__(telemetry)
         self._engine = engine
         self._catalog = catalog
         self._workspace = workspace
         self._memory = memory
+        self._default_profile = default_profile
 
     async def __call__(
         self, request: IngestProjectRequest
@@ -67,8 +72,13 @@ class IngestProject(UseCase):
                 for a in existing_artifacts
                 if a.checksum
             }
+            profile = await resolve_profile(
+                self._workspace,
+                requested=request.profile,
+                configured=self._default_profile,
+            )
             result = await self._engine.run(
-                request.project_id, self._workspace, existing
+                request.project_id, self._workspace, existing, profile=profile
             )
 
             changed = set(result.changed_ids)
@@ -135,4 +145,5 @@ class IngestProject(UseCase):
                 source_registered=registered,
                 duplicate_ids=result.duplicate_ids,
                 deprecated=deprecated,
+                profile=profile.name,
             )
