@@ -312,6 +312,7 @@ def collect_demo(
 
     tests: list[TestEvidence] = []
     files_changed: list[str] = []
+    notes: list[str] = []
     success: bool | None = None
     for name in ("03-complete-adjust.json", "06-complete-audit.json"):
         path = root / name
@@ -331,9 +332,13 @@ def collect_demo(
                 report_ref=name,
             )
         )
-        for changed in data.get("files_changed", []):
-            if isinstance(changed, str):
-                files_changed.append(changed)
+        changed = data.get("files_changed")
+        if isinstance(changed, list):
+            files_changed.extend(c for c in changed if isinstance(c, str))
+        elif isinstance(changed, int):
+            # CompleteTaskReport carries a count, not paths; the per-file
+            # detail lives in the change-set dump it references.
+            notes.append(f"{name}: files_changed={changed}")
     diff_refs = [
         name
         for name in ("changes-1.diff", "changes-2.diff")
