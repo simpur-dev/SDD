@@ -13,6 +13,7 @@ from specweaver.application.engines.ingestion.parsers.openspec import (
     OpenSpecDeltaParser,
     OpenSpecSpecParser,
     classify_openspec,
+    is_spec_sheet,
     requirement_id,
 )
 from specweaver.application.engines.ingestion.parsers.text_symbols import (
@@ -158,6 +159,52 @@ def test_delta_sections_map_to_status_and_supersedes() -> None:
 
     # salted: a draft never collides with the active requirement id
     assert modified.front_matter["id"] != modified.front_matter["supersedes"]
+
+
+def test_spec_parser_dedupes_duplicate_names_keep_first() -> None:
+    """Same-named requirements share one identity hash; keeping the first
+    keeps fresh and incremental ingests converged (last-wins diverges:
+    a fresh catalog gets the last block, an incremental one keeps the
+    first upsert)."""
+    text = (
+        "# search Specification\n\n"
+        "### Requirement: Dup target\nThe system SHALL keep the first block.\n\n"
+        "### Requirement: Dup target\nThe system SHALL never surface this block.\n"
+    )
+    docs = OpenSpecSpecParser().parse(
+        "openspec/specs/search/spec.md", text, None, ArtifactType.requirement
+    )
+    assert len(docs) == 1
+    assert any("keep the first block" in p for p in docs[0].behavior_points)
+    assert not any("never surface" in p for p in docs[0].behavior_points)
+
+
+def test_delta_parser_dedupes_same_name_across_sections() -> None:
+    text = (
+        "## ADDED Requirements\n\n"
+        "### Requirement: Twice\nFirst delta body SHALL win.\n\n"
+        "## MODIFIED Requirements\n\n"
+        "### Requirement: Twice\nSecond body SHALL lose.\n"
+    )
+    docs = OpenSpecDeltaParser().parse(
+        "openspec/changes/c1/specs/search/spec.md", text, None,
+        ArtifactType.requirement,
+    )
+    assert len(docs) == 1
+    assert docs[0].front_matter["status"] == "draft"
+    assert "delta:added" in docs[0].front_matter["tags"]
+    assert "supersedes" not in docs[0].front_matter
+
+
+def test_malformed_spec_sheet_without_capability_falls_back() -> None:
+    # openspec/specs/spec.md names no capability: not a spec sheet (a
+    # capability of "spec.md" would be nonsense); classify still marks it
+    # requirement so the generic markdown parser keeps it searchable.
+    assert is_spec_sheet("openspec/specs/spec.md") is False
+    assert is_spec_sheet("openspec/specs/search/spec.md") is True
+    assert classify_openspec("openspec/specs/spec.md") is (
+        ArtifactType.requirement
+    )
 
 
 def test_classify_openspec_paths() -> None:

@@ -277,15 +277,20 @@ def collect_demo(
     if csv_path.is_file():
         sources.append("usage.csv")
         with csv_path.open(newline="", encoding="utf-8") as handle:
-            for row in csv.DictReader(handle):
-                usage.spans += 1
-                usage.llm_calls += int(row.get("llm_calls") or 0)
-                usage.prompt_tokens += int(row.get("prompt_tokens") or 0)
-                usage.completion_tokens += int(
-                    row.get("completion_tokens") or 0
-                )
-                usage.backend_calls += int(row.get("backend_calls") or 0)
-                usage.duration_ms += float(row.get("duration_ms") or 0)
+            for line_no, row in enumerate(csv.DictReader(handle), start=2):
+                try:
+                    usage.spans += 1
+                    usage.llm_calls += int(row.get("llm_calls") or 0)
+                    usage.prompt_tokens += int(row.get("prompt_tokens") or 0)
+                    usage.completion_tokens += int(
+                        row.get("completion_tokens") or 0
+                    )
+                    usage.backend_calls += int(row.get("backend_calls") or 0)
+                    usage.duration_ms += float(row.get("duration_ms") or 0)
+                except (TypeError, ValueError) as exc:
+                    raise InvalidRequest(
+                        f"{csv_path}: bad row {line_no} ({exc})"
+                    ) from exc
 
     bundles: list[BundleRef] = []
     for name in ("02-context.json", "07-context-final.json"):
@@ -378,6 +383,8 @@ def collect_demo(
                 record = json.loads(line)
             except json.JSONDecodeError:
                 continue
+            if not isinstance(record, dict):
+                continue
             memory_ops.append(
                 MemoryOp(
                     action=str(record.get("op", "")),
@@ -435,9 +442,19 @@ def collect_off_on(
         )
 
     runs: list[EvalRun] = []
-    for record in summary:
-        arm = str(record.get("arm", ""))
-        index = record.get("run")
+    for position, record in enumerate(summary):
+        if not isinstance(record, dict):
+            raise InvalidRequest(
+                f"{root}/summary.json: record {position} is not an object"
+            )
+        arm = str(record.get("arm") or "")
+        number = record.get("run")
+        if arm not in ("off", "on") or not isinstance(number, int):
+            raise InvalidRequest(
+                f"{root}/summary.json: record {position} needs "
+                "arm=off|on and an integer run"
+            )
+        index: int = number
         run_dir = f"{arm}-{index}"
         sub = root / run_dir
 

@@ -253,3 +253,43 @@ def test_emit_round_trip(tmp_path: Path) -> None:
     out = tmp_path / "evalrun.json"
     out.write_text(run.model_dump_json(indent=2), encoding="utf-8")
     assert load_evalrun(out) == run
+
+
+def test_collect_demo_rejects_bad_usage_row(tmp_path: Path) -> None:
+    _demo_tree(tmp_path)
+    csv_path = tmp_path / "usage.csv"
+    lines = csv_path.read_text(encoding="utf-8").splitlines()
+    lines.insert(1, "get_context,xx-not-a-number,0,0,0,0,ok,,{}")
+    csv_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    with pytest.raises(InvalidRequest, match="usage.csv.*bad row 2"):
+        collect_demo(tmp_path, agent=AGENT)
+
+
+def test_collect_demo_skips_non_object_action_lines(tmp_path: Path) -> None:
+    _demo_tree(tmp_path)
+    actions = tmp_path / "powercontext-actions.jsonl"
+    actions.write_text(
+        json.dumps({"op": "ensure_scope", "scope_id": "scp-1"}) + "\n"
+        + "[1, 2]\n"  # malformed earlier write: skipped, never crashes
+        + json.dumps({"op": "remember_rule", "id": "RULE-1",
+                      "entry_id": "mem_ent_1"}) + "\n",
+        encoding="utf-8",
+    )
+    run = collect_demo(tmp_path, agent=AGENT)
+    assert [op.ref for op in run.memory_ops if op.action == "ensure_scope"] == [
+        "scp-1"
+    ]
+
+
+def test_collect_off_on_rejects_malformed_records(tmp_path: Path) -> None:
+    (tmp_path / "summary.json").write_text(
+        json.dumps([{"arm": "sideways", "run": 0}]), encoding="utf-8"
+    )
+    with pytest.raises(InvalidRequest, match="record 0"):
+        collect_off_on(tmp_path, agent=AGENT)
+
+    (tmp_path / "summary.json").write_text(
+        json.dumps([{"arm": "on"}]), encoding="utf-8"
+    )
+    with pytest.raises(InvalidRequest, match="integer run"):
+        collect_off_on(tmp_path, agent=AGENT)

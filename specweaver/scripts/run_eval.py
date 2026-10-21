@@ -45,6 +45,7 @@ from specweaver.evaluation.harness import (  # noqa: E402
     invocation_for,
     judge_workspace,
     mcp_config_for,
+    normalize_arms,
     parse_transcript,
 )
 from specweaver.evaluation.taskpack import (  # noqa: E402
@@ -101,11 +102,13 @@ def spawn_keepalive(seconds: int):
     )
 
 
-def _dry_run(pack: TaskPack, pack_file: Path, args: argparse.Namespace) -> None:
+def _dry_run(
+    pack: TaskPack, pack_file: Path, args: argparse.Namespace, arms: list[str]
+) -> None:
     """Resolve everything a run would execute; launch nothing, spend nothing."""
     suite = hidden_suite_source(pack_file, pack)
     plan_lines = []
-    for arm in [a.strip() for a in args.arms.split(",") if a.strip()]:
+    for arm in arms:
         plan = materialize(pack, f"{arm}-0-preview", workroot="(temp)")
         cmd, prompt = invocation_for(
             pack, plan, arm=arm,
@@ -325,7 +328,10 @@ def main() -> int:
         return 1
     pack_file = Path(args.pack)
 
-    arms = [a.strip() for a in args.arms.split(",") if a.strip()]
+    arms = normalize_arms(args.arms)
+    if args.n < 1:
+        print("FAIL --n must be >= 1")
+        return 1
     if "on" in arms:
         try:
             _ensure_backends(args.start_backends)
@@ -334,7 +340,7 @@ def main() -> int:
             return 1
 
     if args.dry_run:
-        _dry_run(pack, pack_file, args)
+        _dry_run(pack, pack_file, args, arms)
         return 0
 
     stamp = time.strftime("%Y%m%d-%H%M%S")

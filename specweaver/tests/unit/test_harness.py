@@ -201,3 +201,27 @@ def _pack_with_suite(tmp_path: Path) -> Path:
     target = tmp_path / "with-suite.json"
     target.write_text(json.dumps(data), encoding="utf-8")
     return target
+
+
+def test_hidden_suite_traversal_is_rejected(tmp_path: Path) -> None:
+    (tmp_path / "suite.py").write_text("# ok\n", encoding="utf-8")
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    data = json.loads(json.dumps(PACK))
+    data["acceptance"]["hidden_suite"] = "../suite.py"
+    pack_file = sub / "pack.json"
+    pack_file.write_text(json.dumps(data), encoding="utf-8")
+    pack = load_pack(pack_file)
+    with pytest.raises(InvalidRequest, match="must live under"):
+        hidden_suite_source(pack_file, pack)
+
+
+def test_normalize_arms_validates_strictly() -> None:
+    from specweaver.evaluation.harness import normalize_arms
+
+    assert normalize_arms("on,off") == ["on", "off"]
+    assert normalize_arms(" ON ") == ["on"]
+    with pytest.raises(InvalidRequest, match="unknown arm"):
+        normalize_arms("on,sideways")
+    with pytest.raises(InvalidRequest, match="empty"):
+        normalize_arms(",,")

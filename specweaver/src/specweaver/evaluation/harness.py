@@ -272,15 +272,41 @@ def checkout_pack(
 
 
 def hidden_suite_source(pack_file: Path, pack: TaskPack) -> Path | None:
-    """Resolve the pack-relative hidden suite; None when the pack has none."""
+    """Resolve the pack-relative hidden suite; None when the pack has none.
+
+    The path must stay inside the manifest's own directory: a manifest is
+    machine-read input, and letting it point outside (absolute path or
+    ``..`` traversal) would let a pack silently grade against arbitrary
+    files instead of its declared suite.
+    """
     if not pack.acceptance.hidden_suite:
         return None
-    suite = Path(pack_file).resolve().parent / pack.acceptance.hidden_suite
+    base = Path(pack_file).resolve().parent
+    suite = (base / pack.acceptance.hidden_suite).resolve()
+    if base not in suite.parents:
+        raise InvalidRequest(
+            f"{pack.id}: hidden suite must live under the manifest "
+            f"directory, got {pack.acceptance.hidden_suite!r}"
+        )
     if not suite.is_file():
         raise InvalidRequest(
             f"{pack.id}: hidden suite not found at {suite}"
         )
     return suite
+
+
+def normalize_arms(value: str) -> list[str]:
+    """Validate the --arms list; unknown or empty values fail loudly instead
+    of silently degrading an arm to 'no MCP, no hint'."""
+    arms = [a.strip().lower() for a in (value or "").split(",") if a.strip()]
+    if not arms:
+        raise InvalidRequest("arms is empty; expected e.g. 'on,off'")
+    unknown = [a for a in arms if a not in ("on", "off")]
+    if unknown:
+        raise InvalidRequest(
+            f"unknown arm(s): {', '.join(unknown)}; expected on/off"
+        )
+    return arms
 
 
 def judge_workspace(

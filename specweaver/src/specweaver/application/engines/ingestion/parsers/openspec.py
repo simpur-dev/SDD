@@ -106,9 +106,12 @@ def classify_openspec(path: str) -> ArtifactType | None:
 
 
 def is_spec_sheet(path: str) -> bool:
+    """A spec sheet must name its capability segment: openspec/specs/<cap>/spec.md.
+    ``openspec/specs/spec.md`` (no capability) is malformed and falls through to
+    the generic markdown parser instead of minting a nonsense capability."""
     parts = _norm(path)
     return (
-        len(parts) >= 3
+        len(parts) >= 4
         and parts[0].lower() == "openspec"
         and parts[1].lower() == "specs"
         and parts[-1].lower() == "spec.md"
@@ -207,6 +210,7 @@ class OpenSpecSpecParser:
             ]
 
         docs: list[ParsedDocument] = []
+        seen: set[str] = set()
         for index, match in enumerate(matches):
             start = match.end()
             end = (
@@ -215,6 +219,12 @@ class OpenSpecSpecParser:
                 else len(text)
             )
             name = match.group(1).strip()
+            if name in seen:
+                # Same-named requirements share one identity hash; keeping
+                # only the first keeps a fresh ingest and an incremental one
+                # converged (last-wins would diverge between the two paths).
+                continue
+            seen.add(name)
             behavior, summary = _behavior_and_summary(text[start:end])
             docs.append(
                 ParsedDocument(
@@ -262,6 +272,7 @@ class OpenSpecDeltaParser:
 
         sections = list(_DELTA_SECTION_RE.finditer(text))
         docs: list[ParsedDocument] = []
+        seen: set[str] = set()
         for s_index, section in enumerate(sections):
             verb = section.group(1)
             section_end = (
@@ -279,6 +290,12 @@ class OpenSpecDeltaParser:
                     else len(section_body)
                 )
                 name = req.group(1).strip()
+                if name in seen:
+                    # One name, one delta entry per file (ids are name-salted
+                    # but verb-agnostic; duplicates would converge-diverge
+                    # exactly like the spec parser case).
+                    continue
+                seen.add(name)
                 behavior, summary = _behavior_and_summary(
                     section_body[start:end]
                 )
