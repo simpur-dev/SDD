@@ -199,3 +199,18 @@ docker compose up -d
 ```
 
 PowerContext 无官方镜像（Docker Hub 404），需叠加 `docker-compose.build.yml` 本地构建 master。
+
+## 9. 环境注记：WSL VM 闲置回收会带走 docker 栈（run_eval 必读）
+
+docker 容器跑在 WSL2 里。WSL 无活动会话时会整机回收——**dockerd 与容器随之消失**，
+表现为 Windows 侧 `127.0.0.1:2881/8000` 时通时断（每次 `wsl` 命令又把容器拉成
+"Up 1 second"），极易误判为服务崩溃。这不是 seekdb/powercontext 的问题。
+
+处置（任选其一）：
+
+- `scripts/run_eval.py` 在真跑 ON 臂时会**自动**挂一个 WSL 保活会话（运行期 +
+  600s 余量，结束后自动释放），无需手工干预；
+- 手工保活（长会话调试时）：`wsl bash -lc "sleep 7200"` 放后台；
+- 机器级根治：`%USERPROFILE%\.wslconfig` 写 `[wsl2]
+vmIdleTimeout=-1` 后
+  `wsl --shutdown` 重启（会停容器，重启后 `wait_ready.sh` 拉起即可）。

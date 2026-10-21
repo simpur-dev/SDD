@@ -89,6 +89,18 @@ def _ensure_backends(start: bool) -> None:
         raise InvalidRequest(f"backends still unreachable after start: {down}")
 
 
+def spawn_keepalive(seconds: int):
+    """Hold the WSL VM open so the docker stack cannot be idle-torn-down
+    mid-run (see deploy/README.md). The harness owns and reaps this
+    process; the VM also stays up for any other session meanwhile."""
+    print(f"[harness] holding WSL VM open for {seconds}s (docker keepalive)")
+    return subprocess.Popen(
+        ["wsl", "bash", "-lc", f"sleep {seconds}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+
 def _dry_run(pack: TaskPack, pack_file: Path, args: argparse.Namespace) -> None:
     """Resolve everything a run would execute; launch nothing, spend nothing."""
     suite = hidden_suite_source(pack_file, pack)
@@ -328,24 +340,33 @@ def main() -> int:
     stamp = time.strftime("%Y%m%d-%H%M%S")
     root = Path(args.out) / f"eval-{pack.id}-{stamp}"
     root.mkdir(parents=True, exist_ok=True)
+    keepalive = None
+    if "on" in arms:
+        keepalive = spawn_keepalive(args.n * args.timeout + 600)
     records = []
-    for arm in arms:
-        for index in range(args.n):
-            plan = materialize(
-                pack, f"{arm}-{index}-{stamp}",
-                workroot=tempfile.mkdtemp(prefix=f"runeval-{arm}-{index}-"),
-            )
-            outdir = root / f"{arm}-{index}"
-            outdir.mkdir(parents=True, exist_ok=True)
-            record = _run_one(pack, pack_file, plan, arm, index, outdir, args)
-            records.append(record)
-            print(
-                f"[{arm} {index}] success={record.get('success')} "
-                f"turns={record.get('turns')} "
-                f"sw={len(record.get('sw_calls', []))} "
-                f"-> {record.get('error', record.get('summary', ''))[:60]}",
-                flush=True,
-            )
+    try:
+        for arm in arms:
+            for index in range(args.n):
+                plan = materialize(
+                    pack, f"{arm}-{index}-{stamp}",
+                    workroot=tempfile.mkdtemp(prefix=f"runeval-{arm}-{index}-"),
+                )
+                outdir = root / f"{arm}-{index}"
+                outdir.mkdir(parents=True, exist_ok=True)
+                record = _run_one(
+                    pack, pack_file, plan, arm, index, outdir, args
+                )
+                records.append(record)
+                print(
+                    f"[{arm} {index}] success={record.get('success')} "
+                    f"turns={record.get('turns')} "
+                    f"sw={len(record.get('sw_calls', []))} "
+                    f"-> {record.get('error', record.get('summary', ''))[:60]}",
+                    flush=True,
+                )
+    finally:
+        if keepalive is not None:
+            keepalive.terminate()
     (root / "summary.json").write_text(
         json.dumps(records, ensure_ascii=False, indent=2), encoding="utf-8"
     )
