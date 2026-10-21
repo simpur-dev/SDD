@@ -225,3 +225,81 @@ def test_normalize_arms_validates_strictly() -> None:
         normalize_arms("on,sideways")
     with pytest.raises(InvalidRequest, match="empty"):
         normalize_arms(",,")
+
+
+def test_stage_given_files_copies_into_workspace(tmp_path: Path) -> None:
+    (tmp_path / "givens").mkdir()
+    (tmp_path / "givens" / "delta.md").write_text(
+        "## MODIFIED Requirements\n", encoding="utf-8"
+    )
+    data = json.loads(json.dumps(PACK))
+    data["task"]["given_files"] = [
+        {"src": "givens/delta.md", "dest": "openspec/changes/c1/specs/x/spec.md"}
+    ]
+    pack_file = tmp_path / "pack.json"
+    pack_file.write_text(json.dumps(data), encoding="utf-8")
+    pack = load_pack(pack_file)
+    workdir = tmp_path / "ws"
+    workdir.mkdir()
+
+    from specweaver.evaluation.harness import stage_given_files
+
+    staged = stage_given_files(pack_file, pack, workdir)
+    assert staged == ["openspec/changes/c1/specs/x/spec.md"]
+    staged_file = workdir / "openspec" / "changes" / "c1" / "specs" / "x" / "spec.md"
+    assert staged_file.read_text(encoding="utf-8") == (
+        "## MODIFIED Requirements\n"
+    )
+
+
+def test_stage_given_files_rejects_traversal_and_missing(
+    tmp_path: Path,
+) -> None:
+    from specweaver.evaluation.harness import stage_given_files
+
+    data = json.loads(json.dumps(PACK))
+    data["task"]["given_files"] = [
+        {"src": "../escape.md", "dest": "x.md"}
+    ]
+    pack_file = tmp_path / "pack.json"
+    pack_file.write_text(json.dumps(data), encoding="utf-8")
+    pack = load_pack(pack_file)
+    workdir = tmp_path / "ws"
+    workdir.mkdir()
+    with pytest.raises(InvalidRequest, match="must live under"):
+        stage_given_files(pack_file, pack, workdir)
+
+    data["task"]["given_files"] = [{"src": "givens/none.md", "dest": "x.md"}]
+    pack_file.write_text(json.dumps(data), encoding="utf-8")
+    pack = load_pack(pack_file)
+    with pytest.raises(InvalidRequest, match="given file not found"):
+        stage_given_files(pack_file, pack, workdir)
+
+
+def test_run_workspace_commands_reports_each_result(tmp_path: Path) -> None:
+    from specweaver.evaluation.harness import run_workspace_commands
+
+    outdir = tmp_path / "out"
+    outdir.mkdir()
+    results = run_workspace_commands(
+        tmp_path,
+        ['python -c "print(1)"', 'python -c "raise SystemExit(3)"'],
+        timeout_s=30,
+        report_dir=outdir,
+        report_prefix="setup",
+    )
+    assert results[0]["exit_code"] == 0
+    assert results[0]["report_ref"] == "setup-0.txt"
+    assert results[1]["exit_code"] == 3
+    assert (outdir / "setup-1.txt").is_file()
+
+
+def test_run_workspace_commands_timeout(tmp_path: Path) -> None:
+    from specweaver.evaluation.harness import run_workspace_commands
+
+    results = run_workspace_commands(
+        tmp_path, ['python -c "import time; time.sleep(30)"'],
+        timeout_s=2,
+    )
+    assert results[0]["exit_code"] is None
+    assert "timeout" in results[0]["summary"]

@@ -82,11 +82,22 @@ class RepoSpec(BaseModel):
         return value
 
 
+class GivenFile(BaseModel):
+    """A pack-authored input file staged into the workspace before the
+    agent starts (e.g. a pending-change delta the task builds upon)."""
+
+    model_config = _MANIFEST_STRICTNESS
+
+    src: str = Field(min_length=1)  # manifest-relative source path
+    dest: str = Field(min_length=1)  # workspace-relative destination
+
+
 class TaskSpec(BaseModel):
     model_config = _MANIFEST_STRICTNESS
 
     goal: str = Field(min_length=1)
     givens: list[str] = []  # spec entries / constraints handed to the agent
+    given_files: list[GivenFile] = []  # staged into the workspace pre-run
     # Precise interface contract appended to the agent prompt (hidden
     # acceptance tests will import exactly these); empty = goal only.
     contract: str = ""
@@ -121,6 +132,9 @@ class AcceptanceSpec(BaseModel):
     # own directory; injected into the workspace only after the agent's diff
     # is captured, so it can grade but not leak into the prompt.
     hidden_suite: str = ""
+    # Environment preparation run in the workspace after checkout and before
+    # the agent starts (e.g. npm ci); failures surface in the run record.
+    setup_commands: list[str] = []
 
 
 class TaskPack(BaseModel):

@@ -271,28 +271,106 @@ def checkout_pack(
     return root / subdir if subdir else root
 
 
-def hidden_suite_source(pack_file: Path, pack: TaskPack) -> Path | None:
-    """Resolve the pack-relative hidden suite; None when the pack has none.
+def resolve_pack_relative(pack_file: Path, rel: str) -> Path:
+    """Resolve a manifest-relative path with a traversal guard: the result
+    must stay inside the manifest's own directory (a manifest is machine-read
+    input and must not reach arbitrary files)."""
+    base = Path(pack_file).resolve().parent
+    resolved = (base / rel).resolve()
+    if base not in resolved.parents:
+        raise InvalidRequest(
+            f"path must live under the manifest directory, got {rel!r}"
+        )
+    return resolved
 
-    The path must stay inside the manifest's own directory: a manifest is
-    machine-read input, and letting it point outside (absolute path or
-    ``..`` traversal) would let a pack silently grade against arbitrary
-    files instead of its declared suite.
-    """
+
+def hidden_suite_source(pack_file: Path, pack: TaskPack) -> Path | None:
+    """Resolve the pack-relative hidden suite; None when the pack has none."""
     if not pack.acceptance.hidden_suite:
         return None
-    base = Path(pack_file).resolve().parent
-    suite = (base / pack.acceptance.hidden_suite).resolve()
-    if base not in suite.parents:
-        raise InvalidRequest(
-            f"{pack.id}: hidden suite must live under the manifest "
-            f"directory, got {pack.acceptance.hidden_suite!r}"
-        )
+    suite = resolve_pack_relative(pack_file, pack.acceptance.hidden_suite)
     if not suite.is_file():
         raise InvalidRequest(
             f"{pack.id}: hidden suite not found at {suite}"
         )
     return suite
+
+
+def stage_given_files(
+    pack_file: Path, pack: TaskPack, workdir: Path
+) -> list[str]:
+    """Copy given_files into the workspace (dest relative to workdir).
+
+    Given files are the pack's authored inputs — e.g. a pending-change delta
+    the task builds upon — and land BEFORE the agent starts, so ingestion
+    treats them as first-class workspace content. Returns the staged
+    workspace-relative destinations.
+    """
+    staged: list[str] = []
+    for given in pack.task.given_files:
+        src = resolve_pack_relative(pack_file, given.src)
+        if not src.is_file():
+            raise InvalidRequest(
+                f"{pack.id}: given file not found at {src}"
+            )
+        dest = workdir / given.dest
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(src, dest)
+        staged.append(given.dest)
+    return staged
+
+
+def command_env(python_exe: str) -> dict[str, str]:
+    """Shell environment for workspace commands: `python` resolves to the
+    project venv so declared commands like "python -m pytest" work."""
+    env = os.environ.copy()
+    env["PATH"] = (
+        str(Path(python_exe).parent) + os.pathsep + os.environ.get("PATH", "")
+    )
+    return env
+
+
+def run_workspace_commands(
+    workdir: Path,
+    commands: list[str],
+    *,
+    env: dict[str, str] | None = None,
+    timeout_s: float | None = None,
+    report_dir: Path | None = None,
+    report_prefix: str = "cmd",
+) -> list[dict[str, Any]]:
+    """Run shell commands in order inside workdir; one result dict each.
+    Shared by acceptance judging and environment setup."""
+    results: list[dict[str, Any]] = []
+    for index, command in enumerate(commands):
+        try:
+            proc = subprocess.run(
+                command,
+                shell=True,
+                cwd=workdir,
+                env=env,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=timeout_s,
+            )
+            tail = (proc.stdout + proc.stderr)[-400:]
+            exit_code: int | None = proc.returncode
+        except subprocess.TimeoutExpired:
+            tail = f"timeout after {timeout_s}s"
+            exit_code = None
+        entry: dict[str, Any] = {
+            "command": command,
+            "exit_code": exit_code,
+            "summary": tail.splitlines()[-1] if tail else "",
+        }
+        if report_dir is not None:
+            report = report_dir / f"{report_prefix}-{index}.txt"
+            report.write_text(tail, encoding="utf-8")
+            entry["report_ref"] = report.name
+        results.append(entry)
+    return results
 
 
 def normalize_arms(value: str) -> list[str]:
@@ -318,6 +396,7 @@ def judge_workspace(
     test_commands: list[str],
     hidden_suite: Path | None = None,
     python_exe: str = sys.executable,
+    timeout_s: float | None = None,
 ) -> dict[str, Any]:
     """Capture the agent diff, then grade: inject the hidden suite (after
     the diff, so it never leaks) and run every acceptance command."""
@@ -333,33 +412,14 @@ def judge_workspace(
         tests_dir.mkdir(exist_ok=True)
         shutil.copy(hidden_suite, tests_dir / hidden_suite.name)
 
-    env = os.environ.copy()
-    env["PATH"] = (
-        str(Path(python_exe).parent) + os.pathsep + os.environ.get("PATH", "")
+    results = run_workspace_commands(
+        workdir,
+        test_commands,
+        env=command_env(python_exe),
+        timeout_s=timeout_s,
+        report_dir=outdir,
+        report_prefix="judge",
     )
-    results: list[dict[str, Any]] = []
-    for index, command in enumerate(test_commands):
-        proc = subprocess.run(
-            command,
-            shell=True,
-            cwd=workdir,
-            env=env,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-        )
-        tail = (proc.stdout + proc.stderr)[-400:]
-        report = outdir / f"judge-{index}.txt"
-        report.write_text(tail, encoding="utf-8")
-        results.append(
-            {
-                "command": command,
-                "exit_code": proc.returncode,
-                "summary": tail.splitlines()[-1] if tail else "",
-                "report_ref": report.name,
-            }
-        )
     changed = diff.strip() != ""
     return {
         "changed": changed,

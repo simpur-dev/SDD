@@ -162,3 +162,24 @@ def test_manifest_round_trip_is_lossless(tmp_path: Path) -> None:
         _write(tmp_path, pack.model_dump(mode="json"), "round.json")
     )
     assert again == pack
+
+
+def test_given_files_and_setup_commands_load(tmp_path: Path) -> None:
+    data = json.loads(json.dumps(MINIMAL))
+    data["task"]["given_files"] = [
+        {"src": "givens/delta.md", "dest": "openspec/changes/c1/specs/x/spec.md"}
+    ]
+    data["acceptance"]["setup_commands"] = ["npm ci"]
+    pack = load_pack(_write(tmp_path, data))
+    assert pack.task.given_files[0].src == "givens/delta.md"
+    assert pack.task.given_files[0].dest == (
+        "openspec/changes/c1/specs/x/spec.md"
+    )
+    assert pack.acceptance.setup_commands == ["npm ci"]
+
+
+def test_given_file_requires_both_paths(tmp_path: Path) -> None:
+    data = json.loads(json.dumps(MINIMAL))
+    data["task"]["given_files"] = [{"src": "givens/delta.md"}]
+    with pytest.raises(InvalidRequest, match="dest"):
+        load_pack(_write(tmp_path, data))

@@ -47,6 +47,8 @@ from specweaver.evaluation.harness import (  # noqa: E402
     mcp_config_for,
     normalize_arms,
     parse_transcript,
+    run_workspace_commands,
+    stage_given_files,
 )
 from specweaver.evaluation.taskpack import (  # noqa: E402
     ExecutionPlan,
@@ -166,6 +168,15 @@ def _run_one(
         checkout_root = Path(plan.workspace_dir)
         base_rev = pack.repo.commit
 
+        staged = stage_given_files(pack_file, pack, workdir)
+        setup_results = run_workspace_commands(
+            workdir,
+            pack.acceptance.setup_commands,
+            timeout_s=args.timeout,
+            report_dir=outdir,
+            report_prefix="setup",
+        )
+
         cfg_path = None
         usage_out = outdir / "server-usage.csv"
         if arm == "on":
@@ -214,6 +225,7 @@ def _run_one(
             outdir,
             test_commands=pack.acceptance.test_commands,
             hidden_suite=suite,
+            timeout_s=args.timeout,
         )
         record.update(
             changed=judge["changed"],
@@ -243,6 +255,13 @@ def _run_one(
             MemoryOp(action=call) for call in sw_calls if call in MEMORY_TOOLS
         ]
         notes = [f"sw_calls={sw_calls}"]
+        if staged:
+            notes.append(f"given_files staged: {staged}")
+        notes.extend(
+            f"setup failed: {r['command']} -> {r['exit_code']}"
+            for r in setup_results
+            if r["exit_code"] != 0
+        )
         if record.get("error"):
             notes.append(record["error"])
         tests = [
@@ -279,6 +298,7 @@ def _run_one(
                 "transcript.jsonl",
                 "agent.diff",
                 "prompt.txt",
+                *(r["report_ref"] for r in setup_results if r.get("report_ref")),
                 *(t.report_ref for t in tests),
                 *( ["server-usage.csv"] if usage_out.exists() else [] ),
             ],
