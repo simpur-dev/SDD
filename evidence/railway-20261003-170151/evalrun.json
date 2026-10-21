@@ -1,0 +1,378 @@
+{
+  "schema_version": 1,
+  "meta": {
+    "source": "railway-demo",
+    "arm": "",
+    "run_index": null,
+    "agent": {
+      "name": "run_demo (scripted steps)",
+      "version": "",
+      "model": ""
+    },
+    "sw_version": "9e5d88a",
+    "started_at": "",
+    "taskpack_id": "",
+    "tier": ""
+  },
+  "context_bundles": [
+    {
+      "task": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
+      "bundle_ref": "02-context.md",
+      "citations": [
+        {
+          "artifact_id": "REQ-1",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-schedule.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "REQ-2",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-occupancy.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "REQ-3",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-publish.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "RULE-3",
+          "version": "1.0.0",
+          "source_uri": "rules/publish-rule.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "RULE-1",
+          "version": "1.0.0",
+          "source_uri": "rules/interval-rule.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "RULE-2",
+          "version": "1.0.0",
+          "source_uri": "rules/regression-rule.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "REQ-4",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-api.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "REQ-5",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-dryrun.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "DES-1",
+          "version": "1.0.0",
+          "source_uri": "design/schedule-design.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "CODE-12d4b7620710",
+          "version": "0.1.0",
+          "source_uri": "src/publish.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "CODE-2335993c1bbc",
+          "version": "0.1.0",
+          "source_uri": "src/schedule.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "CODE-4bfabc68a8f6",
+          "version": "0.1.0",
+          "source_uri": "src/occupancy.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "DES-2",
+          "version": "1.0.0",
+          "source_uri": "design/publish-design.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "CODE-e662196c212e",
+          "version": "0.1.0",
+          "source_uri": "src/api.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "TST-e9c84656fadf",
+          "version": "0.1.0",
+          "source_uri": "tests/test_schedule.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "TST-d4cf3c71d337",
+          "version": "0.1.0",
+          "source_uri": "tests/test_publish.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "TST-da7154c71d35",
+          "version": "0.1.0",
+          "source_uri": "tests/test_occupancy.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "TST-46ecef6a906e",
+          "version": "0.1.0",
+          "source_uri": "tests/test_api.py",
+          "locator": "",
+          "updated_at": ""
+        }
+      ],
+      "findings": 6,
+      "bundle_bytes": 6617,
+      "excluded": 0
+    },
+    {
+      "task": "为列车按站调整发车时间并重算后续各站时刻，检查占用冲突并阻止发布",
+      "bundle_ref": "07-context-final.md",
+      "citations": [
+        {
+          "artifact_id": "REQ-6",
+          "version": "2.0.0",
+          "source_uri": "specs/requirement-schedule-v2.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "REQ-2",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-occupancy.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "REQ-3",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-publish.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "RULE-3",
+          "version": "1.0.0",
+          "source_uri": "rules/publish-rule.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "RULE-1",
+          "version": "1.0.0",
+          "source_uri": "rules/interval-rule.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "RULE-2",
+          "version": "1.0.0",
+          "source_uri": "rules/regression-rule.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "REQ-4",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-api.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "REQ-5",
+          "version": "1.0.0",
+          "source_uri": "specs/requirement-dryrun.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "CODE-2335993c1bbc",
+          "version": "0.1.0",
+          "source_uri": "src/schedule.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "DES-1",
+          "version": "1.0.0",
+          "source_uri": "design/schedule-design.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "CODE-12d4b7620710",
+          "version": "0.1.0",
+          "source_uri": "src/publish.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "CODE-4bfabc68a8f6",
+          "version": "0.1.0",
+          "source_uri": "src/occupancy.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "DES-2",
+          "version": "1.0.0",
+          "source_uri": "design/publish-design.md",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "CODE-e662196c212e",
+          "version": "0.1.0",
+          "source_uri": "src/api.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "TST-885ea3f0b041",
+          "version": "0.1.0",
+          "source_uri": "tests/test_adjust.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "TST-e9c84656fadf",
+          "version": "0.1.0",
+          "source_uri": "tests/test_schedule.py",
+          "locator": "",
+          "updated_at": ""
+        },
+        {
+          "artifact_id": "TST-bf4598def6a1",
+          "version": "0.1.0",
+          "source_uri": "tests/test_audit.py",
+          "locator": "",
+          "updated_at": ""
+        }
+      ],
+      "findings": 10,
+      "bundle_bytes": 7666,
+      "excluded": 1
+    }
+  ],
+  "code_diff": {
+    "diff_refs": [
+      "changes-1.diff",
+      "changes-2.diff"
+    ],
+    "files_changed": []
+  },
+  "test_evidence": [
+    {
+      "command": "pytest (via complete_task)",
+      "exit_code": null,
+      "passed": 11,
+      "failed": 0,
+      "total": 11,
+      "summary": "success=True",
+      "report_ref": "03-complete-adjust.json"
+    },
+    {
+      "command": "pytest (via complete_task)",
+      "exit_code": null,
+      "passed": 13,
+      "failed": 0,
+      "total": 13,
+      "summary": "success=True",
+      "report_ref": "06-complete-audit.json"
+    }
+  ],
+  "memory_ops": [
+    {
+      "action": "handoff",
+      "ref": "handoff:handoff:1",
+      "detail": ""
+    },
+    {
+      "action": "resume",
+      "ref": "",
+      "detail": "handoff_resumed=True, mismatches=0"
+    },
+    {
+      "action": "ensure_scope",
+      "ref": "scp_7dv36scnjspf58kferr2qss4p1",
+      "detail": ""
+    },
+    {
+      "action": "remember_rule",
+      "ref": "mem_ent_93ace1325f0a42f2845a68835fb1d230",
+      "detail": ""
+    },
+    {
+      "action": "remember_rule",
+      "ref": "mem_ent_8f5225383e1b44cfa2e27cbc78618f5a",
+      "detail": ""
+    },
+    {
+      "action": "remember_rule",
+      "ref": "mem_ent_ceba1dcbdde84fdca13de753bffa96dd",
+      "detail": ""
+    },
+    {
+      "action": "commit_handoff",
+      "ref": "",
+      "detail": ""
+    }
+  ],
+  "usage": {
+    "llm_calls": 3,
+    "prompt_tokens": 405,
+    "completion_tokens": 339,
+    "backend_calls": 281,
+    "duration_ms": 13905.132000014419,
+    "spans": 8,
+    "agent_usage_raw": {}
+  },
+  "budget": {
+    "declared": {},
+    "actual": {},
+    "over": []
+  },
+  "outcome": {
+    "success": true,
+    "source": "complete_task.success",
+    "notes": []
+  },
+  "sources": [
+    "usage.csv",
+    "02-context.json",
+    "07-context-final.json",
+    "03-complete-adjust.json",
+    "06-complete-audit.json",
+    "changes-1.diff",
+    "changes-2.diff",
+    "04-handoff.json",
+    "05-resume.json",
+    "powercontext-actions.jsonl",
+    "01-ingest.json"
+  ]
+}
