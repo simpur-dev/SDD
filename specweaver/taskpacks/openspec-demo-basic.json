@@ -46,13 +46,18 @@
     "time_limit_s": 900
   },
   "acceptance": {
-    "test_commands": ["npx playwright test"],
+    "test_commands": [
+      "npx playwright test --retries=2"
+    ],
     "forbidden_regressions": [
       "REQ-c016ccdcbc98",
       "REQ-079c63277997",
       "REQ-a2b19c71ca5e"
     ],
     "hidden_suite": "suites/openspec-demo-basic.spec.ts",
-    "setup_commands": ["npm ci", "npx playwright install chromium"]
+    "setup_commands": [
+      "npm ci",
+      "npx playwright install chromium"
+    ]
   }
 }

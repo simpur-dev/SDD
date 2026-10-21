@@ -43,12 +43,9 @@ async function mockSearch(page: Page, seen: string[]) {
 
 async function runSearch(page: Page) {
   await page.goto("/");
-  await page.getByRole("search").getByRole("textbox").fill("tolkien");
-  await page
-    .getByRole("search")
-    .getByRole("button", { name: "Search" })
-    .click();
-  await expect(page.getByLabel("Search results")).toBeVisible();
+  await page.getByRole("searchbox").fill("tolkien");
+  await page.getByRole("button", { name: "Search" }).click();
+  await expect(page.getByRole("list", { name: "Search results" })).toBeVisible();
 }
 
 test.describe("Sort composes with the author filter (hidden acceptance)", () => {
@@ -60,10 +57,10 @@ test.describe("Sort composes with the author filter (hidden acceptance)", () => 
     await runSearch(page);
     await page.getByLabel("Author:").selectOption("J.R.R. Tolkien");
     await expect(
-      page.getByLabel("Search results").getByRole("listitem"),
+      page.getByRole("list", { name: "Search results" }).getByRole("listitem"),
     ).toHaveCount(1);
     await page.getByLabel("Sort:").selectOption("new");
-    const grid = page.getByLabel("Search results");
+    const grid = page.getByRole("list", { name: "Search results" });
     await expect(grid).toBeVisible();
     await expect(grid.getByRole("listitem")).toHaveCount(1);
     await expect(grid).toContainText("A Tolkien Book");
@@ -86,7 +83,7 @@ test.describe("Sort composes with the author filter (hidden acceptance)", () => 
     const sort = page.getByLabel("Sort:");
     await expect(sort).toHaveValue("new");
     await expect(
-      page.getByLabel("Search results").getByRole("listitem"),
+      page.getByRole("list", { name: "Search results" }).getByRole("listitem"),
     ).toHaveCount(1);
     await expect(
       seen.some((params) => params.includes("author=")),
