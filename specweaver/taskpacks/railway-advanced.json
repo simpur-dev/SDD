@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "railway-advanced",
+  "tier": "advanced",
+  "title": "铁路教学标的：规格升版后的联动修改（保留有效旧约束）",
+  "repo": {
+    "origin": "https://github.com/simpur-dev/SDD.git",
+    "commit": "200b579cfada73c50a33886a53eaab11b53e19f0",
+    "subdir": "demo/railway",
+    "profile": "specweaver"
+  },
+  "agent": {
+    "name": "claude-code",
+    "version": "2.1.261",
+    "model": "env-configured (specweaver/.env)",
+    "tool_allowlist": [
+      "sw_ping",
+      "sw_doctor",
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task",
+      "sw_handoff",
+      "sw_resume_task",
+      "sw_record_decision",
+      "sw_report_progress",
+      "sw_verify",
+      "sw_explain_source"
+    ]
+  },
+  "task": {
+    "goal": "规格升版（REQ-1 v2，按站调整发车时间）后完成联动修改：替换被 v2 取代的约束，同时保留仍未被取消的旧约束（占用检查、发布判断）与既有测试行为；上下文须能区分该替换与该保留。",
+    "givens": [
+      "specs/requirement-schedule.md 含 v2 升版记录",
+      "rules/interval-rule.md 等旧约束仍然有效"
+    ]
+  },
+  "snapshot": {
+    "seekdb": "fresh",
+    "powercontext_scope": "fresh"
+  },
+  "budget": {
+    "max_tokens": 200000,
+    "max_backend_calls": 500,
+    "time_limit_s": 900
+  },
+  "acceptance": {
+    "test_commands": ["python -m pytest -q"],
+    "forbidden_regressions": ["REQ-2", "REQ-3", "REQ-4", "REQ-5"]
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "railway-challenge",
+  "tier": "challenge",
+  "title": "铁路教学标的：中断交接后的任务恢复与回归收尾",
+  "repo": {
+    "origin": "https://github.com/simpur-dev/SDD.git",
+    "commit": "200b579cfada73c50a33886a53eaab11b53e19f0",
+    "subdir": "demo/railway",
+    "profile": "specweaver"
+  },
+  "agent": {
+    "name": "claude-code",
+    "version": "2.1.261",
+    "model": "env-configured (specweaver/.env)",
+    "tool_allowlist": [
+      "sw_ping",
+      "sw_doctor",
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task",
+      "sw_handoff",
+      "sw_resume_task",
+      "sw_record_decision",
+      "sw_report_progress",
+      "sw_verify",
+      "sw_explain_source"
+    ]
+  },
+  "task": {
+    "goal": "任务在部分修改完成、测试未结束时被中断并已落 sw_handoff：新会话从 handoff 恢复（resume 三方核对），校验并恢复工程状态后完成剩余修改，并通过全量回归；改善成本或时延可作加分。",
+    "givens": [
+      "前一会话已调用 sw_handoff 落下交接（handoff_rev 由 harness 注入）",
+      "未完成部分与验收口径见交接记录"
+    ]
+  },
+  "snapshot": {
+    "seekdb": "fresh",
+    "powercontext_scope": "fresh"
+  },
+  "budget": {
+    "max_tokens": 200000,
+    "max_backend_calls": 500,
+    "time_limit_s": 900
+  },
+  "acceptance": {
+    "test_commands": ["python -m pytest -q"],
+    "forbidden_regressions": ["REQ-1", "REQ-2", "REQ-3", "REQ-4", "REQ-5"]
+  }
+}

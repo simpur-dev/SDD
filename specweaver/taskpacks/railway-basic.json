@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "id": "railway-basic",
+  "tier": "basic",
+  "title": "铁路教学标的：给定规格的局部修改",
+  "repo": {
+    "origin": "https://github.com/simpur-dev/SDD.git",
+    "commit": "200b579cfada73c50a33886a53eaab11b53e19f0",
+    "subdir": "demo/railway",
+    "profile": "specweaver"
+  },
+  "agent": {
+    "name": "claude-code",
+    "version": "2.1.261",
+    "model": "env-configured (specweaver/.env)",
+    "tool_allowlist": [
+      "sw_ping",
+      "sw_doctor",
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task",
+      "sw_handoff",
+      "sw_resume_task",
+      "sw_record_decision",
+      "sw_report_progress",
+      "sw_verify",
+      "sw_explain_source"
+    ]
+  },
+  "task": {
+    "goal": "依据 specs/ 中当前有效的规格，为 api 模块新增规格定义的查询入口；先读取有效约束与相关测试再修改，保持 schedule/occupancy/publish 既有行为不变。",
+    "givens": [
+      "specs/requirement-api.md 定义了接口层行为与约束",
+      "rules/ 为必须遵守的团队规则"
+    ]
+  },
+  "snapshot": {
+    "seekdb": "fresh",
+    "powercontext_scope": "fresh"
+  },
+  "budget": {
+    "max_tokens": 200000,
+    "max_backend_calls": 500,
+    "time_limit_s": 900
+  },
+  "acceptance": {
+    "test_commands": ["python -m pytest -q"],
+    "forbidden_regressions": ["REQ-1", "REQ-2", "REQ-3", "REQ-4"]
+  }
+}
