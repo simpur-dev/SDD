@@ -1,0 +1,19 @@
+[
+  {
+    "arm": "on",
+    "run": 0,
+    "project_id": "railway-basic-on-0-20261021-145158",
+    "rc": 0,
+    "duration_ms": 66990.80610275269,
+    "turns": 41,
+    "changed": true,
+    "success": true,
+    "summary": "14 passed in 0.03s",
+    "sw_calls": [
+      "sw_ingest_project",
+      "sw_get_context",
+      "sw_complete_task"
+    ],
+    "evalrun": "evalrun.json"
+  }
+]

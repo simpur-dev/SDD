@@ -1,0 +1,134 @@
+diff --git a/demo/railway/src/api.py b/demo/railway/src/api.py
+index f039144..0b37ebf 100644
+--- a/demo/railway/src/api.py
++++ b/demo/railway/src/api.py
+@@ -4,7 +4,7 @@
+ """
+ 
+ from publish import can_publish
+-from schedule import Train, arrival_times
++from schedule import Train, adjust_departure, arrival_times
+ 
+ 
+ def show_timetable(train: Train) -> dict[str, str]:
+@@ -12,6 +12,11 @@ def show_timetable(train: Train) -> dict[str, str]:
+     return arrival_times(train)
+ 
+ 
++def submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:
++    """提交新发车时间，返回调整后各站时刻。"""
++    return arrival_times(adjust_departure(train, new_start))
++
++
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
+diff --git a/demo/railway/src/schedule.py b/demo/railway/src/schedule.py
+index 08042fc..bbf7ffd 100644
+--- a/demo/railway/src/schedule.py
++++ b/demo/railway/src/schedule.py
+@@ -34,6 +34,15 @@ class Train:
+         return stops
+ 
+ 
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """按新的始发时刻整表平移，站间运行时分保持不变。"""
++    return Train(
++        train_id=train.train_id,
++        start=new_start,
++        legs=dict(train.legs),
++    )
++
++
+ def arrival_times(train: Train) -> dict[str, str]:
+     """各站时刻 = 始发时刻 + 累计运行时分。"""
+     stops = train.stops()
+diff --git a/demo/railway/tests/test_api.py b/demo/railway/tests/test_api.py
+index ef60359..8def3dc 100644
+--- a/demo/railway/tests/test_api.py
++++ b/demo/railway/tests/test_api.py
+@@ -1,6 +1,6 @@
+ """入口冒烟测试（REQ-4）。"""
+ 
+-from api import show_timetable, submit_publish
++from api import show_timetable, submit_adjust_departure, submit_publish
+ from schedule import Train
+ 
+ 
+@@ -15,3 +15,11 @@ def test_show_timetable() -> None:
+ def test_submit_publish_passes_through() -> None:
+     ok, _ = submit_publish(make_train(), [])
+     assert ok
++
++
++def test_submit_adjust_departure_returns_adjusted_times() -> None:
++    assert submit_adjust_departure(make_train(), "09:00") == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
+diff --git a/demo/railway/tests/test_publish.py b/demo/railway/tests/test_publish.py
+index 03c5b23..512a7ce 100644
+--- a/demo/railway/tests/test_publish.py
++++ b/demo/railway/tests/test_publish.py
+@@ -2,7 +2,7 @@
+ 
+ from occupancy import Occupation
+ from publish import can_publish
+-from schedule import Train
++from schedule import Train, adjust_departure
+ 
+ 
+ def make_train() -> Train:
+@@ -19,3 +19,13 @@ def test_publish_blocked_by_conflict() -> None:
+     ok, reason = can_publish(make_train(), busy)
+     assert not ok
+     assert "禁止发布" in reason
++
++
++def test_adjusted_train_still_blocked_by_existing_occupation() -> None:
++    adjusted = adjust_departure(make_train(), "08:05")
++    busy = [Occupation("K1", 480, 490)]
++
++    ok, reason = can_publish(adjusted, busy)
++
++    assert not ok
++    assert "禁止发布" in reason
+diff --git a/demo/railway/tests/test_schedule.py b/demo/railway/tests/test_schedule.py
+index 00eef5f..39bf52d 100644
+--- a/demo/railway/tests/test_schedule.py
++++ b/demo/railway/tests/test_schedule.py
+@@ -1,6 +1,12 @@
+ """时刻计算回归测试（REQ-1）。"""
+ 
+-from schedule import Train, arrival_times, to_hhmm, to_minutes
++from schedule import (
++    Train,
++    adjust_departure,
++    arrival_times,
++    to_hhmm,
++    to_minutes,
++)
+ 
+ 
+ def make_train() -> Train:
+@@ -26,3 +32,19 @@ def test_arrival_times_accumulate() -> None:
+ def test_minute_helpers_roundtrip() -> None:
+     assert to_minutes("09:30") == 570
+     assert to_hhmm(570) == "09:30"
++
++
++def test_adjust_departure_returns_new_shifted_train() -> None:
++    train = make_train()
++    adjusted = adjust_departure(train, "09:00")
++
++    assert adjusted is not train
++    assert adjusted.train_id == train.train_id
++    assert adjusted.start == "09:00"
++    assert adjusted.legs == train.legs
++    assert train.start == "08:00"
++    assert arrival_times(adjusted) == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }

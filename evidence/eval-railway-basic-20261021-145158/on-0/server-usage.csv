@@ -1,0 +1,4 @@
+name,duration_ms,llm_calls,prompt_tokens,completion_tokens,backend_calls,status,error,metrics
+ingest_project,2663.7891000136733,0,0,0,38,ok,,{}
+get_context,3232.248300104402,1,205,192,70,ok,,"{""recall"": 18, ""valid"": 18, ""excluded"": 0, ""assembly_ms"": 1.0, ""findings"": 6, ""bundle_bytes"": 6363, ""memory_notes"": 0}"
+complete_task,822.9049000656232,0,0,0,14,ok,,{}
