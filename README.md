@@ -49,7 +49,7 @@ MCP 配置样例（把 `python.exe` 与 `WORKSPACE__ROOT` 换成你机器上的�
 ```
 赛题.md                        官方赛题原文（语雀建议稿 v0.4，2026-10-21 爬取，含来源溯源）
 附件2.md                       已作废指针（旧副本收敛至 赛题.md，旧文见 git 历史）
-docs/                         01 架构说明书 · 02 调研纪要 · 03 工程骨架设计 · architecture-map/
+docs/                         01 架构说明书 · 02 调研纪要 · 03 工程骨架设计 · 04 一页技术说明 · architecture-map/
 specweaver/src/specweaver/    工具源码（domain/application/adapters/shared）
 specweaver/tests/             unit（含 boundary 审计组）· contract · integration（真后端）· fakes
 specweaver/scripts/           gate.py · run_demo.py · run_off_on.py · verify_mcp.py · probe_metrics_http.py · eval_retrieval.py · scaling_probe.py
