@@ -16,6 +16,15 @@ from ....domain.ports.workspace import WorkspacePort
 from ....shared.errors import InvalidRequest
 from .discovery import FileDiscovery
 from .parsers import ParserRegistry
+from .parsers.openspec import (
+    OpenSpecDeltaParser,
+    OpenSpecFileDiscovery,
+    OpenSpecSpecParser,
+    is_delta_sheet,
+    is_non_python_code,
+    is_spec_sheet,
+)
+from .parsers.text_symbols import TextSymbolsParser
 
 __all__ = ["RepositoryProfile", "known_profiles", "resolve_profile"]
 
@@ -46,17 +55,36 @@ def _build_specweaver() -> RepositoryProfile:
 
 
 def _build_plain() -> RepositoryProfile:
-    """Fallback for arbitrary repositories; v1 shares the default dispatch."""
+    """Fallback for arbitrary repositories: Tier-2 mining for non-Python code."""
     return RepositoryProfile(
         name="plain",
         sniff_markers=(),
-        registry=ParserRegistry(),
+        registry=ParserRegistry(
+            entries=[(is_non_python_code, TextSymbolsParser())]
+        ),
         discovery=FileDiscovery(),
     )
 
 
-# Sniff order: the most specific convention must be checked first.
+def _build_openspec() -> RepositoryProfile:
+    """OpenSpec convention (specs / pending-change deltas / archive)."""
+    return RepositoryProfile(
+        name="openspec",
+        sniff_markers=("openspec/",),
+        registry=ParserRegistry(
+            entries=[
+                (lambda path, _type: is_spec_sheet(path), OpenSpecSpecParser()),
+                (lambda path, _type: is_delta_sheet(path), OpenSpecDeltaParser()),
+                (is_non_python_code, TextSymbolsParser()),
+            ]
+        ),
+        discovery=OpenSpecFileDiscovery(),
+    )
+
+
+# Registration order doubles as sniff order: most specific convention first.
 _BUILDERS: dict[str, Callable[[], RepositoryProfile]] = {
+    "openspec": _build_openspec,
     "specweaver": _build_specweaver,
     "plain": _build_plain,
 }
@@ -92,6 +120,9 @@ async def resolve_profile(
             continue
         for path in paths:
             normalized = path.replace("\\", "/").lower()
-            if any(normalized.startswith(marker) for marker in profile.sniff_markers):
+            if any(
+                normalized.startswith(marker)
+                for marker in profile.sniff_markers
+            ):
                 return profile
     return _build_specweaver()
