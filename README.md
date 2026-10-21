@@ -5,6 +5,7 @@
 在开发 Agent 动手之前，给出**当前有效、最小充分、来源可核对**的工程依据；任务完成后把代码变化与验证结果**反向织回**工程记录，并支持跨会话/跨 Agent 接续。
 
 - 工程资料库与混合检索：**OceanBase seekdb**（关键词 + 语义 + 版本/状态/模块收窄，RRF 融合）
+- 标的可插拔：**仓库档案层**（specweaver / openspec / plain 三档，自动嗅探或 `ingest --profile` 指定；openspec 档案把规格按需求条目拍平、变更 delta 映射为 draft+supersedes 版本链，非 Python 代码走 Tier-2 文本符号索引）
 - 工作记忆与任务交接：**PowerContext**（Memory remember/revise/retire、Handoff 提交与接续）
 - 对 Agent 的接口：**MCP**（stdio / streamable-http，11 个工具）与 **CLI**（7 个命令：doctor · ingest · context · finish · handoff · resume · version）
 - 推理后端不绑定品牌：`none | minimax | deepseek | qianwen`（OpenAI 兼容 chat + 各家 embeddings 差异由适配器吸收）

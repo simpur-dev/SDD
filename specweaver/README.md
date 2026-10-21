@@ -35,7 +35,7 @@
 | `sw_get_context` | 读 | ✅ | **核心**：组装带预算与引用的 Context Bundle |
 | `sw_verify` | 读 | ✅ | 三方一致性核对报告（工作区/目录/活动/记忆） |
 | `sw_explain_source` | 读 | ✅ | 单构件回源链：source 指针 + upstream `based_on` + downstream 关系 |
-| `sw_ingest_project` | 写 | ✅ | 增量摄入（upsert 收敛；记忆写入按 PowerContext 幂等语义） |
+| `sw_ingest_project` | 写 | ✅ | 增量摄入（upsert 收敛；记忆写入按 PowerContext 幂等语义）；可选 `profile` 指定仓库档案（specweaver/openspec/plain），报告回显生效档案 |
 | `sw_complete_task` | 写 | ❌ | 跑测试 + 反向回写 + 记录变更集/结果（每次追加新证据行） |
 | `sw_resume_task` | 写 | ❌ | 接续 Handoff（服务端登记接续）+ 核对 + 重建上下文 |
 | `sw_handoff` | 写 | ❌ | 提交交接快照，返回 `handoff_rev` |
@@ -49,6 +49,7 @@
 ```
 specweaver doctor
 specweaver ingest  <project_id> [--scope-id ...] [--register-source/--no-register-source]
+                   [--profile auto|specweaver|openspec|plain]  # 仓库档案，缺省 WORKSPACE__PROFILE/自动嗅探
 specweaver context <project_id> "<任务描述>" [--base-ref ...]
 specweaver finish  <project_id> <task_id> <base_ref> [--test-command ...] [--scope-id ...]
 specweaver handoff <project_id> [--objective ...] [--state ...]x [--next-step ...]x [--omission ...]x
