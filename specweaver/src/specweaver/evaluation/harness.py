@@ -253,6 +253,21 @@ def checkout_pack(
         upstream = upstream.replace("\\", "/")
     if Path(target).exists():
         raise InvalidRequest(f"{target}: checkout target already exists")
+    # fail fast on a mirror/commit mismatch (e.g. pointing --source at the
+    # SDD repo for an upstream pack): the commit must exist in the mirror
+    probe = subprocess.run(
+        ["git", "-C", upstream, "cat-file", "-e", f"{commit}^{{commit}}"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+    )
+    if probe.returncode != 0:
+        raise InvalidRequest(
+            f"pinned commit {commit[:12]} not found in source {upstream!r} "
+            "(the commit belongs to pack.repo.origin's history — point "
+            "--source at a mirror of that repo)"
+        )
     proc = subprocess.run(
         ["git", "clone", "-q", upstream, str(target)],
         capture_output=True,
