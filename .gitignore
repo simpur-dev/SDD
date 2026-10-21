@@ -20,6 +20,9 @@ htmlcov/
 # ---- Local research & scratch (not part of delivery) ----
 research/
 
+# ---- Local dependency install cache (pip --target; ~166MB, never deliver) ----
+specweaver/.deps/
+
 # ---- Secrets / local environment ----
 .env
 .env.*
