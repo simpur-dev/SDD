@@ -313,3 +313,63 @@ def test_run_workspace_commands_timeout(tmp_path: Path) -> None:
     )
     assert results[0]["exit_code"] is None
     assert "timeout" in results[0]["summary"]
+
+
+def test_detect_tamper_flags_modify_delete_not_add() -> None:
+    from specweaver.evaluation.harness import detect_tamper
+
+    changes = [
+        ("A", "tests/new-agent-test.spec.ts"),      # additions are free
+        ("M", "tests/book-search.spec.ts"),          # upstream weakened
+        ("D", "tests/pagination.spec.ts"),           # upstream deleted
+        ("M", "src/api/client.ts"),                  # outside protection
+    ]
+    tampered = detect_tamper(changes, ["tests"])
+    assert sorted(tampered) == [
+        "D tests/pagination.spec.ts",
+        "M tests/book-search.spec.ts",
+    ]
+
+
+def test_detect_tamper_covers_nested_and_exact_paths() -> None:
+    from specweaver.evaluation.harness import detect_tamper
+
+    changes = [
+        ("M", "openspec/specs/search-filters/spec.md"),
+        ("M", "tests/helpers/mockApi.ts"),
+    ]
+    tampered = detect_tamper(changes, ["tests", "openspec/specs"])
+    assert "M openspec/specs/search-filters/spec.md" in tampered
+    assert "M tests/helpers/mockApi.ts" in tampered
+
+
+def test_judge_fails_on_upstream_test_tampering(tmp_path: Path) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+    _git(source, "init", "-q")
+    (source / "app.py").write_text("value = 1\n", encoding="utf-8")
+    (source / "tests").mkdir()
+    (source / "tests" / "test_upstream.py").write_text(
+        "def test_upstream():\n    assert True\n", encoding="utf-8"
+    )
+    _git(source, "add", "-A")
+    _git(source, "-c", "user.name=t", "-c", "user.email=t@t", "commit",
+         "-q", "-m", "base")
+    rev = _git(source, "rev-parse", "HEAD")
+
+    target = tmp_path / "checkout"
+    workdir = checkout_pack("unused", rev, target, source=str(source))
+    (workdir / "app.py").write_text("value = 2\n", encoding="utf-8")
+    (workdir / "tests" / "test_upstream.py").write_text(
+        "def test_upstream():\n    assert False  # weakened\n",
+        encoding="utf-8",
+    )
+    outdir = tmp_path / "out"
+    outdir.mkdir()
+    judge = judge_workspace(
+        target, workdir, rev, outdir,
+        test_commands=["python -c \"print('suite green')\""],
+        protected_paths=["tests"],
+    )
+    assert judge["success"] is False  # suite green, but verdict is failure
+    assert judge["tampered"] == ["M tests/test_upstream.py"]

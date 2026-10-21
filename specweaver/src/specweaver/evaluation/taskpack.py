@@ -135,6 +135,10 @@ class AcceptanceSpec(BaseModel):
     # Environment preparation run in the workspace after checkout and before
     # the agent starts (e.g. npm ci); failures surface in the run record.
     setup_commands: list[str] = []
+    # Workspace-relative paths (files or dirs) the agent must not modify or
+    # delete — upstream tests and living specs. Additions elsewhere are free;
+    # tampering with these flips the verdict to failure.
+    protected_paths: list[str] = []
 
 
 class TaskPack(BaseModel):

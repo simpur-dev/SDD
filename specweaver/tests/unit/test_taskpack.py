@@ -187,6 +187,17 @@ def test_openspec_demo_assets_carry_the_delta_and_setup() -> None:
             assert "REQ-c016ccdcbc98" in pack.acceptance.forbidden_regressions
 
 
+def test_all_assets_protect_upstream_tests() -> None:
+    for pack in load_dir(TASKPACKS):
+        assert pack.acceptance.protected_paths, (
+            f"{pack.id} declares no protected paths"
+        )
+        assert any(
+            p.rstrip("/").endswith("tests")
+            for p in pack.acceptance.protected_paths
+        )
+
+
 def test_contract_and_hidden_suite_default_empty(tmp_path: Path) -> None:
     pack = load_pack(_write(tmp_path, MINIMAL))
     assert pack.task.contract == ""

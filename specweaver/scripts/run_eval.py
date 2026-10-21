@@ -226,6 +226,7 @@ def _run_one(
             test_commands=pack.acceptance.test_commands,
             hidden_suite=suite,
             timeout_s=args.timeout,
+            protected_paths=pack.acceptance.protected_paths,
         )
         record.update(
             changed=judge["changed"],
@@ -262,6 +263,8 @@ def _run_one(
             for r in setup_results
             if r["exit_code"] != 0
         )
+        if judge["tampered"]:
+            notes.append(f"UPSTREAM TAMPERED: {judge['tampered']}")
         if record.get("error"):
             notes.append(record["error"])
         tests = [

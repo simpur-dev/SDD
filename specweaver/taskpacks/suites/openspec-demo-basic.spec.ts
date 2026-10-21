@@ -31,9 +31,10 @@ function searchResponse(author: string | null) {
   return { numFound: docs.length, start: 0, docs };
 }
 
-async function mockSearch(page: Page) {
+async function mockSearch(page: Page, seen: string[] = []) {
   await page.route("**/search.json**", (route) => {
     const url = new URL(route.request().url());
+    seen.push(url.searchParams.toString());
     return route.fulfill({ json: searchResponse(url.searchParams.get("author")) });
   });
   await page.route("https://covers.openlibrary.org/**", (route) =>

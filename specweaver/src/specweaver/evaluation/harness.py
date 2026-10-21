@@ -349,6 +349,29 @@ def command_env(python_exe: str) -> dict[str, str]:
     return env
 
 
+def detect_tamper(
+    changes: list[tuple[str, str]], protected: list[str]
+) -> list[str]:
+    """Upstream files the agent modified or deleted under protected paths.
+
+    ``changes`` are (git status, path) pairs from ``diff --name-status``.
+    ADDING new files is always allowed (agents may write their own tests);
+    modifying or deleting a protected upstream file is tampering — the
+    fastest way to make a failing suite green is to weaken its tests.
+    """
+    tampered: list[str] = []
+    for status, path in changes:
+        if status == "A":
+            continue
+        normalized = path.replace("\\", "/")
+        for guarded in protected:
+            guard = guarded.replace("\\", "/").rstrip("/") + "/"
+            if normalized.startswith(guard) or normalized == guarded.rstrip("/"):
+                tampered.append(f"{status} {path}")
+                break
+    return tampered
+
+
 def run_workspace_commands(
     workdir: Path,
     commands: list[str],
@@ -416,15 +439,29 @@ def judge_workspace(
     hidden_suite: Path | None = None,
     python_exe: str = sys.executable,
     timeout_s: float | None = None,
+    protected_paths: list[str] | None = None,
 ) -> dict[str, Any]:
     """Capture the agent diff, then grade: inject the hidden suite (after
-    the diff, so it never leaks) and run every acceptance command."""
+    the diff, so it never leaks) and run every acceptance command. Files
+    under ``protected_paths`` that the agent modified or deleted flip the
+    verdict to failure — weakening upstream tests is the cheapest way to
+    fake a green suite."""
     if _git(checkout_root, "status", "--porcelain"):
         _git(checkout_root, "add", "-A")
         _git(checkout_root, "commit", "-q", "-m", "agent work")
     head_rev = _git(checkout_root, "rev-parse", "HEAD")
     diff = _git(checkout_root, "diff", base_rev, head_rev)
     outdir.joinpath("agent.diff").write_text(diff, encoding="utf-8")
+
+    status_output = _git(
+        checkout_root, "diff", "--name-status", base_rev, head_rev
+    )
+    changes: list[tuple[str, str]] = []
+    for line in status_output.splitlines():
+        parts = line.split("\t", 1)
+        if len(parts) == 2:
+            changes.append((parts[0].strip(), parts[1].strip()))
+    tampered = detect_tamper(changes, protected_paths or [])
 
     if hidden_suite is not None:
         tests_dir = workdir / "tests"
@@ -443,7 +480,12 @@ def judge_workspace(
     return {
         "changed": changed,
         "results": results,
-        "success": changed and all(r["exit_code"] == 0 for r in results),
+        "tampered": tampered,
+        "success": (
+            changed
+            and not tampered
+            and all(r["exit_code"] == 0 for r in results)
+        ),
     }
 
 

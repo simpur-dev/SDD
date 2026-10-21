@@ -55,6 +55,9 @@
       "REQ-4",
       "REQ-5"
     ],
-    "hidden_suite": "suites/railway-acceptance.py"
+    "hidden_suite": "suites/railway-acceptance.py",
+    "protected_paths": [
+      "tests"
+    ]
   }
 }

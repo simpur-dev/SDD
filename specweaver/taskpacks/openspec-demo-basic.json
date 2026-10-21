@@ -58,6 +58,10 @@
     "setup_commands": [
       "npm ci",
       "npx playwright install chromium"
+    ],
+    "protected_paths": [
+      "tests",
+      "openspec/specs"
     ]
   }
 }
