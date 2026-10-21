@@ -76,7 +76,7 @@ class MarkdownParser:
         text: str,
         checksum: str | None,
         declared_type: ArtifactType,
-    ) -> ParsedDocument:
+    ) -> list[ParsedDocument]:
         front_matter, body = split_front_matter(text)
         effective_type = normalize_type(front_matter.get("type")) or declared_type
 
@@ -102,18 +102,20 @@ class MarkdownParser:
                 if len(summary_parts) < 3:
                     summary_parts.append(line.strip())
 
-        return ParsedDocument(
-            path=path,
-            type=effective_type,
-            title=title,
-            summary=" ".join(summary_parts)[:400],
-            behavior_points=self._dedupe(behavior),
-            constraints=self._dedupe(constraints),
-            references=extract_refs(text),
-            front_matter=front_matter,
-            checksum=checksum,
-            raw_text=text,
-        )
+        return [
+            ParsedDocument(
+                path=path,
+                type=effective_type,
+                title=title,
+                summary=" ".join(summary_parts)[:400],
+                behavior_points=self._dedupe(behavior),
+                constraints=self._dedupe(constraints),
+                references=extract_refs(text),
+                front_matter=front_matter,
+                checksum=checksum,
+                raw_text=text,
+            )
+        ]
 
     @staticmethod
     def _first_heading(body: str, level: int) -> str | None:

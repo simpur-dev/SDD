@@ -78,7 +78,7 @@ def test_corpus_instance_stays_inside_the_declared_shape(name: str) -> None:
         text,
         checksum=None,
         declared_type=expected_type,
-    )
+    )[0]
 
     assert set(front) <= set(template_front)
     assert doc.type is expected_type

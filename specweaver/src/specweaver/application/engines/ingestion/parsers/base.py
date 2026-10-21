@@ -37,7 +37,13 @@ class ParsedDocument(BaseModel):
 
 
 class Parser(Protocol):
-    """Synchronous, CPU-only parser: file text -> ParsedDocument."""
+    """Synchronous, CPU-only parser: file text -> one or more ParsedDocuments.
+
+    A single file may carry several spec entries (e.g. an OpenSpec spec.md
+    holds one ``### Requirement:`` block per requirement); parsers flatten
+    such files into one ParsedDocument per entry so ids, citations and
+    supersedes chains stay at entry granularity.
+    """
 
     def parse(
         self,
@@ -45,4 +51,4 @@ class Parser(Protocol):
         text: str,
         checksum: str | None,
         declared_type: ArtifactType,
-    ) -> ParsedDocument: ...
+    ) -> list[ParsedDocument]: ...

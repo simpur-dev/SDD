@@ -29,7 +29,7 @@ from specweaver.domain.enums import ArtifactType
 def _doc(path: str, text: str) -> ParsedDocument:
     return MarkdownParser().parse(
         path, text, "sha256:x", ArtifactType.requirement
-    )
+    )[0]
 
 
 def test_unclosed_front_matter_is_ignored_as_text() -> None:
@@ -73,7 +73,7 @@ def test_refs_are_case_sensitive_and_pad_zero() -> None:
 def test_python_syntax_error_file_is_indexed_without_symbols() -> None:
     doc = PythonCodeParser().parse(
         "src/broken.py", "def broken(:\n", "sha256:y", ArtifactType.code
-    )
+    )[0]
     assert doc.symbols == []
     assert doc.raw_text.startswith("def broken(")
 

@@ -56,7 +56,7 @@ class PythonCodeParser:
         text: str,
         checksum: str | None,
         declared_type: ArtifactType,
-    ) -> ParsedDocument:
+    ) -> list[ParsedDocument]:
         try:
             tree = ast.parse(text)
         except SyntaxError:
@@ -93,14 +93,16 @@ class PythonCodeParser:
                 imports.append(node.module)
 
         title = os.path.splitext(os.path.basename(path))[0]
-        return ParsedDocument(
-            path=path,
-            type=ArtifactType.code,
-            title=title,
-            summary=(ast.get_docstring(tree) or "")[:400],
-            symbols=symbols,
-            references=extract_refs(text),
-            imports=_dedupe(imports),
-            checksum=checksum,
-            raw_text=text,
-        )
+        return [
+            ParsedDocument(
+                path=path,
+                type=ArtifactType.code,
+                title=title,
+                summary=(ast.get_docstring(tree) or "")[:400],
+                symbols=symbols,
+                references=extract_refs(text),
+                imports=_dedupe(imports),
+                checksum=checksum,
+                raw_text=text,
+            )
+        ]

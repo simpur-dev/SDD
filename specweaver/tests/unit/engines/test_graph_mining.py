@@ -25,7 +25,7 @@ def _make(path: str, text: str, declared: ArtifactType):
         parser = PythonTestParser()
     else:
         parser = PythonCodeParser()
-    doc = parser.parse(path, text, "chk", declared)
+    doc = parser.parse(path, text, "chk", declared)[0]
     return doc, to_artifact("railway", doc)
 
 

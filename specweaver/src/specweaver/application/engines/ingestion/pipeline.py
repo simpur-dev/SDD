@@ -62,28 +62,35 @@ class IngestionEngine:
             checksum = await workspace.checksum(discovered.path)
             text = await workspace.read_file(discovered.path)
             parser = self._registry.for_file(discovered.path, discovered.type)
-            doc = parser.parse(
+            # A parser may flatten one file into several entries (e.g. an
+            # OpenSpec spec.md holding one requirement per block); ids,
+            # duplicates and incrementality are tracked per entry.
+            for doc in parser.parse(
                 discovered.path, text, checksum, discovered.type
-            )
-            artifact = to_artifact(project_id, doc)
-            # audit C2: surface id collisions instead of silent overwrite
-            uri = artifact.source.uri if artifact.source else discovered.path
-            earlier = seen_paths.get(artifact.id)
-            if earlier is not None and earlier != uri:
-                if artifact.id not in duplicate_ids:
-                    duplicate_ids.append(artifact.id)
-            seen_paths.setdefault(artifact.id, uri)
-            previous = existing_checksums.get(artifact.id)
-            if previous == checksum:
-                unchanged += 1
-            else:
-                if previous is None:
-                    added += 1
+            ):
+                artifact = to_artifact(project_id, doc)
+                # audit C2: surface id collisions instead of silent overwrite
+                uri = (
+                    artifact.source.uri
+                    if artifact.source
+                    else discovered.path
+                )
+                earlier = seen_paths.get(artifact.id)
+                if earlier is not None and earlier != uri:
+                    if artifact.id not in duplicate_ids:
+                        duplicate_ids.append(artifact.id)
+                seen_paths.setdefault(artifact.id, uri)
+                previous = existing_checksums.get(artifact.id)
+                if previous == checksum:
+                    unchanged += 1
                 else:
-                    updated += 1
-                changed.append(artifact)
-                changed_ids.append(artifact.id)
-            pairs.append((doc, artifact))
+                    if previous is None:
+                        added += 1
+                    else:
+                        updated += 1
+                    changed.append(artifact)
+                    changed_ids.append(artifact.id)
+                pairs.append((doc, artifact))
 
         relations = mine_relations(project_id, pairs)
         await self._embedder.embed(changed)

@@ -87,7 +87,7 @@ def test_self_reference_edges_are_skipped() -> None:
     text = "---\nid: REQ-01\n---\n# 标题\n- 见 REQ-1 说明\n"
     doc = MarkdownParser().parse(
         "specs/a.md", text, "sha256:a", ArtifactType.requirement
-    )
+    )[0]
     artifact = to_artifact("p", doc)
     relations = mine_relations("p", [(doc, artifact)])
     self_loops = [r for r in relations if r.src == r.dst]

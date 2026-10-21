@@ -61,17 +61,17 @@ class ArtifactSync:
             checksum = await workspace.checksum(path)
             text = await workspace.read_file(path)
             parser = self._registry.for_file(path, declared)
-            doc = parser.parse(path, text, checksum, declared)
-            artifact = to_artifact(project_id, doc)
-            rebuilt.append(artifact)
-            pairs.append((doc, artifact))
+            for doc in parser.parse(path, text, checksum, declared):
+                artifact = to_artifact(project_id, doc)
+                rebuilt.append(artifact)
+                pairs.append((doc, artifact))
 
-            if artifact.supersedes:
-                old = existing.get(artifact.supersedes)
-                if old is not None and old.status == LifecycleStatus.active:
-                    old.status = LifecycleStatus.superseded
-                    old.superseded_by = artifact.id
-                    superseded.append(old)
+                if artifact.supersedes:
+                    old = existing.get(artifact.supersedes)
+                    if old is not None and old.status == LifecycleStatus.active:
+                        old.status = LifecycleStatus.superseded
+                        old.superseded_by = artifact.id
+                        superseded.append(old)
 
         # Unchanged catalog artifacts join only as edge context: their stored
         # based_on refs re-emit the same deterministic edges (upsert is

@@ -18,8 +18,8 @@ class PythonTestParser(PythonCodeParser):
         text: str,
         checksum: str | None,
         declared_type: ArtifactType,
-    ) -> ParsedDocument:
-        doc = super().parse(path, text, checksum, declared_type)
+    ) -> list[ParsedDocument]:
+        doc = super().parse(path, text, checksum, declared_type)[0]
 
         cases = [
             symbol
@@ -40,11 +40,13 @@ class PythonTestParser(PythonCodeParser):
         front_matter = dict(doc.front_matter)
         front_matter["test_target_module"] = target
 
-        return doc.model_copy(
-            update={
-                "type": ArtifactType.test,
-                "symbols": cases,
-                "behavior_points": [s.name.split(".")[-1] for s in cases],
-                "front_matter": front_matter,
-            }
-        )
+        return [
+            doc.model_copy(
+                update={
+                    "type": ArtifactType.test,
+                    "symbols": cases,
+                    "behavior_points": [s.name.split(".")[-1] for s in cases],
+                    "front_matter": front_matter,
+                }
+            )
+        ]
