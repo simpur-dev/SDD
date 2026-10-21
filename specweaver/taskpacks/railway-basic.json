@@ -32,7 +32,8 @@
     "givens": [
       "specs/requirement-api.md 定义了接口层行为与约束",
       "rules/ 为必须遵守的团队规则"
-    ]
+    ],
+    "contract": "1. src/schedule.py: add adjust_departure(train: Train, new_start: str) -> Train returning a NEW Train whose start becomes new_start with legs unchanged (the whole timetable shifts).\n2. src/api.py: add submit_adjust_departure(train: Train, new_start: str) -> dict[str, str] returning the adjusted arrival times.\n3. Add regression tests for the new behavior, including one showing an adjusted train is still blocked from publishing when it conflicts with an existing vehicle-occupation window."
   },
   "snapshot": {
     "seekdb": "fresh",
@@ -44,7 +45,15 @@
     "time_limit_s": 900
   },
   "acceptance": {
-    "test_commands": ["python -m pytest -q"],
-    "forbidden_regressions": ["REQ-1", "REQ-2", "REQ-3", "REQ-4"]
+    "test_commands": [
+      "python -m pytest -q"
+    ],
+    "forbidden_regressions": [
+      "REQ-1",
+      "REQ-2",
+      "REQ-3",
+      "REQ-4"
+    ],
+    "hidden_suite": "suites/railway-acceptance.py"
   }
 }

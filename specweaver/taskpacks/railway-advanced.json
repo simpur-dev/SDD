@@ -32,7 +32,8 @@
     "givens": [
       "specs/requirement-schedule.md 含 v2 升版记录",
       "rules/interval-rule.md 等旧约束仍然有效"
-    ]
+    ],
+    "contract": "The competition rules require the full chain to keep working after the change (timetable calculation, vehicle-occupation re-check, publish gating).\nMinimum interface contract (hidden acceptance tests will import exactly these): src/schedule.py gains adjust_departure(train, new_start) -> Train and src/api.py gains submit_adjust_departure(train, new_start) -> dict of stop -> \"HH:MM\"."
   },
   "snapshot": {
     "seekdb": "fresh",
@@ -44,7 +45,15 @@
     "time_limit_s": 900
   },
   "acceptance": {
-    "test_commands": ["python -m pytest -q"],
-    "forbidden_regressions": ["REQ-2", "REQ-3", "REQ-4", "REQ-5"]
+    "test_commands": [
+      "python -m pytest -q"
+    ],
+    "forbidden_regressions": [
+      "REQ-2",
+      "REQ-3",
+      "REQ-4",
+      "REQ-5"
+    ],
+    "hidden_suite": "suites/railway-acceptance.py"
   }
 }

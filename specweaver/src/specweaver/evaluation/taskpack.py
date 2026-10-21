@@ -87,6 +87,9 @@ class TaskSpec(BaseModel):
 
     goal: str = Field(min_length=1)
     givens: list[str] = []  # spec entries / constraints handed to the agent
+    # Precise interface contract appended to the agent prompt (hidden
+    # acceptance tests will import exactly these); empty = goal only.
+    contract: str = ""
 
 
 class SnapshotSpec(BaseModel):
@@ -114,6 +117,10 @@ class AcceptanceSpec(BaseModel):
 
     test_commands: list[str] = Field(min_length=1)
     forbidden_regressions: list[str] = []  # artifact ids that must keep passing
+    # Hidden acceptance test file, path relative to the taskpack manifest's
+    # own directory; injected into the workspace only after the agent's diff
+    # is captured, so it can grade but not leak into the prompt.
+    hidden_suite: str = ""
 
 
 class TaskPack(BaseModel):

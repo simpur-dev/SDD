@@ -143,6 +143,17 @@ def test_shipped_assets_load_and_cover_all_tiers() -> None:
         assert all(t.startswith("sw_") for t in pack.agent.tool_allowlist)
         assert pack.snapshot.seekdb == "fresh"
         assert pack.budget.time_limit_s and pack.budget.max_tokens
+        # harness-grade assets: precise contract + an existing hidden suite
+        assert pack.task.contract
+        assert "adjust_departure" in pack.task.contract
+        suite = TASKPACKS / pack.acceptance.hidden_suite
+        assert suite.is_file(), f"missing hidden suite for {pack.id}"
+
+
+def test_contract_and_hidden_suite_default_empty(tmp_path: Path) -> None:
+    pack = load_pack(_write(tmp_path, MINIMAL))
+    assert pack.task.contract == ""
+    assert pack.acceptance.hidden_suite == ""
 
 
 def test_manifest_round_trip_is_lossless(tmp_path: Path) -> None:
