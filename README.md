@@ -1,6 +1,6 @@
 # SpecWeaver（规格织网）
 
-第 6 届 OceanBase 开发者大赛 · **SDD 工程上下文工具**赛道参赛作品。
+第六届 OceanBase 数据库大赛 · MiniMax × OceanBase 赛题**「规有所依——面向软件持续演进的 SDD 上下文管理系统」**参赛作品（官方语雀建议稿 v0.4，原文见 [赛题.md](赛题.md)）。
 
 在开发 Agent 动手之前，给出**当前有效、最小充分、来源可核对**的工程依据；任务完成后把代码变化与验证结果**反向织回**工程记录，并支持跨会话/跨 Agent 接续。
 
@@ -28,7 +28,7 @@ Copy-Item .\specweaver\.env.example .\specweaver\.env   # 填自己的 key
 specweaver doctor
 .\.venv\Scripts\python .\specweaver\scripts\gate.py           # 离线：ruff + 单元/契约
 .\.venv\Scripts\python .\specweaver\scripts\gate.py --live    # 在线：doctor + 11 工具 + /metrics
-# 5) 铁路调度教学演示（赛题第七章），产出完整证据链
+# 5) 铁路调度教学演示（自建教学标的；v0.4 官方参考标的为 openspec-demo 图书应用，见 赛题.md §2.4），产出完整证据链
 .\.venv\Scripts\python .\specweaver\scripts\run_demo.py
 ```
 
@@ -41,12 +41,13 @@ MCP 配置样例（把 `python.exe` 与 `WORKSPACE__ROOT` 换成你机器上的�
 | stdio | [`specweaver/deploy/mcp.stdio.json`](specweaver/deploy/mcp.stdio.json) | Agent 本地拉起，单项目 |
 | streamable-http | [`specweaver/deploy/mcp.http.json`](specweaver/deploy/mcp.http.json) | 共享服务（先跑 `python -m specweaver.adapters.driving.mcp.run_http`），并可在同端口 `GET /metrics` 抓 Prometheus 指标 |
 
-与**官方 seekdb MCP Server** 的分工：官方那套是"数据库运维面"（`execute_sql` / `hybrid_search` / seekdb 自带 memory 函数），SpecWeaver 是"工程上下文语义面"（构件/关系/有效性/预算/接续），并把 seekdb 与 PowerContext 织成一条链路——赛题要求两者同时使用，故不自建 MCP 无法成立。详见《03》§7.2。
+与**官方 seekdb MCP Server** 的分工：官方那套是"数据库运维面"（`execute_sql` / `hybrid_search` / seekdb 自带 memory 函数），SpecWeaver 是"工程上下文语义面"（构件/关系/有效性/预算/接续），并把 seekdb 与 PowerContext 织成一条链路——赛题 §2.2 要求两者同时实际使用，故不自建 MCP 无法成立。详见《03》§7.2。
 
 ## 仓库地图
 
 ```
-赛题.md / 附件2.md            赛题说明（两文件内容相同，仅行尾差异）
+赛题.md                        官方赛题原文（语雀建议稿 v0.4，2026-10-21 爬取，含来源溯源）
+附件2.md                       已作废指针（旧副本收敛至 赛题.md，旧文见 git 历史）
 docs/                         01 架构说明书 · 02 调研纪要 · 03 工程骨架设计 · architecture-map/
 specweaver/src/specweaver/    工具源码（domain/application/adapters/shared）
 specweaver/tests/             unit（含 boundary 审计组）· contract · integration（真后端）· fakes
