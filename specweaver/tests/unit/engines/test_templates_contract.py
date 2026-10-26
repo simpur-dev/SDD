@@ -1,4 +1,4 @@
-"""The shipped SDD templates must match what ingestion actually digests.
+﻿"""The shipped SDD templates must match what ingestion actually digests.
 
 Two directions are pinned here: the template front matter only promises keys the
 parser reads, and a real corpus file (demo/railway) parsed by the production
@@ -21,7 +21,17 @@ from specweaver.domain.enums import ArtifactType
 
 PKG_ROOT = Path(__file__).resolve().parents[3]
 TEMPLATES = PKG_ROOT / "templates"
-RAILWAY = PKG_ROOT.parent / "demo" / "railway"
+
+# In the source repo the demo project sits next to the package; in the
+# packaged submission layout (minimax/source/) it sits below the package root.
+_RAILWAY_CANDIDATES = (
+    PKG_ROOT.parent / "demo" / "railway",
+    PKG_ROOT / "demo" / "railway",
+)
+RAILWAY = next(
+    (path for path in _RAILWAY_CANDIDATES if path.is_dir()),
+    _RAILWAY_CANDIDATES[0],
+)
 
 PARSER = MarkdownParser()
 
