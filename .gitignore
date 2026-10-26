@@ -38,3 +38,6 @@ demo/openspec-demo/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# ---- Local agent scratch plans (not part of delivery) ----
+.zcode/
