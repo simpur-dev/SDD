@@ -1,0 +1,123 @@
+diff --git a/src/api.py b/src/api.py
+index f039144..c0baf44 100644
+--- a/src/api.py
++++ b/src/api.py
+@@ -4,7 +4,7 @@
+ """
+ 
+ from publish import can_publish
+-from schedule import Train, arrival_times
++from schedule import Train, adjust_departure, arrival_times
+ 
+ 
+ def show_timetable(train: Train) -> dict[str, str]:
+@@ -12,6 +12,11 @@ def show_timetable(train: Train) -> dict[str, str]:
+     return arrival_times(train)
+ 
+ 
++def submit_adjust_departure(train: Train, new_start: str) -> dict[str, str]:
++    """提交新的发车时间：返回调整后各站时刻（依据 REQ-1、REQ-4）。"""
++    return arrival_times(adjust_departure(train, new_start))
++
++
+ def submit_publish(train: Train, fleet: list) -> tuple[bool, str]:
+     """提交发布：先经占用与发布判断。"""
+     return can_publish(train, fleet)
+diff --git a/src/schedule.py b/src/schedule.py
+index 08042fc..0b37427 100644
+--- a/src/schedule.py
++++ b/src/schedule.py
+@@ -34,6 +34,20 @@ class Train:
+         return stops
+ 
+ 
++def adjust_departure(train: Train, new_start: str) -> Train:
++    """调整发车时间：返回新车发时刻的列车，站间运行时分保持不变。
++
++    站间运行时分不变意味着整张时刻表整体平移，后续各站时刻随之重算
++    （依据 REQ-1 与 DES-01）。
++    """
++    to_minutes(new_start)  # 校验时刻格式，非法输入直接报错
++    return Train(
++        train_id=train.train_id,
++        start=new_start,
++        legs=dict(train.legs),
++    )
++
++
+ def arrival_times(train: Train) -> dict[str, str]:
+     """各站时刻 = 始发时刻 + 累计运行时分。"""
+     stops = train.stops()
+diff --git a/tests/test_adjust.py b/tests/test_adjust.py
+new file mode 100644
+index 0000000..58f504e
+--- /dev/null
++++ b/tests/test_adjust.py
+@@ -0,0 +1,67 @@
++"""按站调整发车时间的回归测试（REQ-1、REQ-4、REQ-3、RULE-3）。"""
++
++import pytest
++
++from api import submit_adjust_departure
++from occupancy import Occupation
++from publish import can_publish
++from schedule import Train, adjust_departure, arrival_times
++
++
++def make_train() -> Train:
++    return Train(
++        train_id="K1",
++        start="08:00",
++        legs={"A->B": 10, "B->C": 15},
++    )
++
++
++def test_adjust_departure_shifts_whole_timetable() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    assert adjusted.start == "09:00"
++    assert adjusted.legs == {"A->B": 10, "B->C": 15}
++    assert arrival_times(adjusted) == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_adjust_departure_returns_new_train_and_keeps_original() -> None:
++    original = make_train()
++    adjusted = adjust_departure(original, "07:30")
++    assert adjusted is not original
++    assert original.start == "08:00"
++    assert arrival_times(original)["C"] == "08:25"
++    assert adjusted.legs is not original.legs
++
++
++def test_adjust_departure_rejects_invalid_time() -> None:
++    with pytest.raises(ValueError):
++        adjust_departure(make_train(), "not-a-time")
++
++
++def test_submit_adjust_departure_returns_adjusted_times() -> None:
++    assert submit_adjust_departure(make_train(), "09:00") == {
++        "A": "09:00",
++        "B": "09:10",
++        "C": "09:25",
++    }
++
++
++def test_adjusted_train_still_blocked_when_occupied() -> None:
++    """调整后与既有车辆占用窗口冲突的，仍然禁止发布（RULE-3）。"""
++    train = make_train()
++    busy = [Occupation("K1", 545, 555)]  # 09:05 - 09:15，与调整后的 A->B 重叠
++    assert can_publish(train, busy)[0] is True
++
++    adjusted = adjust_departure(train, "09:00")
++    ok, reason = can_publish(adjusted, busy)
++    assert not ok
++    assert "禁止发布" in reason
++
++
++def test_adjusted_train_publish_allowed_without_conflict() -> None:
++    adjusted = adjust_departure(make_train(), "09:00")
++    ok, reason = can_publish(adjusted, [])
++    assert ok, reason

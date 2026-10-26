@@ -1,0 +1,15 @@
+{
+  "project_id": "official-spec-20261026-112242",
+  "added": 0,
+  "updated": 1,
+  "unchanged": 17,
+  "skipped": 3,
+  "relations": 18,
+  "changed_ids": [
+    "REQ-1"
+  ],
+  "source_registered": true,
+  "duplicate_ids": [],
+  "deprecated": 0,
+  "profile": "specweaver"
+}

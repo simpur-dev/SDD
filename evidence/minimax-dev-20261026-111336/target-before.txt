@@ -1,0 +1,6 @@
+FAIL exists: AssertionError: schedule.adjust_departure is missing
+FAIL api_exists: AssertionError: api.submit_adjust_departure is missing
+FAIL shift: AttributeError: module 'schedule' has no attribute 'adjust_departure'
+FAIL api: AttributeError: module 'api' has no attribute 'submit_adjust_departure'
+FAIL conflict: AttributeError: module 'schedule' has no attribute 'adjust_departure'
+TARGET_RESULT FAIL

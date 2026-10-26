@@ -1,0 +1,35 @@
+{
+  "seekdb": {
+    "artifact_count": 18,
+    "by_type": {
+      "design": 2,
+      "rule": 3,
+      "requirement": 5,
+      "code": 4,
+      "test": 4
+    },
+    "sample_ids": [
+      "DES-2",
+      "DES-1",
+      "RULE-1",
+      "RULE-3",
+      "RULE-2",
+      "REQ-4",
+      "REQ-5",
+      "REQ-2",
+      "REQ-3",
+      "REQ-1",
+      "CODE-e662196c212e",
+      "CODE-4bfabc68a8f6"
+    ],
+    "backend": "seekdb v1.4.0 @ 127.0.0.1:12881"
+  },
+  "powercontext": {
+    "scope_id": "scp_6wyk52w46krpa3ckeh4c7dvzvd",
+    "memory_entries": 1,
+    "entry_kinds": {
+      "ingestion": 1
+    },
+    "test_runs_in_activity_table": 0
+  }
+}

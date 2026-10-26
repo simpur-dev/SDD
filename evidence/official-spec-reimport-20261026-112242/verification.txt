@@ -1,0 +1,4 @@
+BEFORE: REQ-1 present: True | version: 1.0.0 | content has 5min: True | content has 7min: False | citation versions: ['1.0.0']
+AFTER:  REQ-1 present: True | version: 1.1.0 | content has 5min: False | content has 7min: True | citation versions: ['1.1.0']
+CHECKS {"before_has_5min": true, "after_has_7min": true, "after_version_1_1_0": true, "after_not_stale_5min": true}
+RESULT PASS

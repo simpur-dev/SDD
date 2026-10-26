@@ -1,0 +1,2 @@
+name,duration_ms,llm_calls,prompt_tokens,completion_tokens,backend_calls,status,error,metrics
+get_context,13739.090799994301,1,324,193,67,ok,,"{""recall"": 18, ""valid"": 16, ""excluded"": 2, ""assembly_ms"": 0.7, ""findings"": 6, ""bundle_bytes"": 5866, ""memory_notes"": 0}"

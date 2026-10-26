@@ -1,0 +1,9 @@
+{
+  "project_id": "official-state-20261026-112308",
+  "scope_id": "scp_24aftaz67g80nj54xf0mk9rb1j",
+  "memory_entries": 1,
+  "entry_kinds": {
+    "ingestion": 1
+  },
+  "handoff_note": "state reuse evidence: process A handoff -> process B resume (see b1-resume.json)"
+}

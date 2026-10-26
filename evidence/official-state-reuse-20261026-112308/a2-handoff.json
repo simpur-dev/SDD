@@ -1,0 +1,12 @@
+{
+  "project_id": "official-state-20261026-112308",
+  "scope_id": "scp_24aftaz67g80nj54xf0mk9rb1j",
+  "handoff_rev": "handoff:handoff:1",
+  "objective": "按站调整发车时间并重算后续各站",
+  "next_steps": [
+    "实现 adjust_departure 并补回归测试"
+  ],
+  "unverified": [
+    "尚未运行 occupancy/publish 联动回归"
+  ]
+}
