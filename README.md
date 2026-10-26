@@ -1,6 +1,6 @@
 # SpecWeaver（规格织网）
 
-第六届 OceanBase 数据库大赛 · MiniMax × OceanBase 赛题**「规有所依——面向软件持续演进的 SDD 上下文管理系统」**参赛作品（官方语雀建议稿 v0.4，原文见 [赛题.md](赛题.md)）。
+第六届 OceanBase 数据库大赛 · MiniMax × OceanBase 赛题**「规有所依——面向软件持续演进的 SDD 上下文管理系统」**参赛作品（官方**正式题面** 2026-10-26 发布，原文见 [赛题.md](赛题.md)；合规核对与六项必做状态见 [docs/05](docs/05-正式题面对齐与合规核对.md)）。
 
 在开发 Agent 动手之前，给出**当前有效、最小充分、来源可核对**的工程依据；任务完成后把代码变化与验证结果**反向织回**工程记录，并支持跨会话/跨 Agent 接续。
 
@@ -9,6 +9,19 @@
 - 工作记忆与任务交接：**PowerContext**（Memory remember/revise/retire、Handoff 提交与接续）
 - 对 Agent 的接口：**MCP**（stdio / streamable-http，11 个工具）与 **CLI**（7 个命令：doctor · ingest · context · finish · handoff · resume · version）
 - 推理后端不绑定品牌：`none | minimax | deepseek | qianwen`（OpenAI 兼容 chat + 各家 embeddings 差异由适配器吸收）
+
+## 正式题面对齐（2026-10-26）
+
+正式题面为**总分 20、六项必做、全部通过得 20 / 任一不通过得 0**（旧《建议稿 v0.4》的 30 分与 60/25/15 分层已不适用于评分）：
+
+1. 能够运行（按运行说明在干净环境初始化数据、启动模块、跑验证样例）；
+2. **MiniMax 实际参与**代码生成/修改（开发记录与 diff 对应）；
+3. 上下文正确（必要规格/代码/测试来源；规格更新重导入后使用新内容）；
+4. **seekdb / OceanBase 实际参与**（资料或索引入库，查询结果用于上下文）；
+5. **PowerContext 状态复用**（空状态保存 → 重启模块 → 读取并用于后续处理）；
+6. 代码修改有效（同一组目标测试改前失败、改后通过，回归通过）。
+
+作品的提交材料必须位于参赛仓库 `minimax/` 目录。本项目对上述要求的对齐状态、证据与缺口见 [docs/05-正式题面对齐与合规核对.md](docs/05-正式题面对齐与合规核对.md)；MiniMax 实际参与代码修改的证据见 [evidence/minimax-dev-20261026-111336/README.md](evidence/minimax-dev-20261026-111336/README.md)。
 
 ## 架构（冻结）
 
@@ -47,16 +60,17 @@ MCP 配置样例（把 `python.exe` 与 `WORKSPACE__ROOT` 换成你机器上的�
 ## 仓库地图
 
 ```
-赛题.md                        官方赛题原文（语雀建议稿 v0.4，2026-10-21 爬取，含来源溯源）
+赛题.md                        官方正式题面（2026-10-26 更新，含来源与版本溯源；旧 v0.4 建议稿见 git 历史）
 附件2.md                       已作废指针（旧副本收敛至 赛题.md，旧文见 git 历史）
-docs/                         01 架构说明书 · 02 调研纪要 · 03 工程骨架设计 · 04 一页技术说明 · architecture-map/
+docs/                         01 架构说明书 · 02 调研纪要 · 03 工程骨架设计 · 04 一页技术说明 · 05 正式题面对齐与合规核对 · architecture-map/
 specweaver/src/specweaver/    工具源码（domain/application/adapters/shared）
 specweaver/tests/             unit（含 boundary 审计组）· contract · integration（真后端）· fakes
 specweaver/scripts/           gate.py · run_demo.py · run_off_on.py · verify_mcp.py · probe_metrics_http.py · eval_retrieval.py · scaling_probe.py
 specweaver/deploy/            docker-compose + WSL 脚本 + mcp.*.json 样例
 specweaver/taskpacks/         TaskPack 评测任务包（railway 三层；schema 见 specweaver/src/specweaver/evaluation/）
 demo/railway/                 铁路调度教学项目（演示标的）+ gold/ 检索金标标注
-evidence/                     railway-* 全链路 · retrieval-* 金标质量 · scaling-* 规模扫描 · off-on-* 效率对照 · m5-* / http-transport-* 接口与指标实测
+evidence/                     railway-* 全链路 · retrieval-* 金标质量 · scaling-* 规模扫描 · off-on-* 效率对照 · m5-* / http-transport-* 接口与指标实测 · minimax-dev-*（MiniMax 实际改码记录）· official-*（正式题面必做项补证）
+minimax/                      正式提交材料（README · 运行说明 · 验证样例 · 代码与测试 · 技术使用记录 · 一页说明；source/ 由打包脚本生成）
 research/                     调研克隆（spec-kit / powercontext，不随交付）
 ```
 
@@ -66,7 +80,7 @@ research/                     调研克隆（spec-kit / powercontext，不随交
 
 | 维度 | 现状数字 | 出处 |
 |---|---|---|
-| 自动化测试 | 269 项：263 项离线（unit 含 boundary 审计组 + CLI/后端适配器契约 + seekdb 边界超时 + 装配段内兜底排序 + contract）+ 6 项真后端集成；语句覆盖 94%（`python -m pytest --cov=specweaver`）；`--live` 下任何 skip 直接判失败 | `scripts/gate.py` |
+| 自动化测试 | **339 项收集：333 项离线 + 6 项真后端集成**（2026-10-26 复核实测；语句覆盖 94%，`python -m pytest --cov=specweaver`）；`--live` 下任何 skip 直接判失败 | `scripts/gate.py` |
 | 检索质量金标（6 任务，人工标注，三方对照） | 生产预算 recall：SpecWeaver **1.0** / 朴素关键词 0.847 / 官方 `/v1/context/prepare` 0.208（记忆侧装配，工程构件本不在其中）；precision 仅 0.204（bundle 平均 6363B＝预算 80%，未触及约束）；**紧预算 1500B：根因已定位并修复**——装配按"类型优先于相关度"排序且允许低段补位，导致无关的 publish 规则在 5/6 用例抢占槽位、需求与设计被挤出；改为"同一 tier 内按相关度竞争 + 段内不补位"后三次独立运行 **0.4583 / 0.4305 / 0.3750**（precision 0.667 / 0.583 / 0.583），基线同轮 0.4722 —— 由"明显落后"变为**接近持平、仍略低**；残余差距主要是金标把 CODE/TST 也记作 expected，而 1500B 下 goal 段就吃满预算） | `evidence/retrieval-railway-{1500,1500-v3,1500-v3-run2,1500-v3-run3,8000-v4}/`（改动前留档：`-v2` 与 `8000-v3`） |
 | 上下文预算保证 | 声明的字节预算现在对**交付文本**成立：④段引用清单计入成本 + 渲染后复测重裁；扫描 7 档预算断言渲染字节 ≤ 预算（其中 4 档含默认 8000B 在修复前会超），预算小于裸框架时由⑥段明确宣告 | `specweaver/tests/unit/engines/assembly/test_budget_guarantee.py` |
 | 四类内容的容量门槛（真 provider 分数 + 填充策略模拟 + 一次实现后实测） | 条目成本 ≈220-360B、固定 chrome 600B ⇒ **1500B 下任何策略都只够两类**；设计段稳定在场需 ≈4000B，**默认 8000B 下 18/18 全交付、四类天然齐全**；两条候选都被实测否决：给设计段留配额（recall 0.4583→0.4028、设计段仍 0%）、②③段紧凑渲染（实现后实测设计段 0/6、recall 0.4028，已回退，证据留档） | 《01》§11 + `evidence/compact-probe-112530/` |
