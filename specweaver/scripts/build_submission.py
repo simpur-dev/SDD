@@ -45,6 +45,7 @@ _EVIDENCE_GLOBS = (
     "minimax-dev-*",
     "official-spec-reimport-*",
     "official-state-reuse-*",
+    "official-clean-env-*",
 )
 
 _README = """# source/ 使用说明（自动生成）

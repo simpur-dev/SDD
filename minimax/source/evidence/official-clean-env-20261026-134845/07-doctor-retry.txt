@@ -1,0 +1,11 @@
+FAIL seekdb: {'ok': False, 'error': 'seekdb unreachable at 127.0.0.1:12881: 
+(2003, "Can\'t connect to MySQL server on \'127.0.0.1\' ([WinError 10061] 
+由于目标计算机积极拒绝，无法连接。)")'}
+OK   powercontext: {'name': 'powercontext', 'ok': True, 'detail': {'status': 
+'ready', 'checks': {'runtime': 'ready', 'database': 'ready', 
+'artifact_processing_supervisor': 'disabled', 'access_mode': 'disabled', 
+'authentication_provider': 'disabled', 'access_provider': 'disabled', 
+'access_resource_kinds': 'server,scope,artifact', 'access_artifact_families': 
+'atomic-memory:enabled,experience:enabled,handoff:enabled,memory:enabled,profil
+e:enabled,prompt:enabled,skill:enabled'}}}
+OK   inference: qianwen

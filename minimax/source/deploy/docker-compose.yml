@@ -2,9 +2,13 @@ name: specweaver
 
 # ============================================================================
 # SpecWeaver 依赖环境：seekdb（存储/混合检索） + PowerContext（记忆/交接）
-# 默认两个服务都使用官方镜像。
-# 若 powercontext 官方镜像拉取失败，请叠加 docker-compose.build.yml 本地构建：
+#
+# 干净环境（Linux Docker / WSL2 / Docker Desktop）推荐使用固定 commit 的
+# 公开源码构建 PowerContext（无需本机 checkout）：
 #   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# 已有本地镜像时（离线复跑）：
+#   docker compose -f docker-compose.yml -f docker-compose.run.yml up -d
 # ============================================================================
 
 services:
@@ -19,7 +23,10 @@ services:
     environment:
       MODE: ${SEEKDB_MODE:-slim}
     volumes:
-      - seekdb-data:/var/lib/oceanbase
+      # seekdb v1.4.0 的实际数据目录是 /var/lib/seekdb（进程参数 --base-dir），
+      # 必须把卷挂在这里才能跨容器重建保留 catalog。
+      - seekdb-data:/var/lib/seekdb
+      - seekdb-meta:/var/lib/oceanbase
     healthcheck:
       # OceanBase 首次启动需要初始化数据文件，耗时较长（数分钟），故放宽 start_period/retries
       test: ["CMD-SHELL", "mysql -h127.0.0.1 -P2881 -uropt -e 'SELECT 1' >/dev/null 2>&1 || mysql -h127.0.0.1 -P2881 -uroot -e 'SELECT 1' >/dev/null 2>&1 || exit 1"]
@@ -29,7 +36,9 @@ services:
       start_period: 60s
 
   powercontext:
-    image: oceanbase/powercontext:${PC_VERSION:-1.0.0}
+    # 上游发行版（PyPI / Docker Hub）尚不包含本题所需的 Source/Handoff 原语；
+    # 干净环境由 docker-compose.build.yml 从固定 commit 构建此镜像。
+    image: powercontext-server:local
     container_name: sw-powercontext
     restart: unless-stopped
     ports:
@@ -37,7 +46,7 @@ services:
     volumes:
       - pc-data:/data
     environment:
-      # 第一版：独立 SQLite 持久化（官方默认），与 seekdb 在应用层双向关联
+      # 独立 SQLite 持久化（官方默认），与 seekdb 在应用层双向关联
       POWERCONTEXT_SERVER_DATABASE_KIND: sqlite
       # 对外能力：HTTP + Streamable MCP（/mcp）
       POWERCONTEXT_SERVER_MCP_ENABLED: "true"
@@ -56,4 +65,5 @@ services:
 
 volumes:
   seekdb-data:
+  seekdb-meta:
   pc-data:

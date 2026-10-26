@@ -1,0 +1,7 @@
+OK   seekdb: {'name': 'seekdb', 'ok': True, 'version': '5.7.25-OceanBase 
+seekdb-v1.4.0.0'}
+FAIL powercontext: {'ok': False, 'error': "powercontext not ready at 
+http://127.0.0.1:28000/health/ready: Server error '502 Bad Gateway' for url 
+'http://127.0.0.1:28000/health/ready'\nFor more information check: 
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/502"}
+OK   inference: qianwen

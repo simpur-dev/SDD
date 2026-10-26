@@ -1,11 +1,26 @@
-# 构建 override：从 WSL 内 powercontext 源码用【官方 Dockerfile】构建（v1.1.0，纯 Python，含 MCP）。
-# 使用：docker compose -f docker-compose.yml -f docker-compose.build.yml build powercontext
+# 构建 override：在任意 Docker（Linux / WSL2 / Docker Desktop）上从
+# 【固定 commit 的公开源码】构建 PowerContext 镜像，不依赖本机 checkout。
+#
+# 用法（在 specweaver/deploy 下）：
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# 代理环境可传入：HTTP_PROXY/HTTPS_PROXY/NO_PROXY（见 Dockerfile.powercontext）。
 services:
+  # Docker Hub 只有 oceanbase/seekdb:latest（即 v1.4.0），没有 1.4.0 这个 tag。
+  # 显式固定 latest，避免本地 .env 里的旧 SEEKDB_VERSION 触发不存在的 tag。
+  seekdb:
+    image: oceanbase/seekdb:latest
+    pull_policy: missing
+
   powercontext:
     image: powercontext-server:local
     pull_policy: build
     build:
-      context: ${POWERCONTEXT_SRC}
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile.powercontext
       args:
-        POWERCONTEXT_VERSION: ${PC_VERSION}
+        POWERCONTEXT_COMMIT: ${POWERCONTEXT_COMMIT:-2e163b4338f5fe596dd8bcf752cad6940807f459}
+        POWERCONTEXT_VERSION: ${PC_VERSION:-1.2.0.dev0}
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        NO_PROXY: ${NO_PROXY:-}

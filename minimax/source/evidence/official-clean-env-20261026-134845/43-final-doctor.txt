@@ -1,0 +1,10 @@
+OK   seekdb: {'name': 'seekdb', 'ok': True, 'version': '5.7.25-OceanBase 
+seekdb-v1.4.0.0'}
+OK   powercontext: {'name': 'powercontext', 'ok': True, 'detail': {'status': 
+'ready', 'checks': {'runtime': 'ready', 'database': 'ready', 
+'artifact_processing_supervisor': 'disabled', 'access_mode': 'disabled', 
+'authentication_provider': 'disabled', 'access_provider': 'disabled', 
+'access_resource_kinds': 'server,scope,artifact', 'access_artifact_families': 
+'experience:enabled,handoff:enabled,memory:enabled,profile:enabled,prompt:enabl
+ed,skill:enabled'}}}
+OK   inference: qianwen

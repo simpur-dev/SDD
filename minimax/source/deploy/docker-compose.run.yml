@@ -1,4 +1,5 @@
 # 运行 override：两个服务都使用本地已就绪镜像，不触发任何 build / 网络拉取。
+# 适用：已通过 docker-compose.build.yml 构建过 powercontext-server:local 的环境。
 # 启动：docker compose -f docker-compose.yml -f docker-compose.run.yml up -d
 services:
   seekdb:
