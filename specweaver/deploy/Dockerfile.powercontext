@@ -1,0 +1,96 @@
+# syntax=docker/dockerfile:1.7
+#
+# Portable PowerContext image for the competition submission.
+#
+# The upstream project publishes no image containing the Source/Handoff
+# primitives this workload needs (see docs/02 §7.2), so the clean-environment
+# path builds it from a pinned public commit instead of depending on a
+# developer-machine checkout.  The build follows the upstream
+# docker/Dockerfile (uv multi-stage) and only adds the pinned clone step.
+#
+# Build (from specweaver/deploy):
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml build powercontext
+#
+# Optional build args:
+#   POWERCONTEXT_REPO     default https://github.com/oceanbase/powercontext.git
+#   POWERCONTEXT_COMMIT   pinned commit, default below
+#   HTTP_PROXY / HTTPS_PROXY / NO_PROXY  for environments behind a proxy
+
+FROM docker.io/astral/uv:0.10.12 AS uv
+
+
+FROM python:3.11-slim-bookworm AS builder
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends git ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=uv /uv /uvx /bin/
+
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_CONCURRENT_DOWNLOADS=4 \
+    UV_HTTP_RETRIES=5 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
+
+ARG POWERCONTEXT_REPO=https://github.com/oceanbase/powercontext.git
+ARG POWERCONTEXT_COMMIT=2e163b4338f5fe596dd8bcf752cad6940807f459
+ARG POWERCONTEXT_VERSION=1.2.0.dev0
+ARG HTTP_PROXY=""
+ARG HTTPS_PROXY=""
+ARG NO_PROXY=""
+
+WORKDIR /app
+
+# Fetch exactly the pinned commit (no floating branch): reviewers get the
+# same code the competition build was verified against.
+RUN git init -q /app \
+    && git -C /app remote add origin "${POWERCONTEXT_REPO}" \
+    && git -C /app fetch --depth 1 origin "${POWERCONTEXT_COMMIT}" \
+    && git -C /app checkout -q --detach FETCH_HEAD
+
+RUN --mount=type=cache,id=powercontext-uv,target=/root/.cache/uv \
+    test -n "${POWERCONTEXT_VERSION}" \
+    && SETUPTOOLS_SCM_PRETEND_VERSION="${POWERCONTEXT_VERSION}" uv sync \
+    --frozen \
+    --no-dev \
+    --no-editable \
+    --extra cli \
+    --extra server \
+    --refresh-package powercontext \
+    && test "$(.venv/bin/python -c 'from importlib.metadata import version; print(version("powercontext"))')" \
+    = "${POWERCONTEXT_VERSION}"
+
+
+FROM python:3.11-slim-bookworm AS runtime
+
+RUN groupadd --gid 10001 powercontext \
+    && useradd --uid 10001 --gid powercontext --home-dir /app --no-create-home --shell /usr/sbin/nologin powercontext \
+    && mkdir -p /data \
+    && chown powercontext:powercontext /data
+
+WORKDIR /app
+
+ENV PATH="/app/.venv/bin:$PATH" \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    POWERCONTEXT_HOME=/data \
+    POWERCONTEXT_SERVER_HTTP_HOST=0.0.0.0 \
+    POWERCONTEXT_SERVER_HTTP_PORT=8000
+
+# The container binds 0.0.0.0 so the published port is reachable; this is the
+# deliberate opt-in the upstream image documents for container deployments.
+ENV POWERCONTEXT_SERVER_ALLOW_UNAUTHENTICATED_NON_LOOPBACK=true
+
+COPY --from=builder --chown=powercontext:powercontext /app/.venv /app/.venv
+
+USER powercontext
+
+VOLUME ["/data"]
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=5 \
+    CMD ["python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=3)"]
+
+ENTRYPOINT ["powercontext"]
+CMD ["server", "run"]

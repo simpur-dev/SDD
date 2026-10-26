@@ -1,216 +1,97 @@
-# SpecWeaver 依赖环境部署（已在本机 WSL2 验证通过）
+# SpecWeaver 依赖环境部署（seekdb + PowerContext）
 
-两个官方指定后端：**seekdb**（工程资料库 + 混合检索）与 **PowerContext**（记忆 + 上下文 + 任务交接）。
+两个指定后端：**seekdb**（工程资料库 + 混合检索）与 **PowerContext**（记忆 + 上下文 + 任务交接）。
 
-本机采用：**WSL2 Ubuntu-24.04 + Docker Engine**（Docker Desktop 在 Windows 内部版 26200 下有数据盘兼容问题）。
+本文档以**干净环境可复现**为目标：只需要 Docker（Linux、WSL2 或 Docker Desktop 均可），
+PowerContext 由仓库内 `Dockerfile.powercontext` 从**固定公开 commit** 构建，不依赖开发机上的源码 checkout。
 
+## 0. 组件与端口
 
+| 组件 | 镜像 | 端口 | 版本（实测） |
+| --- | --- | --- | --- |
+| seekdb | `oceanbase/seekdb:latest`（Docker Hub，v1.4.0） | 2881(SQL) / 2886(HTTP) | `5.7.25-OceanBase seekdb-v1.4.0.0` |
+| powercontext | `powercontext-server:local`（由本仓库 Dockerfile 构建） | 8000(HTTP) | PowerContext API 1.1.0（含 Source / Memory / Handoff / MCP） |
 
-***
-
-## 0. 组件与端口（实测）
-
-
-
-| 组件           | 镜像                               | 端口                   | 实测                                      |
-| ------------ | -------------------------------- | -------------------- | --------------------------------------- |
-| seekdb       | `oceanbase/seekdb:latest`（819MB） | 2881(SQL)/2886(HTTP) | `5.7.25-OceanBase seekdb-v1.4.0.0`      |
-| powercontext | 本地构建 `powercontext-server:local` | 8000(HTTP)           | **PowerContext API 1.1.0，97 个路径，含 MCP** |
-
-### 为什么 PowerContext 用 `master` 分支（重要）
-
-
-
-* 截至目前，**所有已发布的 release/tag（最新 v1.1.7、PyPI&#x20;**`powercontext`**&#x20;1.1.0）内部仍是旧的 "PowerMem API"**：
-
-  只有 `/api/v1/memories` 等记忆存储接口，**没有 MCP，也没有赛题描述的 Source / Handoff / PreparedContext / Skill 完整原语**。
-
-* 赛题描述的完整 **PowerContext**（Source、Memory revise/retire、Handoff、Skill、Scope、MCP、多 Agent 集成）
-
-  **目前只存在于&#x20;**`master`**&#x20;分支**（有 `uv.lock`，可复现构建；赛题本就按它设计）。
-
-* 因此 `prep_powercontext.sh` 拉取并使用 `master`，构建时以 `POWERCONTEXT_VERSION=1.2.0.dev0` 标识。
-
-### seekdb 镜像 tag 说明
-
-Docker Hub 上 `oceanbase/seekdb:1.4.0`**&#x20;这个 tag 不存在**，请使用 `oceanbase/seekdb:latest`（即 v1.4.0）。
-
-运行 override 已固定为 latest 并禁止拉取。
-
-
-
-***
-
-## 1. 一次性安装（脚本在 `deploy/wsl/`，经 `wsl -u root` 以 root 运行，无需密码）
-
-
-
-```powershell
-cd E:\2026ob_projects\SDD\specweaver\deploy
-
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/setup_docker.sh      # 装 Docker（拉镜像走宿主代理，IP 自适应）
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/prep_powercontext.sh # 拉 powercontext master 到 /opt/powercontext
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/build.sh            # 用官方 Dockerfile 构建
-```
-
-> master 的官方 Dockerfile 为纯 Python（uv 构建），
->
-> **不含前端阶段，无需 pnpm/node 修补**
->
-> 。
-> 早期 v1.0.0 需要的 
->
-> `wsl/Dockerfile.pc`
->
-> （固定 pnpm9）仅作历史保留，master 构建不使用。
-
-
-
-***
-
-## 2. 启动与验证（日常）
-
-
-
-```powershell
-# 彻底（重新）部署并验证：down → up（全本地镜像、离线）→ 等待 → 核对路由与 MCP
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/clean_redeploy.sh
-
-# 仅启动（幂等）
-wsl -d Ubuntu-24.04 -u root -- bash /mnt/e/2026ob_projects/SDD/specweaver/deploy/wsl/start2.sh
-```
-
-手动等价命令（WSL 内）：
+## 1. 干净环境快速启动（推荐）
 
 ```bash
-cd /mnt/e/2026ob_projects/SDD/specweaver/deploy
-docker compose -f docker-compose.yml -f docker-compose.run.yml up -d          # 运行（本地镜像，离线）
-docker compose -f docker-compose.yml -f docker-compose.build.yml build powercontext  # 重新构建
+cd specweaver/deploy
+
+# 构建 PowerContext（固定 commit 2e163b4…；首次需拉取 uv 依赖，约 5–10 分钟）
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+
+# 查看状态（两个容器都应 healthy）
+docker compose -f docker-compose.yml -f docker-compose.build.yml ps
+curl -s http://127.0.0.1:8000/health/ready
 ```
 
-
-
-***
-
-## 3. compose 文件分工
-
-
-
-| 文件                         | 作用                                                                                 |
-| -------------------------- | ---------------------------------------------------------------------------------- |
-| `docker-compose.yml`       | 基础编排：seekdb + powercontext（环境 / 健康检查 / 卷）                                          |
-| `docker-compose.build.yml` | 构建 override：从 `/opt/powercontext` 用官方 `docker/Dockerfile`，传 `POWERCONTEXT_VERSION` |
-| `docker-compose.run.yml`   | 运行 override：两服务都锁定本地镜像（seekdb:latest /powercontext-server:local），**禁止任何拉取 / 构建**   |
-| `init/01_schema.sql`       | seekdb 参考建表 DDL（正式由 SpecWeaver 初始化执行）                                              |
-
-
-
-***
-
-## 4. 访问方式
-
-
-
-* PowerContext Swagger：`http://localhost:8000/docs`；OpenAPI：`http://localhost:8000/openapi.json`
-
-* 健康检查：`http://localhost:8000/health/live`、`http://localhost:8000/health/ready`
-
-* **MCP 端点**：`http://localhost:8000/mcp`
-
-
-  * 浏览器 / GET 直接访问会 **307 重定向到&#x20;**`/mcp/`；
-
-  * 未完成 MCP 握手时返回 JSON-RPC `400 Missing session ID`（并下发 `mcp-session-id`）——**这是正常现象**。
-
-  * 标准用法是 MCP 客户端先 `initialize` → `notifications/initialized` 建立会话，再调用工具。
-
-* seekdb：SQL 连 `localhost:2881`（root 无密码），HTTP/Dashboard `http://localhost:2886`。
-
-已实测的 PowerContext 原语分组（97 路径中）：`/v1/sources/*`、`/v1/scopes/*`(21)、
-
-`/v1/work/handoffs/*`、`/v1/external-skills/*` 等。
-
-
-
-***
-
-## 5. 重要行为说明
-
-
-
-* **WSL 空闲约 60s 自动关闭 VM**（`vmIdleTimeout` 默认 60000ms）：一次性命令结束并空闲后，VM 与容器一起停止。
-  若"长时间等待"期间没有任何 WSL 进程，等待结束时容器其实已被关停、Windows 连 `localhost` 被拒（`wsl ... uptime` 显示 `up 0 min`）。
-  **开发时保持 VM**：后台运行 `wsl -d Ubuntu-24.04 -u root -- sleep infinity`；或调大 `%UserProfile%\.wslconfig` 的 `vmIdleTimeout`。
-  等容器健康统一用 `deploy/wsl/wait_ready.sh`（在单条命令内轮询，不被空闲回收打断）；冷启动瞬间立即 curl 会得到 000。
-
-* **Windows 侧访问**：WSL2 默认端口转发，Windows 浏览器直接用 `localhost` 即可。
-
-* **鉴权姿态（重要，交付前请看）**：本目录的 compose 以**单机演示姿态**运行——PowerContext 的 `access_mode` 实测为 `disabled`（`specweaver doctor` 会把这一项打印出来），seekdb 用 `root` 空密码，SpecWeaver 的 `/mcp` 与 `GET /metrics` 自身不带鉴权。若要放到共享机器或局域网：
-  * PowerContext 侧启用官方鉴权：`POWERCONTEXT_SERVER_ACCESS_MODE=enforced` + `POWERCONTEXT_SERVER_AUTH_TOKEN=<强随机>`（官方 docker/README 与 configure-server-environment 文档口径），SpecWeaver 侧在 `specweaver/.env` 填 `POWERCONTEXT__TOKEN=<同一 token>`（`PowerContextClient` 会带 `Authorization: Bearer`）；
-  * seekdb 侧设置 `ROOT_PASSWORD` 并同步 `SEEKDB__PASSWORD`；
-  * SpecWeaver 的 HTTP 服务默认只绑 `127.0.0.1`（`SERVER__HOST`），对外暴露请置于反代之后并对 `/metrics` 做访问控制（指标含项目名与构件规模，属敏感信息）。
-
-* **代理**：脚本动态读取宿主 IP（`ip route` default via），代理端口固定 10090；daemon 与构建均已配置。
-
-
-
-***
-
-## 6. 停止与清理
-
-
-
-```
-docker compose -f docker-compose.yml -f docker-compose.run.yml down      # 删容器，保留数据
-
-docker compose -f docker-compose.yml -f docker-compose.run.yml down -v   # 连数据卷删除（谨慎）
-
-wsl --shutdown
-```
-
-
-
-***
-
-## 7. 实测验证证据
-
-
-
-* seekdb：`SELECT version()` → `5.7.25-OceanBase seekdb-v1.4.0.0`；`SHOW DATABASES` 正常；
-
-  建库 / 建表 / 插入 2 行 / 计数 `n=2`/ 删除，全部成功。
-
-* powercontext：两容器 `healthy`；openapi title **PowerContext API 1.1.0、97 路径**；
-
-  `/health/ready` 200；`/mcp` 307→`/mcp/`，返回标准 JSON-RPC 会话响应（MCP 在线）。
-
-
-
-***
-
-## 8. 备选：Docker Desktop（受支持的 Windows 版本）
-
-
-
-```
-Copy-Item .env.example .env
-
-docker compose up -d
-```
-
-PowerContext 无官方镜像（Docker Hub 404），需叠加 `docker-compose.build.yml` 本地构建 master。
-
-## 9. 环境注记：WSL VM 闲置回收会带走 docker 栈（run_eval 必读）
-
-docker 容器跑在 WSL2 里。WSL 无活动会话时会整机回收——**dockerd 与容器随之消失**，
-表现为 Windows 侧 `127.0.0.1:2881/8000` 时通时断（每次 `wsl` 命令又把容器拉成
-"Up 1 second"），极易误判为服务崩溃。这不是 seekdb/powercontext 的问题。
-
-处置（任选其一）：
-
-- `scripts/run_eval.py` 在真跑 ON 臂时会**自动**挂一个 WSL 保活会话（运行期 +
-  600s 余量，结束后自动释放），无需手工干预；
-- 手工保活（长会话调试时）：`wsl bash -lc "sleep 7200"` 放后台；
-- 机器级根治：`%USERPROFILE%\.wslconfig` 写 `[wsl2]
-vmIdleTimeout=-1` 后
-  `wsl --shutdown` 重启（会停容器，重启后 `wait_ready.sh` 拉起即可）。
+- 需要代理的环境：构建前导出 `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY`（compose 会作为 build args 传给 Dockerfile）；
+- 若 2881/8000 被其他服务占用，可改宿主端口：
+  `SEEKDB_SQL_PORT=12881 SEEKDB_HTTP_PORT=12886 PC_PORT=18000 docker compose ... up -d --build`，
+  并同步设置 SpecWeaver 的 `SEEKDB__PORT` / `POWERCONTEXT__BASE_URL`；
+- **已有本地镜像时（离线复跑）**：
+  `docker compose -f docker-compose.yml -f docker-compose.run.yml up -d`（不构建、不拉取）；
+- 重置数据：`docker compose ... down -v`（会删除 seekdb catalog 与 PowerContext 状态卷）。
+
+启动完成后回到项目根执行 `specweaver doctor`（或 `python -m specweaver.adapters.driving.cli.app doctor`），
+应看到 seekdb / PowerContext / inference 三行 OK。
+
+> 首次启动请等两个容器都 `healthy`、再等几秒后执行 `specweaver ingest`：PowerContext 刚启动时
+> `/v1/memory/*` 可能短暂 502。WSL2 下还需保持一个 WSL 会话（`wsl bash -lc "sleep 3600"`），
+> 否则 VM 自动回收会让容器重启。
+
+## 2. 为什么需要自建 PowerContext 镜像
+
+- 上游的 release / PyPI `powercontext 1.0.0` 仍只有旧的 "PowerMem API"，**没有** 本题需要的
+  Source / Handoff / PreparedContext / Skill 完整原语，也没有 MCP；
+- 这些原语目前位于 `oceanbase/powercontext` 的 `master` 分支（含 `uv.lock`，可复现构建）；
+- 因此本仓库的 `Dockerfile.powercontext` 直接固定 **commit `2e163b4338f5fe596dd8bcf752cad6940807f459`**
+  （2026-09-25，纯 Python uv 构建），按上游 `docker/Dockerfile` 的多阶段方式构建，避免"开发机 checkout"这一不可复现依赖。
+- seekdb 使用 Docker Hub 的 `oceanbase/seekdb:latest`（即 v1.4.0；`1.4.0` 这个 tag 不存在）。
+
+## 3. 验证与访问
+
+- PowerContext Swagger：`http://localhost:8000/docs`；健康：`/health/live`、`/health/ready`；
+  MCP 端点：`http://localhost:8000/mcp`（GET 会被 307 到 `/mcp/`，未握手时 JSON-RPC 400 `Missing session ID` 属正常）；
+- seekdb：SQL `localhost:2881`（root 无密码），HTTP `http://localhost:2886`；
+- 两者数据卷：`seekdb-data`（容器内 `/var/lib/seekdb`，v1.4.0 的实际数据目录）、`seekdb-meta`
+  （`/var/lib/oceanbase`，镜像管理面目录）、`pc-data`（`/data`）。
+
+## 4. 鉴权姿态（重要）
+
+本目录 compose 以**单机演示姿态**运行：PowerContext `access_mode=disabled`，seekdb root 空密码，
+SpecWeaver 的 `/mcp` 与 `GET /metrics` 自身不带鉴权。放到共享机器/局域网时：
+
+- PowerContext：`POWERCONTEXT_SERVER_ACCESS_MODE=enforced` + `POWERCONTEXT_SERVER_AUTH_TOKEN=<强随机>`，
+  SpecWeaver 侧在 `.env` 填 `POWERCONTEXT__TOKEN=<同一 token>`；
+- seekdb：设置 `ROOT_PASSWORD` 并同步 `SEEKDB__PASSWORD`；
+- SpecWeaver HTTP 默认只绑 `127.0.0.1`，对外暴露请置于反向代理之后，并保护 `/metrics`。
+
+## 5. 开发机补充（WSL2）
+
+本机开发环境使用 Windows 11 + WSL2 Ubuntu-24.04 + Docker Engine。相关脚本在 `deploy/wsl/`：
+
+- `setup_docker.sh`：安装 Docker Engine（拉镜像走宿主代理，IP 自适应）；
+- 可选旧流程：`prep_powercontext.sh` 把 `oceanbase/powercontext` 拉到 `/opt/powercontext`，
+  `build.sh` 用官方 Dockerfile 构建本地镜像——**干净环境不需要这一步**，直接用 §1 的 build override；
+- WSL 空闲约 60s 会自动回收 VM，容器随之停止。需要长时间跑评测时保持一个 WSL 会话：
+  `wsl bash -lc "sleep 7200"`，或用 `deploy/wsl/wait_ready.sh` 等待就绪；
+- 冷启动瞬间访问 `localhost:2881/8000` 可能失败，等 healthy 后再跑 `doctor`。
+
+## 6. 故障排查
+
+| 现象 | 处理 |
+| --- | --- |
+| `failed to bind host port 2881/8000` | 本机有其他服务占用；用 §1 的 `SEEKDB_SQL_PORT`/`SEEKDB_HTTP_PORT`/`PC_PORT` 改端口，并同步 SpecWeaver 配置 |
+| seekdb 容器反复重启（日志 `Segmentation fault` / `Starting seekdb...` 循环） | 多为容器可写层数据损坏；`docker compose ... down` 后重新 `up`（会重建容器，catalog 由重新 ingest 恢复）；持久化已改到 `/var/lib/seekdb` 卷，重建容器不再清数据 |
+| PowerContext 构建失败且日志是网络错误 | 导出 `HTTP_PROXY/HTTPS_PROXY` 后重试 §1 的构建命令 |
+| PowerContext 健康检查 404 | 确认使用的是本仓库构建的 `powercontext-server:local`（API 1.1.0），而不是旧发行版镜像 |
+| PowerContext 刚启动时 `/v1/memory/*` 返回 502 | 等两个容器 `healthy` 后等几秒再跑 `ingest`；WSL2 下保持会话避免 VM 回收重启容器 |
+| 数据想从零开始 | `docker compose ... down -v`，并使用新的 `project_id`（seekdb 记录键/ PowerContext scope 都按 project 隔离） |
+
+## 7. 实测与证据
+
+- seekdb：`SELECT version()` → `5.7.25-OceanBase seekdb-v1.4.0.0`；建库/建表/混合检索均实测；
+- PowerContext：API 1.1.0、97 个路径、`/health/ready` 200、`/mcp` 在线；
+- 仓库根 `evidence/` 保留了真实容器上的全链路、接口、检索质量与评测证据；
+- 干净环境构建/启动/`doctor`/数据持久化的复核记录见 `evidence/official-clean-env-*`（由部署修复时产生）。
