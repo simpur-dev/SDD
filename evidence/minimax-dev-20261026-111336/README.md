@@ -16,6 +16,9 @@
 | 数据库 | seekdb v1.4.0（本机 127.0.0.1:12881，因同机其他项目占用默认端口而临时改端口） |
 | 记忆 | PowerContext（127.0.0.1:18000，API 1.1.0） |
 
+- 代码快照：`before/`（改前）与 `after/`（改后），差异见 `agent.diff`；
+- 一键复现：`reproduce.md`（应用 diff → pytest 10→16 passed → target 5/5 FAIL→PASS → hidden 3/3）。
+
 ## 2. 任务与上下文
 
 - 工程：demo/railway @ baseline $base
@@ -81,7 +84,8 @@ git diff 52a62068ef34..HEAD：
 |---|---|---|
 | 目标行为测试（behavior-level，见 	arget-tests.py） | FAIL（	arget-before.txt，5/5 失败，原因是目标行为/接口尚未实现） | PASS（	arget-after.txt，5/5 通过） |
 | 工程测试 python -m pytest -q | 10 passed（aseline-pytest.txt） | **16 passed**（post-pytest.txt） |
-| 隐藏验收 ailway-acceptance.py（diff 捕获后注入） | — | **3 passed**（hidden-acceptance.txt） |
+| 隐藏验收 
+ailway-acceptance.py（diff 捕获后注入） | — | **3 passed**（hidden-acceptance.txt） |
 
 - 代码 diff：gent.diff（SHA256 前缀 24BA30A90B84E621）
 - 改动文件：src/schedule.py、src/api.py、	ests/test_adjust.py（未改动既有测试）

@@ -1,0 +1,8 @@
+﻿# Root-level lint scope for the development repository.
+#
+# `evidence/` holds recorded artifacts (including verbatim before/after code
+# snapshots) and `minimax/` holds the generated submission payload; neither is
+# hand-maintained source, so they are excluded when ruff runs from the repo
+# root. The package gate keeps using `specweaver/pyproject.toml` and still
+# lints the real source tree.
+extend-exclude = ["evidence", "minimax", "research"]
