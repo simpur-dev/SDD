@@ -1,0 +1,32 @@
+{
+  "model": "MiniMax-M2.7",
+  "num_turns": 16,
+  "tool_calls": {
+    "Bash": 4,
+    "Read": 8,
+    "Edit": 2,
+    "Write": 1
+  },
+  "usage": {
+    "input_tokens": 18697,
+    "cache_creation_input_tokens": 0,
+    "cache_read_input_tokens": 114342,
+    "output_tokens": 2809,
+    "output_tokens_details": {
+      "thinking_tokens": 803
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 0,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "",
+    "iterations": [],
+    "speed": "standard"
+  },
+  "transcript_bytes": 105148
+}

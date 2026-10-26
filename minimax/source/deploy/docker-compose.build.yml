@@ -1,0 +1,11 @@
+# 构建 override：从 WSL 内 powercontext 源码用【官方 Dockerfile】构建（v1.1.0，纯 Python，含 MCP）。
+# 使用：docker compose -f docker-compose.yml -f docker-compose.build.yml build powercontext
+services:
+  powercontext:
+    image: powercontext-server:local
+    pull_policy: build
+    build:
+      context: ${POWERCONTEXT_SRC}
+      dockerfile: docker/Dockerfile
+      args:
+        POWERCONTEXT_VERSION: ${PC_VERSION}

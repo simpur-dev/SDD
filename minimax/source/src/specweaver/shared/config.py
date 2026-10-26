@@ -1,0 +1,66 @@
+from __future__ import annotations
+
+from pathlib import Path
+
+from pydantic import BaseModel, SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# A .env next to the project root is the location-independent fallback, so
+# `specweaver doctor` behaves the same from any cwd; a .env in the current
+# directory still wins (later entries override earlier ones).
+_PROJECT_ENV = str(Path(__file__).resolve().parents[3] / ".env")
+
+
+class SeekDbSettings(BaseModel):
+    host: str = "127.0.0.1"
+    port: int = 2881
+    user: str = "root"
+    password: SecretStr = SecretStr("")
+    database: str = "specweaver"
+
+
+class PowerContextSettings(BaseModel):
+    base_url: str = "http://localhost:8000"
+    token: SecretStr | None = None
+    timeout: float = 20.0
+
+
+class InferenceSettings(BaseModel):
+    provider: str = "none"  # none | minimax | deepseek | qianwen
+    api_key: SecretStr | None = None
+    base_url: str = "https://api.minimax.chat/v1"
+    model: str = "MiniMax-Text-01"
+    embed_model: str = "embo-01"
+    dim: int = 1536
+
+
+class ServerSettings(BaseModel):
+    host: str = "127.0.0.1"
+    port: int = 8765
+    mcp_path: str = "/mcp"
+
+
+class WorkspaceSettings(BaseModel):
+    root: str = "."
+    profile: str = "auto"  # auto | specweaver | openspec | plain (M7 profiles)
+
+
+class ContextSettings(BaseModel):
+    budget_bytes: int = 8000
+    n_results: int = 20
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_nested_delimiter="__",
+        env_file=(_PROJECT_ENV, ".env"),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    seekdb: SeekDbSettings = SeekDbSettings()
+    powercontext: PowerContextSettings = PowerContextSettings()
+    inference: InferenceSettings = InferenceSettings()
+    server: ServerSettings = ServerSettings()
+    workspace: WorkspaceSettings = WorkspaceSettings()
+    context: ContextSettings = ContextSettings()

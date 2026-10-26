@@ -1,0 +1,9 @@
+# 运行 override：两个服务都使用本地已就绪镜像，不触发任何 build / 网络拉取。
+# 启动：docker compose -f docker-compose.yml -f docker-compose.run.yml up -d
+services:
+  seekdb:
+    image: oceanbase/seekdb:latest
+    pull_policy: missing
+  powercontext:
+    image: powercontext-server:local
+    pull_policy: missing

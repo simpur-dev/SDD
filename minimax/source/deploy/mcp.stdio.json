@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "specweaver": {
+      "command": "E:/2026ob_projects/SDD/.venv/Scripts/python.exe",
+      "args": ["-m", "specweaver.adapters.driving.mcp.run_stdio"],
+      "env": {
+        "WORKSPACE__ROOT": "E:/2026ob_projects/SDD/demo/railway"
+      }
+    }
+  }
+}

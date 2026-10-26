@@ -1,0 +1,59 @@
+name: specweaver
+
+# ============================================================================
+# SpecWeaver 依赖环境：seekdb（存储/混合检索） + PowerContext（记忆/交接）
+# 默认两个服务都使用官方镜像。
+# 若 powercontext 官方镜像拉取失败，请叠加 docker-compose.build.yml 本地构建：
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+# ============================================================================
+
+services:
+
+  seekdb:
+    image: oceanbase/seekdb:${SEEKDB_VERSION:-latest}
+    container_name: sw-seekdb
+    restart: unless-stopped
+    ports:
+      - "${SEEKDB_SQL_PORT:-2881}:2881"   # MySQL 兼容 SQL 协议
+      - "${SEEKDB_HTTP_PORT:-2886}:2886"  # HTTP / Dashboard
+    environment:
+      MODE: ${SEEKDB_MODE:-slim}
+    volumes:
+      - seekdb-data:/var/lib/oceanbase
+    healthcheck:
+      # OceanBase 首次启动需要初始化数据文件，耗时较长（数分钟），故放宽 start_period/retries
+      test: ["CMD-SHELL", "mysql -h127.0.0.1 -P2881 -uropt -e 'SELECT 1' >/dev/null 2>&1 || mysql -h127.0.0.1 -P2881 -uroot -e 'SELECT 1' >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 60s
+
+  powercontext:
+    image: oceanbase/powercontext:${PC_VERSION:-1.0.0}
+    container_name: sw-powercontext
+    restart: unless-stopped
+    ports:
+      - "${PC_PORT:-8000}:8000"
+    volumes:
+      - pc-data:/data
+    environment:
+      # 第一版：独立 SQLite 持久化（官方默认），与 seekdb 在应用层双向关联
+      POWERCONTEXT_SERVER_DATABASE_KIND: sqlite
+      # 对外能力：HTTP + Streamable MCP（/mcp）
+      POWERCONTEXT_SERVER_MCP_ENABLED: "true"
+      POWERCONTEXT_SERVER_MCP_PATH: /mcp
+      # 本机演示：关闭访问控制；对外暴露请改为 enforced 并设置 AUTH_TOKEN
+      POWERCONTEXT_SERVER_ACCESS_MODE: disabled
+      POWERCONTEXT_SERVER_DASHBOARD_ENABLED: "false"
+      POWERCONTEXT_SERVER_LOGGING_LEVEL: INFO
+      POWERCONTEXT_SERVER_METRICS_ENABLED: "true"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health/ready',timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+volumes:
+  seekdb-data:
+  pc-data:
